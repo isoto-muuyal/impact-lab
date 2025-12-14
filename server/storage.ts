@@ -4,6 +4,8 @@ import {
   roles,
   userRoles,
   projects,
+  courses,
+  courseEnrollments,
   type User,
   type UpsertUser,
   type UserProfile,
@@ -14,6 +16,12 @@ import {
   type Project,
   type InsertProject,
   type ProjectWithOwner,
+  type Course,
+  type InsertCourse,
+  type CourseWithInstructor,
+  type CourseEnrollment,
+  type InsertCourseEnrollment,
+  type EnrollmentWithCourse,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, or, and } from "drizzle-orm";
@@ -48,6 +56,21 @@ export interface IStorage {
   createProject(project: InsertProject): Promise<ProjectWithOwner>;
   updateProject(id: string, project: Partial<InsertProject>): Promise<ProjectWithOwner | undefined>;
   deleteProject(id: string): Promise<boolean>;
+  
+  // Course operations
+  getCourses(includeUnpublished?: boolean): Promise<CourseWithInstructor[]>;
+  getCourse(id: string): Promise<CourseWithInstructor | undefined>;
+  createCourse(course: InsertCourse): Promise<CourseWithInstructor>;
+  updateCourse(id: string, course: Partial<InsertCourse>): Promise<CourseWithInstructor | undefined>;
+  deleteCourse(id: string): Promise<boolean>;
+  
+  // Enrollment operations
+  getEnrollmentsByUser(userId: string): Promise<EnrollmentWithCourse[]>;
+  getEnrollmentsByCourse(courseId: string): Promise<CourseEnrollment[]>;
+  getEnrollment(courseId: string, userId: string): Promise<CourseEnrollment | undefined>;
+  enrollUser(courseId: string, userId: string): Promise<CourseEnrollment>;
+  updateEnrollment(id: string, data: Partial<InsertCourseEnrollment>): Promise<CourseEnrollment | undefined>;
+  unenrollUser(courseId: string, userId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -308,6 +331,147 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .delete(projects)
       .where(eq(projects.id, id));
+    return true;
+  }
+
+  // Course operations
+  async getCourses(includeUnpublished: boolean = false): Promise<CourseWithInstructor[]> {
+    let courseList;
+    if (includeUnpublished) {
+      courseList = await db
+        .select()
+        .from(courses)
+        .orderBy(desc(courses.createdAt));
+    } else {
+      courseList = await db
+        .select()
+        .from(courses)
+        .where(eq(courses.status, 'published'))
+        .orderBy(desc(courses.createdAt));
+    }
+    
+    const coursesWithInstructors = await Promise.all(
+      courseList.map(async (course) => {
+        const instructor = await this.getUser(course.instructorId);
+        return { ...course, instructor };
+      })
+    );
+    
+    return coursesWithInstructors;
+  }
+
+  async getCourse(id: string): Promise<CourseWithInstructor | undefined> {
+    const [course] = await db
+      .select()
+      .from(courses)
+      .where(eq(courses.id, id));
+    
+    if (!course) return undefined;
+    
+    const instructor = await this.getUser(course.instructorId);
+    return { ...course, instructor };
+  }
+
+  async createCourse(courseData: InsertCourse): Promise<CourseWithInstructor> {
+    const [course] = await db
+      .insert(courses)
+      .values(courseData)
+      .returning();
+    
+    const instructor = await this.getUser(course.instructorId);
+    return { ...course, instructor };
+  }
+
+  async updateCourse(id: string, courseData: Partial<InsertCourse>): Promise<CourseWithInstructor | undefined> {
+    const [course] = await db
+      .update(courses)
+      .set({
+        ...courseData,
+        updatedAt: new Date(),
+      })
+      .where(eq(courses.id, id))
+      .returning();
+    
+    if (!course) return undefined;
+    
+    const instructor = await this.getUser(course.instructorId);
+    return { ...course, instructor };
+  }
+
+  async deleteCourse(id: string): Promise<boolean> {
+    await db.delete(courseEnrollments).where(eq(courseEnrollments.courseId, id));
+    await db.delete(courses).where(eq(courses.id, id));
+    return true;
+  }
+
+  // Enrollment operations
+  async getEnrollmentsByUser(userId: string): Promise<EnrollmentWithCourse[]> {
+    const enrollments = await db
+      .select()
+      .from(courseEnrollments)
+      .where(eq(courseEnrollments.userId, userId))
+      .orderBy(desc(courseEnrollments.enrolledAt));
+    
+    const enrollmentsWithCourses = await Promise.all(
+      enrollments.map(async (enrollment) => {
+        const [course] = await db
+          .select()
+          .from(courses)
+          .where(eq(courses.id, enrollment.courseId));
+        return { ...enrollment, course };
+      })
+    );
+    
+    return enrollmentsWithCourses;
+  }
+
+  async getEnrollmentsByCourse(courseId: string): Promise<CourseEnrollment[]> {
+    return db
+      .select()
+      .from(courseEnrollments)
+      .where(eq(courseEnrollments.courseId, courseId));
+  }
+
+  async getEnrollment(courseId: string, userId: string): Promise<CourseEnrollment | undefined> {
+    const [enrollment] = await db
+      .select()
+      .from(courseEnrollments)
+      .where(and(
+        eq(courseEnrollments.courseId, courseId),
+        eq(courseEnrollments.userId, userId)
+      ));
+    return enrollment;
+  }
+
+  async enrollUser(courseId: string, userId: string): Promise<CourseEnrollment> {
+    const [enrollment] = await db
+      .insert(courseEnrollments)
+      .values({
+        courseId,
+        userId,
+        status: 'enrolled',
+        progress: '0',
+      })
+      .returning();
+    return enrollment;
+  }
+
+  async updateEnrollment(id: string, data: Partial<InsertCourseEnrollment>): Promise<CourseEnrollment | undefined> {
+    const [enrollment] = await db
+      .update(courseEnrollments)
+      .set(data)
+      .where(eq(courseEnrollments.id, id))
+      .returning();
+    return enrollment;
+  }
+
+  async unenrollUser(courseId: string, userId: string): Promise<boolean> {
+    await db
+      .delete(courseEnrollments)
+      .where(and(
+        eq(courseEnrollments.courseId, courseId),
+        eq(courseEnrollments.userId, userId)
+      ));
     return true;
   }
 }

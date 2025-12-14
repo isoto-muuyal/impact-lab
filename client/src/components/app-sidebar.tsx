@@ -49,6 +49,8 @@ const menuItemsByRole = {
   facilitador: [
     { title: "Inicio", url: "/", icon: Home },
     { title: "Mi Perfil", url: "/profile", icon: User },
+    { title: "Proyectos", url: "/projects", icon: Target },
+    { title: "Cursos", url: "/courses", icon: BookOpen },
     { title: "Gestión de Programas", url: "/programs", icon: Rocket },
     { title: "Usuarios", url: "/users", icon: Users },
     { title: "Eventos", url: "/events", icon: Calendar },

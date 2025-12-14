@@ -210,3 +210,84 @@ export type ProjectWithOwner = Project & {
   owner?: User;
   mentor?: User | null;
 };
+
+// Course status enum
+export const courseStatusEnum = pgEnum('course_status', ['draft', 'published', 'archived']);
+
+// Enrollment status enum
+export const enrollmentStatusEnum = pgEnum('enrollment_status', ['enrolled', 'in_progress', 'completed', 'dropped']);
+
+// Courses table
+export const courses = pgTable("courses", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title").notNull(),
+  description: text("description"),
+  content: text("content"),
+  category: varchar("category"),
+  difficulty: varchar("difficulty"),
+  duration: varchar("duration"),
+  instructorId: varchar("instructor_id").notNull().references(() => users.id),
+  status: courseStatusEnum("status").default('draft'),
+  imageUrl: varchar("image_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Course enrollments table
+export const courseEnrollments = pgTable("course_enrollments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  courseId: varchar("course_id").notNull().references(() => courses.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  status: enrollmentStatusEnum("status").default('enrolled'),
+  progress: varchar("progress").default('0'),
+  enrolledAt: timestamp("enrolled_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+});
+
+// Course relations
+export const coursesRelations = relations(courses, ({ one, many }) => ({
+  instructor: one(users, {
+    fields: [courses.instructorId],
+    references: [users.id],
+  }),
+  enrollments: many(courseEnrollments),
+}));
+
+export const courseEnrollmentsRelations = relations(courseEnrollments, ({ one }) => ({
+  course: one(courses, {
+    fields: [courseEnrollments.courseId],
+    references: [courses.id],
+  }),
+  user: one(users, {
+    fields: [courseEnrollments.userId],
+    references: [users.id],
+  }),
+}));
+
+// Insert schemas for courses
+export const insertCourseSchema = createInsertSchema(courses).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCourseEnrollmentSchema = createInsertSchema(courseEnrollments).omit({
+  id: true,
+  enrolledAt: true,
+});
+
+// Course types
+export type Course = typeof courses.$inferSelect;
+export type InsertCourse = z.infer<typeof insertCourseSchema>;
+
+export type CourseEnrollment = typeof courseEnrollments.$inferSelect;
+export type InsertCourseEnrollment = z.infer<typeof insertCourseEnrollmentSchema>;
+
+// Extended types
+export type CourseWithInstructor = Course & {
+  instructor?: User;
+};
+
+export type EnrollmentWithCourse = CourseEnrollment & {
+  course?: Course;
+};

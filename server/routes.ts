@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertProjectSchema } from "@shared/schema";
+import { insertProjectSchema, insertCourseSchema } from "@shared/schema";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -239,6 +239,218 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error deleting project:", error);
       res.status(500).json({ message: "Failed to delete project" });
+    }
+  });
+
+  // ===== COURSE ROUTES =====
+  
+  // Get all courses (facilitadores see all, others see only published)
+  app.get('/api/courses', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const userRole = userWithProfile?.userRoles?.[0]?.role?.name;
+      
+      const includeUnpublished = userRole === 'facilitador';
+      const courses = await storage.getCourses(includeUnpublished);
+      res.json(courses);
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+      res.status(500).json({ message: "Failed to fetch courses" });
+    }
+  });
+
+  // Get single course
+  app.get('/api/courses/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const course = await storage.getCourse(req.params.id);
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+      res.json(course);
+    } catch (error) {
+      console.error("Error fetching course:", error);
+      res.status(500).json({ message: "Failed to fetch course" });
+    }
+  });
+
+  // Create course (facilitador only)
+  app.post('/api/courses', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const userRole = userWithProfile?.userRoles?.[0]?.role?.name;
+      
+      if (userRole !== 'facilitador') {
+        return res.status(403).json({ message: "Only facilitadores can create courses" });
+      }
+      
+      const courseData = {
+        ...req.body,
+        instructorId: userId,
+      };
+      
+      const validationResult = insertCourseSchema.safeParse(courseData);
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          message: "Invalid course data", 
+          errors: validationResult.error.flatten().fieldErrors 
+        });
+      }
+      
+      const course = await storage.createCourse(validationResult.data);
+      res.status(201).json(course);
+    } catch (error) {
+      console.error("Error creating course:", error);
+      res.status(500).json({ message: "Failed to create course" });
+    }
+  });
+
+  // Update course (facilitador only)
+  app.patch('/api/courses/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const userRole = userWithProfile?.userRoles?.[0]?.role?.name;
+      
+      if (userRole !== 'facilitador') {
+        return res.status(403).json({ message: "Only facilitadores can update courses" });
+      }
+      
+      const course = await storage.getCourse(req.params.id);
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+      
+      const allowedFields = ['title', 'description', 'content', 'category', 'difficulty', 'duration', 'status', 'imageUrl'];
+      const sanitizedData: Record<string, any> = {};
+      for (const field of allowedFields) {
+        if (req.body[field] !== undefined) {
+          sanitizedData[field] = req.body[field];
+        }
+      }
+      
+      const updated = await storage.updateCourse(req.params.id, sanitizedData);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating course:", error);
+      res.status(500).json({ message: "Failed to update course" });
+    }
+  });
+
+  // Delete course (facilitador only)
+  app.delete('/api/courses/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const userRole = userWithProfile?.userRoles?.[0]?.role?.name;
+      
+      if (userRole !== 'facilitador') {
+        return res.status(403).json({ message: "Only facilitadores can delete courses" });
+      }
+      
+      const course = await storage.getCourse(req.params.id);
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+      
+      await storage.deleteCourse(req.params.id);
+      res.json({ message: "Course deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting course:", error);
+      res.status(500).json({ message: "Failed to delete course" });
+    }
+  });
+
+  // ===== ENROLLMENT ROUTES =====
+  
+  // Get user's enrollments
+  app.get('/api/enrollments', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const enrollments = await storage.getEnrollmentsByUser(userId);
+      res.json(enrollments);
+    } catch (error) {
+      console.error("Error fetching enrollments:", error);
+      res.status(500).json({ message: "Failed to fetch enrollments" });
+    }
+  });
+
+  // Enroll in a course
+  app.post('/api/courses/:id/enroll', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const courseId = req.params.id;
+      
+      // Check if course exists and is published
+      const course = await storage.getCourse(courseId);
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+      if (course.status !== 'published') {
+        return res.status(400).json({ message: "Cannot enroll in unpublished course" });
+      }
+      
+      // Check if already enrolled
+      const existing = await storage.getEnrollment(courseId, userId);
+      if (existing) {
+        return res.status(400).json({ message: "Already enrolled in this course" });
+      }
+      
+      const enrollment = await storage.enrollUser(courseId, userId);
+      res.status(201).json(enrollment);
+    } catch (error) {
+      console.error("Error enrolling in course:", error);
+      res.status(500).json({ message: "Failed to enroll in course" });
+    }
+  });
+
+  // Update enrollment progress
+  app.patch('/api/enrollments/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const enrollmentId = req.params.id;
+      
+      // Get enrollments to verify ownership
+      const userEnrollments = await storage.getEnrollmentsByUser(userId);
+      const enrollment = userEnrollments.find(e => e.id === enrollmentId);
+      
+      if (!enrollment) {
+        return res.status(404).json({ message: "Enrollment not found" });
+      }
+      
+      const allowedFields = ['status', 'progress', 'completedAt'];
+      const sanitizedData: Record<string, any> = {};
+      for (const field of allowedFields) {
+        if (req.body[field] !== undefined) {
+          sanitizedData[field] = req.body[field];
+        }
+      }
+      
+      const updated = await storage.updateEnrollment(enrollmentId, sanitizedData);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating enrollment:", error);
+      res.status(500).json({ message: "Failed to update enrollment" });
+    }
+  });
+
+  // Unenroll from course
+  app.delete('/api/courses/:id/enroll', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const courseId = req.params.id;
+      
+      const existing = await storage.getEnrollment(courseId, userId);
+      if (!existing) {
+        return res.status(404).json({ message: "Not enrolled in this course" });
+      }
+      
+      await storage.unenrollUser(courseId, userId);
+      res.json({ message: "Successfully unenrolled from course" });
+    } catch (error) {
+      console.error("Error unenrolling from course:", error);
+      res.status(500).json({ message: "Failed to unenroll from course" });
     }
   });
 
