@@ -3,6 +3,7 @@ import {
   userProfiles,
   roles,
   userRoles,
+  projects,
   type User,
   type UpsertUser,
   type UserProfile,
@@ -10,9 +11,12 @@ import {
   type Role,
   type UserRole,
   type UserWithProfile,
+  type Project,
+  type InsertProject,
+  type ProjectWithOwner,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, desc, or, and } from "drizzle-orm";
 
 export interface IStorage {
   // User operations (mandatory for Replit Auth)
@@ -35,6 +39,15 @@ export interface IStorage {
   
   // Seed operations
   seedRoles(): Promise<void>;
+  
+  // Project operations
+  getProjects(): Promise<ProjectWithOwner[]>;
+  getProjectsByOwner(ownerId: string): Promise<ProjectWithOwner[]>;
+  getProjectsByMentor(mentorId: string): Promise<ProjectWithOwner[]>;
+  getProject(id: string): Promise<ProjectWithOwner | undefined>;
+  createProject(project: InsertProject): Promise<ProjectWithOwner>;
+  updateProject(id: string, project: Partial<InsertProject>): Promise<ProjectWithOwner | undefined>;
+  deleteProject(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -191,6 +204,111 @@ export class DatabaseStorage implements IStorage {
         await this.createRole(roleData);
       }
     }
+  }
+
+  // Project operations
+  async getProjects(): Promise<ProjectWithOwner[]> {
+    const projectList = await db
+      .select()
+      .from(projects)
+      .orderBy(desc(projects.createdAt));
+    
+    const projectsWithOwners = await Promise.all(
+      projectList.map(async (project) => {
+        const owner = await this.getUser(project.ownerId);
+        const mentor = project.mentorId ? await this.getUser(project.mentorId) : null;
+        return { ...project, owner, mentor };
+      })
+    );
+    
+    return projectsWithOwners;
+  }
+
+  async getProjectsByOwner(ownerId: string): Promise<ProjectWithOwner[]> {
+    const projectList = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.ownerId, ownerId))
+      .orderBy(desc(projects.createdAt));
+    
+    const projectsWithOwners = await Promise.all(
+      projectList.map(async (project) => {
+        const owner = await this.getUser(project.ownerId);
+        const mentor = project.mentorId ? await this.getUser(project.mentorId) : null;
+        return { ...project, owner, mentor };
+      })
+    );
+    
+    return projectsWithOwners;
+  }
+
+  async getProjectsByMentor(mentorId: string): Promise<ProjectWithOwner[]> {
+    const projectList = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.mentorId, mentorId))
+      .orderBy(desc(projects.createdAt));
+    
+    const projectsWithOwners = await Promise.all(
+      projectList.map(async (project) => {
+        const owner = await this.getUser(project.ownerId);
+        const mentor = project.mentorId ? await this.getUser(project.mentorId) : null;
+        return { ...project, owner, mentor };
+      })
+    );
+    
+    return projectsWithOwners;
+  }
+
+  async getProject(id: string): Promise<ProjectWithOwner | undefined> {
+    const [project] = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.id, id));
+    
+    if (!project) return undefined;
+    
+    const owner = await this.getUser(project.ownerId);
+    const mentor = project.mentorId ? await this.getUser(project.mentorId) : null;
+    
+    return { ...project, owner, mentor };
+  }
+
+  async createProject(projectData: InsertProject): Promise<ProjectWithOwner> {
+    const [project] = await db
+      .insert(projects)
+      .values(projectData)
+      .returning();
+    
+    const owner = await this.getUser(project.ownerId);
+    const mentor = project.mentorId ? await this.getUser(project.mentorId) : null;
+    
+    return { ...project, owner, mentor };
+  }
+
+  async updateProject(id: string, projectData: Partial<InsertProject>): Promise<ProjectWithOwner | undefined> {
+    const [project] = await db
+      .update(projects)
+      .set({
+        ...projectData,
+        updatedAt: new Date(),
+      })
+      .where(eq(projects.id, id))
+      .returning();
+    
+    if (!project) return undefined;
+    
+    const owner = await this.getUser(project.ownerId);
+    const mentor = project.mentorId ? await this.getUser(project.mentorId) : null;
+    
+    return { ...project, owner, mentor };
+  }
+
+  async deleteProject(id: string): Promise<boolean> {
+    const result = await db
+      .delete(projects)
+      .where(eq(projects.id, id));
+    return true;
   }
 }
 

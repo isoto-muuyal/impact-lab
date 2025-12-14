@@ -11,6 +11,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import Landing from "@/pages/landing";
 import Home from "@/pages/home";
 import Profile from "@/pages/profile";
+import Projects from "@/pages/projects";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -33,6 +34,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/profile" component={Profile} />
+      <Route path="/projects" component={Projects} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -155,8 +155,58 @@ export type InsertRole = z.infer<typeof insertRoleSchema>;
 export type UserRole = typeof userRoles.$inferSelect;
 export type InsertUserRole = z.infer<typeof insertUserRoleSchema>;
 
+// Project status enum
+export const projectStatusEnum = pgEnum('project_status', ['draft', 'active', 'completed', 'paused', 'cancelled']);
+
+// Projects table - social impact projects
+export const projects = pgTable("projects", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title").notNull(),
+  description: text("description"),
+  objectives: text("objectives"),
+  targetBeneficiaries: varchar("target_beneficiaries"),
+  expectedImpact: text("expected_impact"),
+  location: varchar("location"),
+  category: varchar("category"),
+  status: projectStatusEnum("status").default('draft'),
+  ownerId: varchar("owner_id").notNull().references(() => users.id),
+  mentorId: varchar("mentor_id").references(() => users.id),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Project relations
+export const projectsRelations = relations(projects, ({ one }) => ({
+  owner: one(users, {
+    fields: [projects.ownerId],
+    references: [users.id],
+  }),
+  mentor: one(users, {
+    fields: [projects.mentorId],
+    references: [users.id],
+  }),
+}));
+
+// Insert schema for projects
+export const insertProjectSchema = createInsertSchema(projects).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Project types
+export type Project = typeof projects.$inferSelect;
+export type InsertProject = z.infer<typeof insertProjectSchema>;
+
 // Extended types for frontend use
 export type UserWithProfile = User & {
   profile?: UserProfile | null;
   userRoles?: (UserRole & { role?: Role })[];
+};
+
+export type ProjectWithOwner = Project & {
+  owner?: User;
+  mentor?: User | null;
 };
