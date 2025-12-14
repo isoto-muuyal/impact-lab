@@ -13,6 +13,7 @@ import Home from "@/pages/home";
 import Profile from "@/pages/profile";
 import Projects from "@/pages/projects";
 import Courses from "@/pages/courses";
+import Mentorship from "@/pages/mentorship";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -37,6 +38,7 @@ function Router() {
       <Route path="/profile" component={Profile} />
       <Route path="/projects" component={Projects} />
       <Route path="/courses" component={Courses} />
+      <Route path="/mentorship" component={Mentorship} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -6,6 +6,8 @@ import {
   projects,
   courses,
   courseEnrollments,
+  mentorships,
+  mentorshipSessions,
   type User,
   type UpsertUser,
   type UserProfile,
@@ -22,6 +24,11 @@ import {
   type CourseEnrollment,
   type InsertCourseEnrollment,
   type EnrollmentWithCourse,
+  type Mentorship,
+  type InsertMentorship,
+  type MentorshipWithDetails,
+  type MentorshipSession,
+  type InsertMentorshipSession,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, or, and } from "drizzle-orm";
@@ -71,6 +78,24 @@ export interface IStorage {
   enrollUser(courseId: string, userId: string): Promise<CourseEnrollment>;
   updateEnrollment(id: string, data: Partial<InsertCourseEnrollment>): Promise<CourseEnrollment | undefined>;
   unenrollUser(courseId: string, userId: string): Promise<boolean>;
+  
+  // Mentorship operations
+  getMentorships(): Promise<MentorshipWithDetails[]>;
+  getMentorshipsByMentor(mentorId: string): Promise<MentorshipWithDetails[]>;
+  getMentorshipsByMentee(menteeId: string): Promise<MentorshipWithDetails[]>;
+  getMentorship(id: string): Promise<MentorshipWithDetails | undefined>;
+  createMentorship(mentorship: InsertMentorship): Promise<MentorshipWithDetails>;
+  updateMentorship(id: string, data: Partial<InsertMentorship>): Promise<MentorshipWithDetails | undefined>;
+  deleteMentorship(id: string): Promise<boolean>;
+  
+  // Mentorship session operations
+  getMentorshipSessions(mentorshipId: string): Promise<MentorshipSession[]>;
+  createMentorshipSession(session: InsertMentorshipSession): Promise<MentorshipSession>;
+  updateMentorshipSession(id: string, data: Partial<InsertMentorshipSession>): Promise<MentorshipSession | undefined>;
+  deleteMentorshipSession(id: string): Promise<boolean>;
+  
+  // Mentor list for assignments
+  getMentors(): Promise<User[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -473,6 +498,134 @@ export class DatabaseStorage implements IStorage {
         eq(courseEnrollments.userId, userId)
       ));
     return true;
+  }
+
+  // Mentorship operations
+  private async enrichMentorship(mentorship: Mentorship): Promise<MentorshipWithDetails> {
+    const mentee = await this.getUser(mentorship.menteeId);
+    const mentor = mentorship.mentorId ? await this.getUser(mentorship.mentorId) : null;
+    let project = null;
+    if (mentorship.projectId) {
+      const [proj] = await db.select().from(projects).where(eq(projects.id, mentorship.projectId));
+      project = proj || null;
+    }
+    return { ...mentorship, mentee, mentor, project };
+  }
+
+  async getMentorships(): Promise<MentorshipWithDetails[]> {
+    const mentorshipList = await db
+      .select()
+      .from(mentorships)
+      .orderBy(desc(mentorships.createdAt));
+    
+    return Promise.all(mentorshipList.map(m => this.enrichMentorship(m)));
+  }
+
+  async getMentorshipsByMentor(mentorId: string): Promise<MentorshipWithDetails[]> {
+    const mentorshipList = await db
+      .select()
+      .from(mentorships)
+      .where(eq(mentorships.mentorId, mentorId))
+      .orderBy(desc(mentorships.createdAt));
+    
+    return Promise.all(mentorshipList.map(m => this.enrichMentorship(m)));
+  }
+
+  async getMentorshipsByMentee(menteeId: string): Promise<MentorshipWithDetails[]> {
+    const mentorshipList = await db
+      .select()
+      .from(mentorships)
+      .where(eq(mentorships.menteeId, menteeId))
+      .orderBy(desc(mentorships.createdAt));
+    
+    return Promise.all(mentorshipList.map(m => this.enrichMentorship(m)));
+  }
+
+  async getMentorship(id: string): Promise<MentorshipWithDetails | undefined> {
+    const [mentorship] = await db
+      .select()
+      .from(mentorships)
+      .where(eq(mentorships.id, id));
+    
+    if (!mentorship) return undefined;
+    return this.enrichMentorship(mentorship);
+  }
+
+  async createMentorship(data: InsertMentorship): Promise<MentorshipWithDetails> {
+    const [mentorship] = await db
+      .insert(mentorships)
+      .values(data)
+      .returning();
+    
+    return this.enrichMentorship(mentorship);
+  }
+
+  async updateMentorship(id: string, data: Partial<InsertMentorship>): Promise<MentorshipWithDetails | undefined> {
+    const [mentorship] = await db
+      .update(mentorships)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(mentorships.id, id))
+      .returning();
+    
+    if (!mentorship) return undefined;
+    return this.enrichMentorship(mentorship);
+  }
+
+  async deleteMentorship(id: string): Promise<boolean> {
+    await db.delete(mentorshipSessions).where(eq(mentorshipSessions.mentorshipId, id));
+    await db.delete(mentorships).where(eq(mentorships.id, id));
+    return true;
+  }
+
+  // Mentorship session operations
+  async getMentorshipSessions(mentorshipId: string): Promise<MentorshipSession[]> {
+    return db
+      .select()
+      .from(mentorshipSessions)
+      .where(eq(mentorshipSessions.mentorshipId, mentorshipId))
+      .orderBy(desc(mentorshipSessions.scheduledAt));
+  }
+
+  async createMentorshipSession(data: InsertMentorshipSession): Promise<MentorshipSession> {
+    const [session] = await db
+      .insert(mentorshipSessions)
+      .values(data)
+      .returning();
+    return session;
+  }
+
+  async updateMentorshipSession(id: string, data: Partial<InsertMentorshipSession>): Promise<MentorshipSession | undefined> {
+    const [session] = await db
+      .update(mentorshipSessions)
+      .set(data)
+      .where(eq(mentorshipSessions.id, id))
+      .returning();
+    return session;
+  }
+
+  async deleteMentorshipSession(id: string): Promise<boolean> {
+    await db.delete(mentorshipSessions).where(eq(mentorshipSessions.id, id));
+    return true;
+  }
+
+  // Get all users with mentor role
+  async getMentors(): Promise<User[]> {
+    const mentorRole = await this.getRoleByName('mentor');
+    if (!mentorRole) return [];
+    
+    const mentorUserRoles = await db
+      .select()
+      .from(userRoles)
+      .where(eq(userRoles.roleId, mentorRole.id));
+    
+    const mentors = await Promise.all(
+      mentorUserRoles.map(async (ur) => {
+        const user = await this.getUser(ur.userId);
+        return user;
+      })
+    );
+    
+    return mentors.filter((u): u is User => u !== undefined);
   }
 }
 

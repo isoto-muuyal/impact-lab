@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertProjectSchema, insertCourseSchema } from "@shared/schema";
+import { insertProjectSchema, insertCourseSchema, insertMentorshipSchema, insertMentorshipSessionSchema } from "@shared/schema";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -451,6 +451,282 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error unenrolling from course:", error);
       res.status(500).json({ message: "Failed to unenroll from course" });
+    }
+  });
+
+  // ===== MENTORSHIP ROUTES =====
+  
+  // Get mentors list (for requesting mentorship)
+  app.get('/api/mentors', isAuthenticated, async (req: any, res) => {
+    try {
+      const mentors = await storage.getMentors();
+      res.json(mentors);
+    } catch (error) {
+      console.error("Error fetching mentors:", error);
+      res.status(500).json({ message: "Failed to fetch mentors" });
+    }
+  });
+
+  // Get mentorships (filtered by role)
+  app.get('/api/mentorships', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const userRole = userWithProfile?.userRoles?.[0]?.role?.name;
+      
+      let mentorshipList;
+      if (userRole === 'facilitador') {
+        mentorshipList = await storage.getMentorships();
+      } else if (userRole === 'mentor') {
+        mentorshipList = await storage.getMentorshipsByMentor(userId);
+      } else {
+        mentorshipList = await storage.getMentorshipsByMentee(userId);
+      }
+      
+      res.json(mentorshipList);
+    } catch (error) {
+      console.error("Error fetching mentorships:", error);
+      res.status(500).json({ message: "Failed to fetch mentorships" });
+    }
+  });
+
+  // Get single mentorship
+  app.get('/api/mentorships/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const mentorship = await storage.getMentorship(req.params.id);
+      
+      if (!mentorship) {
+        return res.status(404).json({ message: "Mentorship not found" });
+      }
+      
+      // Check authorization
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const userRole = userWithProfile?.userRoles?.[0]?.role?.name;
+      
+      if (mentorship.menteeId !== userId && mentorship.mentorId !== userId && userRole !== 'facilitador') {
+        return res.status(403).json({ message: "Not authorized to view this mentorship" });
+      }
+      
+      res.json(mentorship);
+    } catch (error) {
+      console.error("Error fetching mentorship:", error);
+      res.status(500).json({ message: "Failed to fetch mentorship" });
+    }
+  });
+
+  // Request mentorship (usuarios can create)
+  app.post('/api/mentorships', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      const mentorshipData = {
+        menteeId: userId,
+        mentorId: req.body.mentorId || null,
+        projectId: req.body.projectId || null,
+        notes: req.body.notes,
+        status: 'pending' as const,
+      };
+      
+      const validationResult = insertMentorshipSchema.safeParse(mentorshipData);
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          message: "Invalid mentorship data", 
+          errors: validationResult.error.flatten().fieldErrors 
+        });
+      }
+      
+      const mentorship = await storage.createMentorship(validationResult.data);
+      res.status(201).json(mentorship);
+    } catch (error) {
+      console.error("Error creating mentorship:", error);
+      res.status(500).json({ message: "Failed to create mentorship" });
+    }
+  });
+
+  // Update mentorship (mentor/facilitador can update status, assign mentor)
+  app.patch('/api/mentorships/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const mentorship = await storage.getMentorship(req.params.id);
+      
+      if (!mentorship) {
+        return res.status(404).json({ message: "Mentorship not found" });
+      }
+      
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const userRole = userWithProfile?.userRoles?.[0]?.role?.name;
+      
+      // Check authorization - facilitador can do anything, mentor can update their own
+      if (userRole !== 'facilitador' && mentorship.mentorId !== userId) {
+        return res.status(403).json({ message: "Not authorized to update this mentorship" });
+      }
+      
+      const allowedFields = ['status', 'notes'];
+      if (userRole === 'facilitador') {
+        allowedFields.push('mentorId');
+      }
+      
+      const sanitizedData: Record<string, any> = {};
+      for (const field of allowedFields) {
+        if (req.body[field] !== undefined) {
+          sanitizedData[field] = req.body[field];
+        }
+      }
+      
+      const updated = await storage.updateMentorship(req.params.id, sanitizedData);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating mentorship:", error);
+      res.status(500).json({ message: "Failed to update mentorship" });
+    }
+  });
+
+  // Delete mentorship (facilitador only)
+  app.delete('/api/mentorships/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const userRole = userWithProfile?.userRoles?.[0]?.role?.name;
+      
+      if (userRole !== 'facilitador') {
+        return res.status(403).json({ message: "Only facilitadores can delete mentorships" });
+      }
+      
+      const mentorship = await storage.getMentorship(req.params.id);
+      if (!mentorship) {
+        return res.status(404).json({ message: "Mentorship not found" });
+      }
+      
+      await storage.deleteMentorship(req.params.id);
+      res.json({ message: "Mentorship deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting mentorship:", error);
+      res.status(500).json({ message: "Failed to delete mentorship" });
+    }
+  });
+
+  // ===== MENTORSHIP SESSION ROUTES =====
+  
+  // Get sessions for a mentorship
+  app.get('/api/mentorships/:id/sessions', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const mentorship = await storage.getMentorship(req.params.id);
+      
+      if (!mentorship) {
+        return res.status(404).json({ message: "Mentorship not found" });
+      }
+      
+      // Check authorization
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const userRole = userWithProfile?.userRoles?.[0]?.role?.name;
+      
+      if (mentorship.menteeId !== userId && mentorship.mentorId !== userId && userRole !== 'facilitador') {
+        return res.status(403).json({ message: "Not authorized to view these sessions" });
+      }
+      
+      const sessions = await storage.getMentorshipSessions(req.params.id);
+      res.json(sessions);
+    } catch (error) {
+      console.error("Error fetching sessions:", error);
+      res.status(500).json({ message: "Failed to fetch sessions" });
+    }
+  });
+
+  // Create session (mentor only)
+  app.post('/api/mentorships/:id/sessions', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const mentorship = await storage.getMentorship(req.params.id);
+      
+      if (!mentorship) {
+        return res.status(404).json({ message: "Mentorship not found" });
+      }
+      
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const userRole = userWithProfile?.userRoles?.[0]?.role?.name;
+      
+      // Only mentor or facilitador can create sessions
+      if (mentorship.mentorId !== userId && userRole !== 'facilitador') {
+        return res.status(403).json({ message: "Only the assigned mentor can create sessions" });
+      }
+      
+      const sessionData = {
+        mentorshipId: req.params.id,
+        scheduledAt: new Date(req.body.scheduledAt),
+        duration: req.body.duration,
+        notes: req.body.notes,
+        status: 'scheduled' as const,
+      };
+      
+      const validationResult = insertMentorshipSessionSchema.safeParse(sessionData);
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          message: "Invalid session data", 
+          errors: validationResult.error.flatten().fieldErrors 
+        });
+      }
+      
+      const session = await storage.createMentorshipSession(validationResult.data);
+      res.status(201).json(session);
+    } catch (error) {
+      console.error("Error creating session:", error);
+      res.status(500).json({ message: "Failed to create session" });
+    }
+  });
+
+  // Update session
+  app.patch('/api/sessions/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const userRole = userWithProfile?.userRoles?.[0]?.role?.name;
+      
+      // Only mentor or facilitador
+      if (userRole !== 'mentor' && userRole !== 'facilitador') {
+        return res.status(403).json({ message: "Not authorized to update sessions" });
+      }
+      
+      const allowedFields = ['scheduledAt', 'duration', 'notes', 'status'];
+      const sanitizedData: Record<string, any> = {};
+      for (const field of allowedFields) {
+        if (req.body[field] !== undefined) {
+          if (field === 'scheduledAt') {
+            sanitizedData[field] = new Date(req.body[field]);
+          } else {
+            sanitizedData[field] = req.body[field];
+          }
+        }
+      }
+      
+      const updated = await storage.updateMentorshipSession(req.params.id, sanitizedData);
+      if (!updated) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating session:", error);
+      res.status(500).json({ message: "Failed to update session" });
+    }
+  });
+
+  // Delete session
+  app.delete('/api/sessions/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const userRole = userWithProfile?.userRoles?.[0]?.role?.name;
+      
+      if (userRole !== 'mentor' && userRole !== 'facilitador') {
+        return res.status(403).json({ message: "Not authorized to delete sessions" });
+      }
+      
+      await storage.deleteMentorshipSession(req.params.id);
+      res.json({ message: "Session deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting session:", error);
+      res.status(500).json({ message: "Failed to delete session" });
     }
   });
 
