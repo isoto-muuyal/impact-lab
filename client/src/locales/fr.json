@@ -1,0 +1,159 @@
+{
+  "app": {
+    "name": "Impact Lab",
+    "tagline": "Impact Social",
+    "loading": "Chargement..."
+  },
+  "nav": {
+    "navigation": "Navigation",
+    "settings": "Paramètres",
+    "home": "Accueil",
+    "profile": "Mon Profil",
+    "projects": "Mes Projets",
+    "courses": "Cours",
+    "mentorship": "Mentorat",
+    "events": "Événements",
+    "messages": "Messages",
+    "calendar": "Calendrier",
+    "programs": "Gestion des Programmes",
+    "reports": "Rapports",
+    "assignedProjects": "Projets Assignés",
+    "myMentorships": "Mes Mentorats"
+  },
+  "auth": {
+    "login": "Se Connecter",
+    "logout": "Se Déconnecter",
+    "loginButton": "Se Connecter"
+  },
+  "roles": {
+    "user": "Utilisateur",
+    "mentor": "Mentor",
+    "facilitator": "Facilitateur"
+  },
+  "landing": {
+    "platform": "Plateforme d'Impact Social",
+    "heroTitle": "Transformez votre communauté avec des",
+    "heroHighlight": "projets sociaux",
+    "heroDescription": "Connectez-vous avec des mentors, accédez à des cours, participez à des programmes d'accélération et créez le changement dont votre communauté a besoin.",
+    "startNow": "Commencer maintenant",
+    "learnMore": "En savoir plus",
+    "featuresTitle": "Tout ce dont vous avez besoin pour créer un impact",
+    "featuresDescription": "Une plateforme complète pour gérer des projets sociaux, se connecter avec des experts et accélérer votre croissance.",
+    "rolesTitle": "Rejoignez selon votre profil",
+    "rolesDescription": "Que vous soyez entrepreneur, mentor ou facilitateur, il y a une place pour vous dans notre communauté.",
+    "ctaTitle": "Commencez à créer un impact aujourd'hui",
+    "ctaDescription": "Rejoignez notre communauté d'entrepreneurs sociaux et transformez votre vision en réalité.",
+    "joinNow": "Rejoindre maintenant",
+    "copyright": "Plateforme de Gestion de Projets Sociaux"
+  },
+  "features": {
+    "projects": {
+      "title": "Projets Sociaux",
+      "description": "Créez, gérez et suivez vos projets d'impact communautaire."
+    },
+    "courses": {
+      "title": "Cours et Formation",
+      "description": "Accédez à du contenu éducatif conçu pour les entrepreneurs sociaux."
+    },
+    "mentorship": {
+      "title": "Mentorat",
+      "description": "Connectez-vous avec des mentors expérimentés qui guideront votre parcours."
+    },
+    "acceleration": {
+      "title": "Accélération",
+      "description": "Participez à des programmes intensifs pour faire évoluer votre projet."
+    }
+  },
+  "roleCards": {
+    "user": {
+      "title": "Utilisateur",
+      "description": "Créez des projets sociaux, accédez aux cours et connectez-vous avec des mentors pour développer votre impact.",
+      "features": ["Créer des projets", "S'inscrire aux cours", "Demander un mentorat", "Participer aux événements"]
+    },
+    "mentor": {
+      "title": "Mentor",
+      "description": "Partagez votre expérience et vos connaissances en guidant les entrepreneurs sociaux dans leur parcours.",
+      "features": ["Offrir du mentorat", "Réviser des projets", "Donner des retours", "Connecter des communautés"]
+    },
+    "facilitator": {
+      "title": "Facilitateur",
+      "description": "Coordonnez des programmes, gérez des événements et facilitez la croissance de la communauté.",
+      "features": ["Gérer des programmes", "Coordonner des événements", "Superviser des projets", "Générer des rapports"]
+    }
+  },
+  "home": {
+    "welcome": "Bienvenue",
+    "dashboard": "Tableau de Bord",
+    "recentProjects": "Projets Récents",
+    "upcomingEvents": "Événements à Venir",
+    "activeMentorships": "Mentorats Actifs",
+    "enrolledCourses": "Cours Inscrits"
+  },
+  "profile": {
+    "title": "Mon Profil",
+    "personalInfo": "Informations Personnelles",
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "email": "E-mail",
+    "phone": "Téléphone",
+    "bio": "Biographie",
+    "save": "Enregistrer",
+    "cancel": "Annuler"
+  },
+  "projects": {
+    "title": "Projets",
+    "myProjects": "Mes Projets",
+    "newProject": "Nouveau Projet",
+    "projectName": "Nom du Projet",
+    "description": "Description",
+    "status": "Statut",
+    "progress": "Progression",
+    "startDate": "Date de Début",
+    "endDate": "Date de Fin",
+    "actions": "Actions",
+    "view": "Voir",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "noProjects": "Pas encore de projets",
+    "createFirst": "Créez votre premier projet pour commencer"
+  },
+  "courses": {
+    "title": "Cours",
+    "catalog": "Catalogue des Cours",
+    "myCourses": "Mes Cours",
+    "enroll": "S'inscrire",
+    "continue": "Continuer",
+    "completed": "Terminé",
+    "inProgress": "En Cours",
+    "duration": "Durée",
+    "lessons": "Leçons",
+    "instructor": "Instructeur"
+  },
+  "mentorship": {
+    "title": "Mentorat",
+    "findMentor": "Trouver un Mentor",
+    "myMentors": "Mes Mentors",
+    "mySessions": "Mes Sessions",
+    "requestSession": "Demander une Session",
+    "schedule": "Planifier",
+    "upcoming": "À Venir",
+    "past": "Passées",
+    "expertise": "Expertise",
+    "availability": "Disponibilité"
+  },
+  "common": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "view": "Voir",
+    "create": "Créer",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "noResults": "Aucun résultat trouvé",
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "success": "Succès",
+    "selectLanguage": "Choisir la langue"
+  }
+}

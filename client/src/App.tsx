@@ -5,6 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguageProvider, useTranslation } from "@/contexts/LanguageContext";
+import { LanguageSelector } from "@/components/language-selector";
 import { useAuth } from "@/hooks/useAuth";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
@@ -63,7 +65,10 @@ function AuthenticatedLayout() {
         <div className="flex flex-col flex-1 overflow-hidden">
           <header className="flex items-center justify-between gap-4 p-3 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <SidebarTrigger data-testid="button-sidebar-toggle" />
-            <ThemeToggle />
+            <div className="flex items-center gap-1">
+              <LanguageSelector />
+              <ThemeToggle />
+            </div>
           </header>
           <main className="flex-1 overflow-auto">
             <Router />
@@ -75,6 +80,8 @@ function AuthenticatedLayout() {
 }
 
 function LoadingScreen() {
+  const { t } = useTranslation();
+  
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="flex flex-col items-center gap-4">
@@ -82,7 +89,7 @@ function LoadingScreen() {
           <div className="h-12 w-12 rounded-full border-4 border-muted animate-pulse" />
           <div className="absolute inset-0 h-12 w-12 rounded-full border-4 border-transparent border-t-primary animate-spin" />
         </div>
-        <p className="text-sm text-muted-foreground">Cargando...</p>
+        <p className="text-sm text-muted-foreground">{t("app.loading")}</p>
       </div>
     </div>
   );
@@ -91,11 +98,13 @@ function LoadingScreen() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="light" storageKey="ga4si-theme">
-        <TooltipProvider>
-          <AuthenticatedLayout />
-          <Toaster />
-        </TooltipProvider>
+      <ThemeProvider defaultTheme="light" storageKey="impact-lab-theme">
+        <LanguageProvider>
+          <TooltipProvider>
+            <AuthenticatedLayout />
+            <Toaster />
+          </TooltipProvider>
+        </LanguageProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

@@ -1,0 +1,159 @@
+{
+  "app": {
+    "name": "Impact Lab",
+    "tagline": "Social Impact",
+    "loading": "Loading..."
+  },
+  "nav": {
+    "navigation": "Navigation",
+    "settings": "Settings",
+    "home": "Home",
+    "profile": "My Profile",
+    "projects": "My Projects",
+    "courses": "Courses",
+    "mentorship": "Mentorship",
+    "events": "Events",
+    "messages": "Messages",
+    "calendar": "Calendar",
+    "programs": "Program Management",
+    "reports": "Reports",
+    "assignedProjects": "Assigned Projects",
+    "myMentorships": "My Mentorships"
+  },
+  "auth": {
+    "login": "Log In",
+    "logout": "Log Out",
+    "loginButton": "Log In"
+  },
+  "roles": {
+    "user": "User",
+    "mentor": "Mentor",
+    "facilitator": "Facilitator"
+  },
+  "landing": {
+    "platform": "Social Impact Platform",
+    "heroTitle": "Transform your community with",
+    "heroHighlight": "social projects",
+    "heroDescription": "Connect with mentors, access courses, participate in acceleration programs and create the change your community needs.",
+    "startNow": "Get Started",
+    "learnMore": "Learn More",
+    "featuresTitle": "Everything you need to create impact",
+    "featuresDescription": "A comprehensive platform to manage social projects, connect with experts, and accelerate your growth.",
+    "rolesTitle": "Join according to your profile",
+    "rolesDescription": "Whether you're an entrepreneur, mentor, or facilitator, there's a place for you in our community.",
+    "ctaTitle": "Start creating impact today",
+    "ctaDescription": "Join our community of social entrepreneurs and transform your vision into reality.",
+    "joinNow": "Join Now",
+    "copyright": "Social Project Management Platform"
+  },
+  "features": {
+    "projects": {
+      "title": "Social Projects",
+      "description": "Create, manage and track your community impact projects."
+    },
+    "courses": {
+      "title": "Courses & Training",
+      "description": "Access educational content designed for social entrepreneurs."
+    },
+    "mentorship": {
+      "title": "Mentorship",
+      "description": "Connect with experienced mentors who will guide your journey."
+    },
+    "acceleration": {
+      "title": "Acceleration",
+      "description": "Participate in intensive programs to scale your project."
+    }
+  },
+  "roleCards": {
+    "user": {
+      "title": "User",
+      "description": "Create social projects, access courses, and connect with mentors to grow your impact.",
+      "features": ["Create projects", "Enroll in courses", "Request mentorship", "Participate in events"]
+    },
+    "mentor": {
+      "title": "Mentor",
+      "description": "Share your experience and knowledge by guiding social entrepreneurs on their journey.",
+      "features": ["Offer mentorship", "Review projects", "Provide feedback", "Connect communities"]
+    },
+    "facilitator": {
+      "title": "Facilitator",
+      "description": "Coordinate programs, manage events, and facilitate community growth.",
+      "features": ["Manage programs", "Coordinate events", "Supervise projects", "Generate reports"]
+    }
+  },
+  "home": {
+    "welcome": "Welcome",
+    "dashboard": "Dashboard",
+    "recentProjects": "Recent Projects",
+    "upcomingEvents": "Upcoming Events",
+    "activeMentorships": "Active Mentorships",
+    "enrolledCourses": "Enrolled Courses"
+  },
+  "profile": {
+    "title": "My Profile",
+    "personalInfo": "Personal Information",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "email": "Email",
+    "phone": "Phone",
+    "bio": "Bio",
+    "save": "Save",
+    "cancel": "Cancel"
+  },
+  "projects": {
+    "title": "Projects",
+    "myProjects": "My Projects",
+    "newProject": "New Project",
+    "projectName": "Project Name",
+    "description": "Description",
+    "status": "Status",
+    "progress": "Progress",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "actions": "Actions",
+    "view": "View",
+    "edit": "Edit",
+    "delete": "Delete",
+    "noProjects": "No projects yet",
+    "createFirst": "Create your first project to get started"
+  },
+  "courses": {
+    "title": "Courses",
+    "catalog": "Course Catalog",
+    "myCourses": "My Courses",
+    "enroll": "Enroll",
+    "continue": "Continue",
+    "completed": "Completed",
+    "inProgress": "In Progress",
+    "duration": "Duration",
+    "lessons": "Lessons",
+    "instructor": "Instructor"
+  },
+  "mentorship": {
+    "title": "Mentorship",
+    "findMentor": "Find a Mentor",
+    "myMentors": "My Mentors",
+    "mySessions": "My Sessions",
+    "requestSession": "Request Session",
+    "schedule": "Schedule",
+    "upcoming": "Upcoming",
+    "past": "Past",
+    "expertise": "Expertise",
+    "availability": "Availability"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "create": "Create",
+    "search": "Search",
+    "filter": "Filter",
+    "noResults": "No results found",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "selectLanguage": "Select language"
+  }
+}

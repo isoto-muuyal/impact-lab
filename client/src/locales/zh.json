@@ -1,0 +1,159 @@
+{
+  "app": {
+    "name": "Impact Lab",
+    "tagline": "社会影响",
+    "loading": "加载中..."
+  },
+  "nav": {
+    "navigation": "导航",
+    "settings": "设置",
+    "home": "首页",
+    "profile": "我的资料",
+    "projects": "我的项目",
+    "courses": "课程",
+    "mentorship": "导师指导",
+    "events": "活动",
+    "messages": "消息",
+    "calendar": "日历",
+    "programs": "项目管理",
+    "reports": "报告",
+    "assignedProjects": "分配的项目",
+    "myMentorships": "我的导师"
+  },
+  "auth": {
+    "login": "登录",
+    "logout": "退出登录",
+    "loginButton": "登录"
+  },
+  "roles": {
+    "user": "用户",
+    "mentor": "导师",
+    "facilitator": "协调员"
+  },
+  "landing": {
+    "platform": "社会影响平台",
+    "heroTitle": "用",
+    "heroHighlight": "社会项目",
+    "heroDescription": "与导师联系，获取课程，参与加速计划，为您的社区创造所需的变化。",
+    "startNow": "立即开始",
+    "learnMore": "了解更多",
+    "featuresTitle": "创造影响所需的一切",
+    "featuresDescription": "一个综合平台，用于管理社会项目、与专家联系并加速您的成长。",
+    "rolesTitle": "根据您的角色加入",
+    "rolesDescription": "无论您是企业家、导师还是协调员，我们的社区都有您的位置。",
+    "ctaTitle": "今天开始创造影响",
+    "ctaDescription": "加入我们的社会企业家社区，将您的愿景变为现实。",
+    "joinNow": "立即加入",
+    "copyright": "社会项目管理平台"
+  },
+  "features": {
+    "projects": {
+      "title": "社会项目",
+      "description": "创建、管理和跟踪您的社区影响项目。"
+    },
+    "courses": {
+      "title": "课程与培训",
+      "description": "获取为社会企业家设计的教育内容。"
+    },
+    "mentorship": {
+      "title": "导师指导",
+      "description": "与经验丰富的导师联系，他们将指导您的旅程。"
+    },
+    "acceleration": {
+      "title": "加速",
+      "description": "参与密集计划以扩展您的项目。"
+    }
+  },
+  "roleCards": {
+    "user": {
+      "title": "用户",
+      "description": "创建社会项目，获取课程，与导师联系以扩大您的影响。",
+      "features": ["创建项目", "报名课程", "申请导师", "参与活动"]
+    },
+    "mentor": {
+      "title": "导师",
+      "description": "分享您的经验和知识，指导社会企业家的旅程。",
+      "features": ["提供指导", "审查项目", "提供反馈", "连接社区"]
+    },
+    "facilitator": {
+      "title": "协调员",
+      "description": "协调项目，管理活动，促进社区发展。",
+      "features": ["管理项目", "协调活动", "监督项目", "生成报告"]
+    }
+  },
+  "home": {
+    "welcome": "欢迎",
+    "dashboard": "控制面板",
+    "recentProjects": "最近项目",
+    "upcomingEvents": "即将举行的活动",
+    "activeMentorships": "活跃的导师关系",
+    "enrolledCourses": "已报名课程"
+  },
+  "profile": {
+    "title": "我的资料",
+    "personalInfo": "个人信息",
+    "firstName": "名",
+    "lastName": "姓",
+    "email": "电子邮件",
+    "phone": "电话",
+    "bio": "简介",
+    "save": "保存",
+    "cancel": "取消"
+  },
+  "projects": {
+    "title": "项目",
+    "myProjects": "我的项目",
+    "newProject": "新项目",
+    "projectName": "项目名称",
+    "description": "描述",
+    "status": "状态",
+    "progress": "进度",
+    "startDate": "开始日期",
+    "endDate": "结束日期",
+    "actions": "操作",
+    "view": "查看",
+    "edit": "编辑",
+    "delete": "删除",
+    "noProjects": "还没有项目",
+    "createFirst": "创建您的第一个项目开始"
+  },
+  "courses": {
+    "title": "课程",
+    "catalog": "课程目录",
+    "myCourses": "我的课程",
+    "enroll": "报名",
+    "continue": "继续",
+    "completed": "已完成",
+    "inProgress": "进行中",
+    "duration": "时长",
+    "lessons": "课时",
+    "instructor": "讲师"
+  },
+  "mentorship": {
+    "title": "导师指导",
+    "findMentor": "寻找导师",
+    "myMentors": "我的导师",
+    "mySessions": "我的会议",
+    "requestSession": "请求会议",
+    "schedule": "安排",
+    "upcoming": "即将进行",
+    "past": "已结束",
+    "expertise": "专长",
+    "availability": "可用性"
+  },
+  "common": {
+    "save": "保存",
+    "cancel": "取消",
+    "delete": "删除",
+    "edit": "编辑",
+    "view": "查看",
+    "create": "创建",
+    "search": "搜索",
+    "filter": "筛选",
+    "noResults": "未找到结果",
+    "loading": "加载中...",
+    "error": "错误",
+    "success": "成功",
+    "selectLanguage": "选择语言"
+  }
+}

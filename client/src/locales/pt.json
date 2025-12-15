@@ -1,0 +1,159 @@
+{
+  "app": {
+    "name": "Impact Lab",
+    "tagline": "Impacto Social",
+    "loading": "Carregando..."
+  },
+  "nav": {
+    "navigation": "Navegação",
+    "settings": "Configurações",
+    "home": "Início",
+    "profile": "Meu Perfil",
+    "projects": "Meus Projetos",
+    "courses": "Cursos",
+    "mentorship": "Mentoria",
+    "events": "Eventos",
+    "messages": "Mensagens",
+    "calendar": "Calendário",
+    "programs": "Gestão de Programas",
+    "reports": "Relatórios",
+    "assignedProjects": "Projetos Atribuídos",
+    "myMentorships": "Minhas Mentorias"
+  },
+  "auth": {
+    "login": "Entrar",
+    "logout": "Sair",
+    "loginButton": "Entrar"
+  },
+  "roles": {
+    "user": "Usuário",
+    "mentor": "Mentor",
+    "facilitator": "Facilitador"
+  },
+  "landing": {
+    "platform": "Plataforma de Impacto Social",
+    "heroTitle": "Transforme sua comunidade com",
+    "heroHighlight": "projetos sociais",
+    "heroDescription": "Conecte-se com mentores, acesse cursos, participe de programas de aceleração e crie a mudança que sua comunidade precisa.",
+    "startNow": "Começar agora",
+    "learnMore": "Saiba mais",
+    "featuresTitle": "Tudo o que você precisa para criar impacto",
+    "featuresDescription": "Uma plataforma completa para gerenciar projetos sociais, conectar-se com especialistas e acelerar seu crescimento.",
+    "rolesTitle": "Junte-se de acordo com seu perfil",
+    "rolesDescription": "Seja você empreendedor, mentor ou facilitador, há um lugar para você em nossa comunidade.",
+    "ctaTitle": "Comece a criar impacto hoje",
+    "ctaDescription": "Junte-se à nossa comunidade de empreendedores sociais e transforme sua visão em realidade.",
+    "joinNow": "Junte-se agora",
+    "copyright": "Plataforma de Gestão de Projetos Sociais"
+  },
+  "features": {
+    "projects": {
+      "title": "Projetos Sociais",
+      "description": "Crie, gerencie e acompanhe seus projetos de impacto comunitário."
+    },
+    "courses": {
+      "title": "Cursos e Formação",
+      "description": "Acesse conteúdo educacional projetado para empreendedores sociais."
+    },
+    "mentorship": {
+      "title": "Mentoria",
+      "description": "Conecte-se com mentores experientes que guiarão sua jornada."
+    },
+    "acceleration": {
+      "title": "Aceleração",
+      "description": "Participe de programas intensivos para escalar seu projeto."
+    }
+  },
+  "roleCards": {
+    "user": {
+      "title": "Usuário",
+      "description": "Crie projetos sociais, acesse cursos e conecte-se com mentores para aumentar seu impacto.",
+      "features": ["Criar projetos", "Inscrever-se em cursos", "Solicitar mentoria", "Participar de eventos"]
+    },
+    "mentor": {
+      "title": "Mentor",
+      "description": "Compartilhe sua experiência e conhecimento orientando empreendedores sociais em sua jornada.",
+      "features": ["Oferecer mentoria", "Revisar projetos", "Dar feedback", "Conectar comunidades"]
+    },
+    "facilitator": {
+      "title": "Facilitador",
+      "description": "Coordene programas, gerencie eventos e facilite o crescimento da comunidade.",
+      "features": ["Gerenciar programas", "Coordenar eventos", "Supervisionar projetos", "Gerar relatórios"]
+    }
+  },
+  "home": {
+    "welcome": "Bem-vindo",
+    "dashboard": "Painel de Controle",
+    "recentProjects": "Projetos Recentes",
+    "upcomingEvents": "Próximos Eventos",
+    "activeMentorships": "Mentorias Ativas",
+    "enrolledCourses": "Cursos Inscritos"
+  },
+  "profile": {
+    "title": "Meu Perfil",
+    "personalInfo": "Informações Pessoais",
+    "firstName": "Nome",
+    "lastName": "Sobrenome",
+    "email": "E-mail",
+    "phone": "Telefone",
+    "bio": "Biografia",
+    "save": "Salvar",
+    "cancel": "Cancelar"
+  },
+  "projects": {
+    "title": "Projetos",
+    "myProjects": "Meus Projetos",
+    "newProject": "Novo Projeto",
+    "projectName": "Nome do Projeto",
+    "description": "Descrição",
+    "status": "Status",
+    "progress": "Progresso",
+    "startDate": "Data de Início",
+    "endDate": "Data de Término",
+    "actions": "Ações",
+    "view": "Ver",
+    "edit": "Editar",
+    "delete": "Excluir",
+    "noProjects": "Ainda não há projetos",
+    "createFirst": "Crie seu primeiro projeto para começar"
+  },
+  "courses": {
+    "title": "Cursos",
+    "catalog": "Catálogo de Cursos",
+    "myCourses": "Meus Cursos",
+    "enroll": "Inscrever-se",
+    "continue": "Continuar",
+    "completed": "Concluído",
+    "inProgress": "Em Progresso",
+    "duration": "Duração",
+    "lessons": "Aulas",
+    "instructor": "Instrutor"
+  },
+  "mentorship": {
+    "title": "Mentoria",
+    "findMentor": "Encontrar Mentor",
+    "myMentors": "Meus Mentores",
+    "mySessions": "Minhas Sessões",
+    "requestSession": "Solicitar Sessão",
+    "schedule": "Agendar",
+    "upcoming": "Próximas",
+    "past": "Anteriores",
+    "expertise": "Especialidade",
+    "availability": "Disponibilidade"
+  },
+  "common": {
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "delete": "Excluir",
+    "edit": "Editar",
+    "view": "Ver",
+    "create": "Criar",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "noResults": "Nenhum resultado encontrado",
+    "loading": "Carregando...",
+    "error": "Erro",
+    "success": "Sucesso",
+    "selectLanguage": "Selecionar idioma"
+  }
+}
