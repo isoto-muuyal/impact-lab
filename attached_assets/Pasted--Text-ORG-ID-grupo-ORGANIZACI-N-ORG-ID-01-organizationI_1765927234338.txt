@@ -1,0 +1,68 @@
+
+Text
+ORG ID grupo ORGANIZACIÓN 
+ORG ID 01 organizationId	Contenido: Identificador único de la organización. 
+Method: generate (se crea automáticamente), read. 
+User: Sistema (auto-generado), Admin GA4SI (consulta).
+ORG ID 02 Name	Contenido: Nombre oficial de la organización. 
+Method: create, update, read. 
+User: Admin GA4SI (crea/edita), Partner autorizado (en algunos flujos delegados), Sistema (lee para listados/reportes).
+ORG ID 03 legalStatus	Contenido: Estatus legal: nonprofit, governmental, educational, corporate, community-based, etc.
+Method: create, update, read.
+User: Admin GA4SI (define/actualiza), Sistema (usa para clasificaciones y filtros).
+ORG ID 04 description	Contenido: Breve descripción de la misión, enfoque o rol de la organización en el ecosistema. 
+Method: create, update, read. 
+User: Admin GA4SI (redacta/edita), Partner autorizado (puede proponer actualización en algunos flujos), Sistema (muestra en vistas públicas/internas).
+ORG ID 05 country	Contenido: País de la sede principal de la organización. 
+Method: create, update, read. 
+User: Admin GA4SI (registra/ajusta), Sistema (usa para segmentación geográfica y reportes).
+ORG ID 06 city	Contenido: Ciudad principal de operación. 
+Method: create, update, read. 
+User: Admin GA4SI (registra/ajusta), Sistema (usa para filtros y mapas de impacto).
+ORG ID 07 website	Contenido: URL del sitio web de la organización (opcional). 
+Method: create, update, read. 
+User: Admin GA4SI (carga/edita), Partner autorizado (puede sugerir cambios), Sistema (muestra enlaces)
+ORG ID 08 logoUrl	Contenido: Enlace o referencia al logo institucional (opcional). 
+Method: create, update, read. 
+User: Admin GA4SI (sube/actualiza), Sistema (muestra en tarjetas, fichas y listados).
+ORG ID 09 isActive	Contenido: Indica si la organización está actualmente activa en el ecosistema GA4SI/ImpactLab. 
+Method: activate, deactivate, read. 
+User: Admin GA4SI (cambia el estado), Sistema (filtra por organizaciones activas).
+ORG ID 10 createdAt	Contenido: Fecha y hora en que la organización fue registrada en el sistema. 
+Method: generate, read. 
+User: Sistema (la genera automáticamente), Admin GA4SI (consulta para trazabilidad y reportes).
+ORG ID 11 updatedAt	Contenido: Fecha y hora de la última actualización del registro. 
+Method: update, read. 
+User: Sistema (actualiza de forma automática), Admin GA4SI (consulta).
+
+ORG M ORG MEMBERSHIP
+ORG M 01 membershipId	Contenido: Identificador único de la relación persona–organización. 
+Method: generate, read. 
+User: Sistema (genera), Admin GA4SI (consulta).
+ORG M 02 userId	Contenido: Identificador de la persona (talento, consultor, mentor, staff, etc.) vinculada a la organización. 
+Method: link, read. 
+User: Admin GA4SI (crea el vínculo entre persona y organización), Sistema (lee para saber quién participa dónde).
+ORG M 03 organizationId	Contenido: Identificador de la organización a la que se vincula la persona. 
+Method: link, read. 
+User: Admin GA4SI (define a qué organización se asocia), Sistema (usa para construir el mapa de relaciones).
+ORG M 04 role	Contenido: Rol de la persona en la organización dentro del contexto GA4SI (ej.: Volunteer Consultant, Mentor, Project Lead, Staff, Partner Representative). 
+Method: assign, update, read. 
+User: Admin GA4SI (asigna o actualiza el rol), Sistema (muestra y filtra por rol).
+ORG M 05 startDate	Contenido: Fecha de inicio de la participación de la persona en esa organización dentro del ecosistema. 
+Method: create, read. 
+User: Admin GA4SI (define al crear la relación), Sistema (usa para reportes, antigüedad, métricas de participación).
+ORG M 06 endDate	Contenido: Fecha de finalización de la participación (puede ser null si sigue activa). 
+Method: update, read. 
+User: Admin GA4SI (registra el fin de la relación), Sistema (usa para cerrar la participación y actualizar métricas).
+ORG M 07 isCurrent	Contenido: Indica si la relación sigue activa. 
+Method: update, read. 
+User: Admin GA4SI (cambia el estado al cerrar o reactivar una relación), Sistema (filtra solo vínculos vigentes).
+ORG M 08 notes	Contenido: Notas internas sobre la relación: acuerdos específicos, nivel de compromiso, tipo de participación, etc. 
+Method: create, update, read. 
+User: Admin GA4SI (documenta observaciones), Sistema (muestra en vistas internas, nunca públicas)
+ORG M 09 createdAt	Contenido: Fecha y hora de creación del vínculo persona–organización. 
+Method: generate, read. 
+User: Sistema (genera automáticamente), Admin GA4SI (consulta para trazabilidad).
+ORG M 10 updatedAt	Contenido: Fecha y hora de la última actualización de la relación. 
+Method: update, read. 
+User: Sistema (actualiza automáticamente), Admin GA4SI (consulta).

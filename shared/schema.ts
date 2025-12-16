@@ -374,3 +374,108 @@ export type MentorshipWithDetails = Mentorship & {
 export type MentorshipSessionWithMentorship = MentorshipSession & {
   mentorship?: Mentorship;
 };
+
+// ============================================
+// ORGANIZATIONS - Allied institutions registry
+// ============================================
+
+// Legal status enum for organizations
+export const legalStatusEnum = pgEnum('legal_status', [
+  'nonprofit', 
+  'governmental', 
+  'educational', 
+  'corporate', 
+  'community_based',
+  'other'
+]);
+
+// Organization membership role enum
+export const orgMembershipRoleEnum = pgEnum('org_membership_role', [
+  'volunteer_consultant',
+  'mentor',
+  'project_lead',
+  'staff',
+  'partner_representative',
+  'board_member',
+  'advisor',
+  'other'
+]);
+
+// Organizations table - ORG ID from diagram
+export const organizations = pgTable("organizations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull(),
+  legalStatus: legalStatusEnum("legal_status"),
+  description: text("description"),
+  country: varchar("country"),
+  city: varchar("city"),
+  website: varchar("website"),
+  logoUrl: varchar("logo_url"),
+  isActive: varchar("is_active").default('true'),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Organization Memberships table - ORG M from diagram
+export const organizationMemberships = pgTable("organization_memberships", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  organizationId: varchar("organization_id").notNull().references(() => organizations.id),
+  role: orgMembershipRoleEnum("role"),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  isCurrent: varchar("is_current").default('true'),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Organization relations
+export const organizationsRelations = relations(organizations, ({ many }) => ({
+  memberships: many(organizationMemberships),
+}));
+
+export const organizationMembershipsRelations = relations(organizationMemberships, ({ one }) => ({
+  user: one(users, {
+    fields: [organizationMemberships.userId],
+    references: [users.id],
+  }),
+  organization: one(organizations, {
+    fields: [organizationMemberships.organizationId],
+    references: [organizations.id],
+  }),
+}));
+
+// Insert schemas for organizations
+export const insertOrganizationSchema = createInsertSchema(organizations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertOrganizationMembershipSchema = createInsertSchema(organizationMemberships).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Organization types
+export type Organization = typeof organizations.$inferSelect;
+export type InsertOrganization = z.infer<typeof insertOrganizationSchema>;
+
+export type OrganizationMembership = typeof organizationMemberships.$inferSelect;
+export type InsertOrganizationMembership = z.infer<typeof insertOrganizationMembershipSchema>;
+
+// Extended types
+export type OrganizationWithMemberships = Organization & {
+  memberships?: OrganizationMembershipWithUser[];
+};
+
+export type OrganizationMembershipWithUser = OrganizationMembership & {
+  user?: User;
+};
+
+export type OrganizationMembershipWithDetails = OrganizationMembership & {
+  user?: User;
+  organization?: Organization;
+};

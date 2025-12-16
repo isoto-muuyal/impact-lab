@@ -8,6 +8,8 @@ import {
   courseEnrollments,
   mentorships,
   mentorshipSessions,
+  organizations,
+  organizationMemberships,
   type User,
   type UpsertUser,
   type UserProfile,
@@ -29,6 +31,13 @@ import {
   type MentorshipWithDetails,
   type MentorshipSession,
   type InsertMentorshipSession,
+  type Organization,
+  type InsertOrganization,
+  type OrganizationWithMemberships,
+  type OrganizationMembership,
+  type InsertOrganizationMembership,
+  type OrganizationMembershipWithUser,
+  type OrganizationMembershipWithDetails,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, or, and } from "drizzle-orm";
@@ -96,6 +105,23 @@ export interface IStorage {
   
   // Mentor list for assignments
   getMentors(): Promise<User[]>;
+  
+  // Organization operations
+  getOrganizations(activeOnly?: boolean): Promise<Organization[]>;
+  getOrganization(id: string): Promise<OrganizationWithMemberships | undefined>;
+  createOrganization(org: InsertOrganization): Promise<Organization>;
+  updateOrganization(id: string, org: Partial<InsertOrganization>): Promise<Organization | undefined>;
+  activateOrganization(id: string): Promise<Organization | undefined>;
+  deactivateOrganization(id: string): Promise<Organization | undefined>;
+  
+  // Organization Membership operations
+  getOrganizationMemberships(organizationId: string): Promise<OrganizationMembershipWithUser[]>;
+  getMembershipsByUser(userId: string): Promise<OrganizationMembershipWithDetails[]>;
+  getOrganizationMembership(id: string): Promise<OrganizationMembershipWithDetails | undefined>;
+  createOrganizationMembership(membership: InsertOrganizationMembership): Promise<OrganizationMembership>;
+  updateOrganizationMembership(id: string, data: Partial<InsertOrganizationMembership>): Promise<OrganizationMembership | undefined>;
+  deleteOrganizationMembership(id: string): Promise<boolean>;
+  getAllUsers(): Promise<User[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -626,6 +652,150 @@ export class DatabaseStorage implements IStorage {
     );
     
     return mentors.filter((u): u is User => u !== undefined);
+  }
+
+  // Organization operations
+  async getOrganizations(activeOnly: boolean = false): Promise<Organization[]> {
+    if (activeOnly) {
+      return db
+        .select()
+        .from(organizations)
+        .where(eq(organizations.isActive, 'true'))
+        .orderBy(desc(organizations.createdAt));
+    }
+    return db
+      .select()
+      .from(organizations)
+      .orderBy(desc(organizations.createdAt));
+  }
+
+  async getOrganization(id: string): Promise<OrganizationWithMemberships | undefined> {
+    const [org] = await db
+      .select()
+      .from(organizations)
+      .where(eq(organizations.id, id));
+    
+    if (!org) return undefined;
+    
+    const memberships = await this.getOrganizationMemberships(id);
+    return { ...org, memberships };
+  }
+
+  async createOrganization(orgData: InsertOrganization): Promise<Organization> {
+    const [org] = await db
+      .insert(organizations)
+      .values(orgData)
+      .returning();
+    return org;
+  }
+
+  async updateOrganization(id: string, orgData: Partial<InsertOrganization>): Promise<Organization | undefined> {
+    const [org] = await db
+      .update(organizations)
+      .set({
+        ...orgData,
+        updatedAt: new Date(),
+      })
+      .where(eq(organizations.id, id))
+      .returning();
+    return org;
+  }
+
+  async activateOrganization(id: string): Promise<Organization | undefined> {
+    const [org] = await db
+      .update(organizations)
+      .set({ isActive: 'true', updatedAt: new Date() })
+      .where(eq(organizations.id, id))
+      .returning();
+    return org;
+  }
+
+  async deactivateOrganization(id: string): Promise<Organization | undefined> {
+    const [org] = await db
+      .update(organizations)
+      .set({ isActive: 'false', updatedAt: new Date() })
+      .where(eq(organizations.id, id))
+      .returning();
+    return org;
+  }
+
+  // Organization Membership operations
+  async getOrganizationMemberships(organizationId: string): Promise<OrganizationMembershipWithUser[]> {
+    const memberships = await db
+      .select()
+      .from(organizationMemberships)
+      .where(eq(organizationMemberships.organizationId, organizationId))
+      .orderBy(desc(organizationMemberships.createdAt));
+    
+    const membershipsWithUsers = await Promise.all(
+      memberships.map(async (m) => {
+        const user = await this.getUser(m.userId);
+        return { ...m, user };
+      })
+    );
+    
+    return membershipsWithUsers;
+  }
+
+  async getMembershipsByUser(userId: string): Promise<OrganizationMembershipWithDetails[]> {
+    const memberships = await db
+      .select()
+      .from(organizationMemberships)
+      .where(eq(organizationMemberships.userId, userId))
+      .orderBy(desc(organizationMemberships.createdAt));
+    
+    const membershipsWithDetails = await Promise.all(
+      memberships.map(async (m) => {
+        const user = await this.getUser(m.userId);
+        const [org] = await db.select().from(organizations).where(eq(organizations.id, m.organizationId));
+        return { ...m, user, organization: org };
+      })
+    );
+    
+    return membershipsWithDetails;
+  }
+
+  async getOrganizationMembership(id: string): Promise<OrganizationMembershipWithDetails | undefined> {
+    const [membership] = await db
+      .select()
+      .from(organizationMemberships)
+      .where(eq(organizationMemberships.id, id));
+    
+    if (!membership) return undefined;
+    
+    const user = await this.getUser(membership.userId);
+    const [org] = await db.select().from(organizations).where(eq(organizations.id, membership.organizationId));
+    
+    return { ...membership, user, organization: org };
+  }
+
+  async createOrganizationMembership(data: InsertOrganizationMembership): Promise<OrganizationMembership> {
+    const [membership] = await db
+      .insert(organizationMemberships)
+      .values(data)
+      .returning();
+    return membership;
+  }
+
+  async updateOrganizationMembership(id: string, data: Partial<InsertOrganizationMembership>): Promise<OrganizationMembership | undefined> {
+    const [membership] = await db
+      .update(organizationMemberships)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(organizationMemberships.id, id))
+      .returning();
+    return membership;
+  }
+
+  async deleteOrganizationMembership(id: string): Promise<boolean> {
+    await db.delete(organizationMemberships).where(eq(organizationMemberships.id, id));
+    return true;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return db
+      .select()
+      .from(users)
+      .orderBy(desc(users.createdAt));
   }
 }
 
