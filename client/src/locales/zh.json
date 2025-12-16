@@ -18,7 +18,8 @@
     "programs": "项目管理",
     "reports": "报告",
     "assignedProjects": "分配的项目",
-    "myMentorships": "我的导师"
+    "myMentorships": "我的导师",
+    "organizations": "组织"
   },
   "auth": {
     "login": "登录",
@@ -140,6 +141,53 @@
     "past": "已结束",
     "expertise": "专长",
     "availability": "可用性"
+  },
+  "organizations": {
+    "title": "组织",
+    "alliedOrganizations": "合作组织",
+    "newOrganization": "新建组织",
+    "editOrganization": "编辑组织",
+    "organizationDetails": "组织详情",
+    "name": "组织名称",
+    "legalStatus": "法律地位",
+    "description": "描述",
+    "country": "国家",
+    "city": "城市",
+    "website": "网站",
+    "status": "状态",
+    "active": "活跃",
+    "inactive": "停用",
+    "activate": "激活",
+    "deactivate": "停用",
+    "members": "成员",
+    "noOrganizations": "暂无组织",
+    "createFirst": "创建第一个组织开始",
+    "legalStatuses": {
+      "nonprofit": "非营利",
+      "governmental": "政府",
+      "educational": "教育",
+      "corporate": "企业",
+      "community-based": "社区"
+    },
+    "membership": {
+      "title": "成员资格",
+      "addMember": "添加成员",
+      "editMember": "编辑成员",
+      "selectUser": "选择用户",
+      "role": "角色",
+      "startDate": "开始日期",
+      "endDate": "结束日期",
+      "isCurrent": "当前活跃",
+      "notes": "备注",
+      "noMembers": "该组织暂无成员",
+      "roles": {
+        "volunteer_consultant": "志愿顾问",
+        "mentor": "导师",
+        "project_lead": "项目负责人",
+        "staff": "员工",
+        "partner_representative": "合作伙伴代表"
+      }
+    }
   },
   "common": {
     "save": "保存",

@@ -18,7 +18,8 @@
     "programs": "Gestión de Programas",
     "reports": "Reportes",
     "assignedProjects": "Proyectos Asignados",
-    "myMentorships": "Mis Mentorías"
+    "myMentorships": "Mis Mentorías",
+    "organizations": "Organizaciones"
   },
   "auth": {
     "login": "Iniciar Sesión",
@@ -140,6 +141,53 @@
     "past": "Pasadas",
     "expertise": "Experiencia",
     "availability": "Disponibilidad"
+  },
+  "organizations": {
+    "title": "Organizaciones",
+    "alliedOrganizations": "Organizaciones Aliadas",
+    "newOrganization": "Nueva Organización",
+    "editOrganization": "Editar Organización",
+    "organizationDetails": "Detalles de la Organización",
+    "name": "Nombre de la Organización",
+    "legalStatus": "Estatus Legal",
+    "description": "Descripción",
+    "country": "País",
+    "city": "Ciudad",
+    "website": "Sitio Web",
+    "status": "Estado",
+    "active": "Activa",
+    "inactive": "Inactiva",
+    "activate": "Activar",
+    "deactivate": "Desactivar",
+    "members": "Miembros",
+    "noOrganizations": "Aún no hay organizaciones",
+    "createFirst": "Crea la primera organización para comenzar",
+    "legalStatuses": {
+      "nonprofit": "Sin fines de lucro",
+      "governmental": "Gubernamental",
+      "educational": "Educativa",
+      "corporate": "Corporativa",
+      "community-based": "Base comunitaria"
+    },
+    "membership": {
+      "title": "Membresías",
+      "addMember": "Agregar Miembro",
+      "editMember": "Editar Miembro",
+      "selectUser": "Seleccionar Usuario",
+      "role": "Rol",
+      "startDate": "Fecha de Inicio",
+      "endDate": "Fecha de Fin",
+      "isCurrent": "Actualmente Activo",
+      "notes": "Notas",
+      "noMembers": "Esta organización no tiene miembros",
+      "roles": {
+        "volunteer_consultant": "Consultor Voluntario",
+        "mentor": "Mentor",
+        "project_lead": "Líder de Proyecto",
+        "staff": "Personal",
+        "partner_representative": "Representante Socio"
+      }
+    }
   },
   "common": {
     "save": "Guardar",

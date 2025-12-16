@@ -18,7 +18,8 @@
     "programs": "Gestion des Programmes",
     "reports": "Rapports",
     "assignedProjects": "Projets Assignés",
-    "myMentorships": "Mes Mentorats"
+    "myMentorships": "Mes Mentorats",
+    "organizations": "Organisations"
   },
   "auth": {
     "login": "Se Connecter",
@@ -140,6 +141,53 @@
     "past": "Passées",
     "expertise": "Expertise",
     "availability": "Disponibilité"
+  },
+  "organizations": {
+    "title": "Organisations",
+    "alliedOrganizations": "Organisations Alliées",
+    "newOrganization": "Nouvelle Organisation",
+    "editOrganization": "Modifier l'Organisation",
+    "organizationDetails": "Détails de l'Organisation",
+    "name": "Nom de l'Organisation",
+    "legalStatus": "Statut Juridique",
+    "description": "Description",
+    "country": "Pays",
+    "city": "Ville",
+    "website": "Site Web",
+    "status": "Statut",
+    "active": "Active",
+    "inactive": "Inactive",
+    "activate": "Activer",
+    "deactivate": "Désactiver",
+    "members": "Membres",
+    "noOrganizations": "Pas encore d'organisations",
+    "createFirst": "Créez la première organisation pour commencer",
+    "legalStatuses": {
+      "nonprofit": "Sans but lucratif",
+      "governmental": "Gouvernementale",
+      "educational": "Éducative",
+      "corporate": "Entreprise",
+      "community-based": "Communautaire"
+    },
+    "membership": {
+      "title": "Adhésions",
+      "addMember": "Ajouter un Membre",
+      "editMember": "Modifier le Membre",
+      "selectUser": "Sélectionner un Utilisateur",
+      "role": "Rôle",
+      "startDate": "Date de Début",
+      "endDate": "Date de Fin",
+      "isCurrent": "Actuellement Actif",
+      "notes": "Notes",
+      "noMembers": "Cette organisation n'a pas de membres",
+      "roles": {
+        "volunteer_consultant": "Consultant Bénévole",
+        "mentor": "Mentor",
+        "project_lead": "Chef de Projet",
+        "staff": "Personnel",
+        "partner_representative": "Représentant Partenaire"
+      }
+    }
   },
   "common": {
     "save": "Enregistrer",

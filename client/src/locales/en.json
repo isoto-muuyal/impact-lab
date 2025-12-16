@@ -18,7 +18,8 @@
     "programs": "Program Management",
     "reports": "Reports",
     "assignedProjects": "Assigned Projects",
-    "myMentorships": "My Mentorships"
+    "myMentorships": "My Mentorships",
+    "organizations": "Organizations"
   },
   "auth": {
     "login": "Log In",
@@ -140,6 +141,53 @@
     "past": "Past",
     "expertise": "Expertise",
     "availability": "Availability"
+  },
+  "organizations": {
+    "title": "Organizations",
+    "alliedOrganizations": "Allied Organizations",
+    "newOrganization": "New Organization",
+    "editOrganization": "Edit Organization",
+    "organizationDetails": "Organization Details",
+    "name": "Organization Name",
+    "legalStatus": "Legal Status",
+    "description": "Description",
+    "country": "Country",
+    "city": "City",
+    "website": "Website",
+    "status": "Status",
+    "active": "Active",
+    "inactive": "Inactive",
+    "activate": "Activate",
+    "deactivate": "Deactivate",
+    "members": "Members",
+    "noOrganizations": "No organizations yet",
+    "createFirst": "Create the first organization to get started",
+    "legalStatuses": {
+      "nonprofit": "Nonprofit",
+      "governmental": "Governmental",
+      "educational": "Educational",
+      "corporate": "Corporate",
+      "community-based": "Community-based"
+    },
+    "membership": {
+      "title": "Memberships",
+      "addMember": "Add Member",
+      "editMember": "Edit Member",
+      "selectUser": "Select User",
+      "role": "Role",
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "isCurrent": "Currently Active",
+      "notes": "Notes",
+      "noMembers": "This organization has no members",
+      "roles": {
+        "volunteer_consultant": "Volunteer Consultant",
+        "mentor": "Mentor",
+        "project_lead": "Project Lead",
+        "staff": "Staff",
+        "partner_representative": "Partner Representative"
+      }
+    }
   },
   "common": {
     "save": "Save",

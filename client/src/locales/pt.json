@@ -18,7 +18,8 @@
     "programs": "Gestão de Programas",
     "reports": "Relatórios",
     "assignedProjects": "Projetos Atribuídos",
-    "myMentorships": "Minhas Mentorias"
+    "myMentorships": "Minhas Mentorias",
+    "organizations": "Organizações"
   },
   "auth": {
     "login": "Entrar",
@@ -140,6 +141,53 @@
     "past": "Anteriores",
     "expertise": "Especialidade",
     "availability": "Disponibilidade"
+  },
+  "organizations": {
+    "title": "Organizações",
+    "alliedOrganizations": "Organizações Aliadas",
+    "newOrganization": "Nova Organização",
+    "editOrganization": "Editar Organização",
+    "organizationDetails": "Detalhes da Organização",
+    "name": "Nome da Organização",
+    "legalStatus": "Situação Legal",
+    "description": "Descrição",
+    "country": "País",
+    "city": "Cidade",
+    "website": "Site",
+    "status": "Status",
+    "active": "Ativa",
+    "inactive": "Inativa",
+    "activate": "Ativar",
+    "deactivate": "Desativar",
+    "members": "Membros",
+    "noOrganizations": "Ainda não há organizações",
+    "createFirst": "Crie a primeira organização para começar",
+    "legalStatuses": {
+      "nonprofit": "Sem fins lucrativos",
+      "governmental": "Governamental",
+      "educational": "Educacional",
+      "corporate": "Corporativa",
+      "community-based": "Base comunitária"
+    },
+    "membership": {
+      "title": "Associações",
+      "addMember": "Adicionar Membro",
+      "editMember": "Editar Membro",
+      "selectUser": "Selecionar Usuário",
+      "role": "Função",
+      "startDate": "Data de Início",
+      "endDate": "Data de Término",
+      "isCurrent": "Atualmente Ativo",
+      "notes": "Notas",
+      "noMembers": "Esta organização não tem membros",
+      "roles": {
+        "volunteer_consultant": "Consultor Voluntário",
+        "mentor": "Mentor",
+        "project_lead": "Líder de Projeto",
+        "staff": "Equipe",
+        "partner_representative": "Representante Parceiro"
+      }
+    }
   },
   "common": {
     "save": "Salvar",

@@ -18,7 +18,8 @@
     "programs": "إدارة البرامج",
     "reports": "التقارير",
     "assignedProjects": "المشاريع المعينة",
-    "myMentorships": "إرشاداتي"
+    "myMentorships": "إرشاداتي",
+    "organizations": "المنظمات"
   },
   "auth": {
     "login": "تسجيل الدخول",
@@ -140,6 +141,53 @@
     "past": "السابقة",
     "expertise": "الخبرة",
     "availability": "التوفر"
+  },
+  "organizations": {
+    "title": "المنظمات",
+    "alliedOrganizations": "المنظمات الشريكة",
+    "newOrganization": "منظمة جديدة",
+    "editOrganization": "تعديل المنظمة",
+    "organizationDetails": "تفاصيل المنظمة",
+    "name": "اسم المنظمة",
+    "legalStatus": "الوضع القانوني",
+    "description": "الوصف",
+    "country": "البلد",
+    "city": "المدينة",
+    "website": "الموقع الإلكتروني",
+    "status": "الحالة",
+    "active": "نشطة",
+    "inactive": "غير نشطة",
+    "activate": "تفعيل",
+    "deactivate": "إلغاء التفعيل",
+    "members": "الأعضاء",
+    "noOrganizations": "لا توجد منظمات بعد",
+    "createFirst": "أنشئ المنظمة الأولى للبدء",
+    "legalStatuses": {
+      "nonprofit": "غير ربحية",
+      "governmental": "حكومية",
+      "educational": "تعليمية",
+      "corporate": "شركة",
+      "community-based": "مجتمعية"
+    },
+    "membership": {
+      "title": "العضويات",
+      "addMember": "إضافة عضو",
+      "editMember": "تعديل العضو",
+      "selectUser": "اختر مستخدم",
+      "role": "الدور",
+      "startDate": "تاريخ البدء",
+      "endDate": "تاريخ الانتهاء",
+      "isCurrent": "نشط حالياً",
+      "notes": "ملاحظات",
+      "noMembers": "هذه المنظمة ليس لديها أعضاء",
+      "roles": {
+        "volunteer_consultant": "استشاري متطوع",
+        "mentor": "مرشد",
+        "project_lead": "قائد المشروع",
+        "staff": "موظف",
+        "partner_representative": "ممثل الشريك"
+      }
+    }
   },
   "common": {
     "save": "حفظ",
