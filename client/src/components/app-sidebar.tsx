@@ -27,7 +27,8 @@ import {
   LogOut,
   Sparkles,
   Calendar,
-  MessageSquare
+  MessageSquare,
+  Building2
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -60,6 +61,7 @@ const menuItemsByRole: Record<string, MenuItem[]> = {
     { titleKey: "nav.projects", url: "/projects", icon: Target },
     { titleKey: "nav.courses", url: "/courses", icon: BookOpen },
     { titleKey: "nav.mentorship", url: "/mentorship", icon: Users },
+    { titleKey: "nav.organizations", url: "/organizations", icon: Building2 },
     { titleKey: "nav.programs", url: "/programs", icon: Rocket },
     { titleKey: "nav.events", url: "/events", icon: Calendar },
     { titleKey: "nav.reports", url: "/reports", icon: Target },

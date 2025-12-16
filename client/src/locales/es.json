@@ -162,12 +162,14 @@
     "members": "Miembros",
     "noOrganizations": "Aún no hay organizaciones",
     "createFirst": "Crea la primera organización para comenzar",
+    "facilitadorOnly": "Esta sección solo está disponible para facilitadores. Por favor, contacta a un administrador si necesitas acceso.",
     "legalStatuses": {
       "nonprofit": "Sin fines de lucro",
       "governmental": "Gubernamental",
       "educational": "Educativa",
       "corporate": "Corporativa",
-      "community-based": "Base comunitaria"
+      "community_based": "Base comunitaria",
+      "other": "Otra"
     },
     "membership": {
       "title": "Membresías",
@@ -202,6 +204,7 @@
     "loading": "Cargando...",
     "error": "Error",
     "success": "Éxito",
-    "selectLanguage": "Seleccionar idioma"
+    "selectLanguage": "Seleccionar idioma",
+    "accessDenied": "Acceso Denegado"
   }
 }

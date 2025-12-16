@@ -162,12 +162,14 @@
     "members": "الأعضاء",
     "noOrganizations": "لا توجد منظمات بعد",
     "createFirst": "أنشئ المنظمة الأولى للبدء",
+    "facilitadorOnly": "هذا القسم متاح فقط للمنسقين. يرجى التواصل مع المسؤول إذا كنت بحاجة إلى الوصول.",
     "legalStatuses": {
       "nonprofit": "غير ربحية",
       "governmental": "حكومية",
       "educational": "تعليمية",
       "corporate": "شركة",
-      "community-based": "مجتمعية"
+      "community_based": "مجتمعية",
+      "other": "أخرى"
     },
     "membership": {
       "title": "العضويات",
@@ -202,6 +204,7 @@
     "loading": "جاري التحميل...",
     "error": "خطأ",
     "success": "نجاح",
-    "selectLanguage": "اختر اللغة"
+    "selectLanguage": "اختر اللغة",
+    "accessDenied": "تم رفض الوصول"
   }
 }
