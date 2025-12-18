@@ -1,0 +1,31 @@
+he source list for the Content Security Policy directive 'default-src' contains an invalid source: ''unsafe-dynamic''. It will be ignored.
+IwbgraHtq0bK4Mm32Y8dt:1 The Content-Security-Policy directive 'default-src' contains 'report-uri' as a source expression. Did you want to add it as a directive and forget a semicolon?
+IwbgraHtq0bK4Mm32Y8dt:1 The source list for Content Security Policy directive 'default-src' contains a source with an invalid path: '/api/4509669501698048/security/?sentry_key=7eb3d90eb4660416caf507087367e67e'. The query component, including the '?', will be ignored.
+5f507c0467938dc1.js:2 Download the Apollo DevTools for a better development experience: https://chrome.google.com/webstore/detail/apollo-client-developer-t/jdkknkkbebbapilgoeccciglkfbmbnfm
+stallwart.build.js:1 stallwart: failed ping 1
+stallwart.build.js:1 stallwart: failed ping 2
+5f507c0467938dc1.js:2 [LaunchDarkly] LaunchDarkly client initialized
+m.stripe.network/inner.html#url=https%3A%2F%2Freplit.com%2Foidc-login-consent%2FIwbgraHtq0bK4Mm32Y8dt&title=Authorize%20Impact%20Lab%20-%20Replit&referrer=https%3A%2F%2F7e03e748-3c8d-42f9-9717-0cdd9fddbd27-00-2hkxkbuwyycuo.spock.replit.dev%2F&muid=NA&sid=NA&version=6&preview=false&__shared_params__[version]=acacia:1 Refused to connect to 'https://stripe.com/' because it violates the following Content Security Policy directive: "connect-src https://m.stripe.network https://m.stripe.com".
+
+m.stripe.network/inn…_[version]=acacia:1 Uncaught (in promise) undefined
+Promise.then
+s @ out-4.5.45.js:1
+h @ out-4.5.45.js:1
+e @ inner.html:1
+m.stripe.network/inner.html#url=https%3A%2F%2Freplit.com%2Foidc-login-consent%2FIwbgraHtq0bK4Mm32Y8dt&title=Authorize%20Impact%20Lab%20-%20Replit&referrer=https%3A%2F%2F7e03e748-3c8d-42f9-9717-0cdd9fddbd27-00-2hkxkbuwyycuo.spock.replit.dev%2F&muid=NA&sid=NA&version=6&preview=false&__shared_params__[version]=acacia:1 Refused to connect to 'https://stripe.com/' because it violates the following Content Security Policy directive: "connect-src https://m.stripe.network https://m.stripe.com".
+
+m.stripe.network/inn…_[version]=acacia:1 Uncaught (in promise) undefined
+Promise.then
+s @ out-4.5.45.js:1
+h @ out-4.5.45.js:1
+e @ inner.html:1
+m.stripe.network/inner.html#url=https%3A%2F%2Freplit.com%2Foidc-login-consent%2FIwbgraHtq0bK4Mm32Y8dt&title=Authorize%20Impact%20Lab%20-%20Replit&referrer=https%3A%2F%2F7e03e748-3c8d-42f9-9717-0cdd9fddbd27-00-2hkxkbuwyycuo.spock.replit.dev%2F&muid=NA&sid=NA&version=6&preview=false&__shared_params__[version]=acacia:1 Refused to connect to 'https://stripe.com/' because it violates the following Content Security Policy directive: "connect-src https://m.stripe.network https://m.stripe.com".
+
+m.stripe.network/inn…_[version]=acacia:1 Uncaught (in promise) undefined
+Promise.then
+s @ out-4.5.45.js:1
+h @ out-4.5.45.js:1
+e @ inner.html:1
+m.stripe.network/inner.html#url=https%3A%2F%2Freplit.com%2Foidc-login-consent%2FIwbgraHtq0bK4Mm32Y8dt&title=Authorize%20Impact%20Lab%20-%20Replit&referrer=https%3A%2F%2F7e03e748-3c8d-42f9-9717-0cdd9fddbd27-00-2hkxkbuwyycuo.spock.replit.dev%2F&muid=NA&sid=NA&version=6&preview=false&__shared_params__[version]=acacia:1 Refused to connect to 'https://stripe.com/' because it violates the following Content Security Policy directive: "connect-src https://m.stripe.network https://m.stripe.com".
+
+m.stripe.network/inn…_[version]=acacia:1 Uncaught (in promise) undefined
