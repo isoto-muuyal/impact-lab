@@ -1059,6 +1059,9 @@ export async function registerRoutes(
       const challengeData = {
         ...req.body,
         createdByUserId: userId,
+        // Convert date strings to Date objects, empty strings to null
+        openFrom: req.body.openFrom && req.body.openFrom.trim() !== '' ? new Date(req.body.openFrom) : null,
+        openUntil: req.body.openUntil && req.body.openUntil.trim() !== '' ? new Date(req.body.openUntil) : null,
       };
       
       const validationResult = insertChallengeSchema.safeParse(challengeData);
@@ -1093,11 +1096,22 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Challenge not found" });
       }
       
+      // Prevent editing archived challenges
+      if (challenge.status === 'archived') {
+        return res.status(400).json({ message: "Cannot edit archived challenges" });
+      }
+      
       const allowedFields = ['title', 'description', 'contextOrganizationId', 'city', 'country', 'sdgTags', 'openFrom', 'openUntil', 'maxProjects'];
       const sanitizedData: Record<string, any> = {};
       for (const field of allowedFields) {
         if (req.body[field] !== undefined) {
-          sanitizedData[field] = req.body[field];
+          // Convert date strings to Date objects, empty strings to null
+          if (field === 'openFrom' || field === 'openUntil') {
+            const value = req.body[field];
+            sanitizedData[field] = value && value.trim && value.trim() !== '' ? new Date(value) : null;
+          } else {
+            sanitizedData[field] = req.body[field];
+          }
         }
       }
       
@@ -1124,6 +1138,31 @@ export async function registerRoutes(
       const validStatuses = ['draft', 'open', 'in_progress', 'completed', 'archived'];
       if (!validStatuses.includes(status)) {
         return res.status(400).json({ message: "Invalid status" });
+      }
+      
+      // Get current challenge to validate transition
+      const existingChallenge = await storage.getChallenge(req.params.id);
+      if (!existingChallenge) {
+        return res.status(404).json({ message: "Challenge not found" });
+      }
+      
+      // Enforce workflow: archived cannot transition
+      if (existingChallenge.status === 'archived') {
+        return res.status(400).json({ message: "Cannot change status of archived challenges" });
+      }
+      
+      // Enforce valid workflow transitions
+      const validTransitions: Record<string, string[]> = {
+        'draft': ['open', 'archived'],
+        'open': ['in_progress'],
+        'in_progress': ['completed'],
+        'completed': ['archived'],
+      };
+      
+      const currentStatus = existingChallenge.status || 'draft';
+      const allowedNextStatuses = validTransitions[currentStatus] || [];
+      if (!allowedNextStatuses.includes(status)) {
+        return res.status(400).json({ message: `Invalid status transition from ${currentStatus} to ${status}` });
       }
       
       const challenge = await storage.setChallengeStatus(req.params.id, status);
@@ -1231,6 +1270,9 @@ export async function registerRoutes(
       const projectData = {
         ...req.body,
         createdByUserId: userId,
+        // Convert date strings to Date objects, empty strings to null
+        startDate: req.body.startDate && req.body.startDate.trim() !== '' ? new Date(req.body.startDate) : null,
+        endDate: req.body.endDate && req.body.endDate.trim() !== '' ? new Date(req.body.endDate) : null,
       };
       
       const validationResult = insertChallengeProjectSchema.safeParse(projectData);
@@ -1267,11 +1309,23 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Not authorized to update this project" });
       }
       
+      // Prevent editing terminal state projects
+      const terminalStatuses = ['completed', 'cancelled'];
+      if (terminalStatuses.includes(project.status || '')) {
+        return res.status(400).json({ message: "Cannot edit completed or cancelled projects" });
+      }
+      
       const allowedFields = ['title', 'summary', 'leadOrganizationId', 'locationCity', 'locationCountry', 'sdgTags', 'impactFocus', 'startDate', 'endDate', 'isPilot'];
       const sanitizedData: Record<string, any> = {};
       for (const field of allowedFields) {
         if (req.body[field] !== undefined) {
-          sanitizedData[field] = req.body[field];
+          // Convert date strings to Date objects, empty strings to null
+          if (field === 'startDate' || field === 'endDate') {
+            const value = req.body[field];
+            sanitizedData[field] = value && value.trim && value.trim() !== '' ? new Date(value) : null;
+          } else {
+            sanitizedData[field] = req.body[field];
+          }
         }
       }
       
@@ -1305,6 +1359,27 @@ export async function registerRoutes(
       const validStatuses = ['idea', 'design', 'pilot', 'active', 'completed', 'on_hold', 'cancelled'];
       if (!validStatuses.includes(status)) {
         return res.status(400).json({ message: "Invalid status" });
+      }
+      
+      // Enforce workflow: terminal states cannot transition
+      const terminalStatuses = ['completed', 'cancelled'];
+      if (terminalStatuses.includes(project.status || '')) {
+        return res.status(400).json({ message: "Cannot change status of completed or cancelled projects" });
+      }
+      
+      // Enforce valid workflow transitions
+      const validTransitions: Record<string, string[]> = {
+        'idea': ['design', 'on_hold', 'cancelled'],
+        'design': ['pilot', 'on_hold', 'cancelled'],
+        'pilot': ['active', 'on_hold', 'cancelled'],
+        'active': ['completed', 'on_hold', 'cancelled'],
+        'on_hold': ['idea', 'design', 'pilot', 'active', 'cancelled'],
+      };
+      
+      const currentStatus = project.status || 'idea';
+      const allowedNextStatuses = validTransitions[currentStatus] || [];
+      if (!allowedNextStatuses.includes(status)) {
+        return res.status(400).json({ message: `Invalid status transition from ${currentStatus} to ${status}` });
       }
       
       const updated = await storage.setChallengeProjectStatus(req.params.id, status);

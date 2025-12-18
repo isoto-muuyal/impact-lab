@@ -17,6 +17,8 @@ import Projects from "@/pages/projects";
 import Courses from "@/pages/courses";
 import Mentorship from "@/pages/mentorship";
 import Organizations from "@/pages/organizations";
+import Challenges from "@/pages/challenges";
+import ChallengeProjects from "@/pages/challenge-projects";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -43,6 +45,8 @@ function Router() {
       <Route path="/courses" component={Courses} />
       <Route path="/mentorship" component={Mentorship} />
       <Route path="/organizations" component={Organizations} />
+      <Route path="/challenges" component={Challenges} />
+      <Route path="/challenge-projects" component={ChallengeProjects} />
       <Route component={NotFound} />
     </Switch>
   );

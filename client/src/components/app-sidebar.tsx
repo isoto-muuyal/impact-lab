@@ -28,7 +28,9 @@ import {
   Sparkles,
   Calendar,
   MessageSquare,
-  Building2
+  Building2,
+  Trophy,
+  FolderKanban
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -62,6 +64,8 @@ const menuItemsByRole: Record<string, MenuItem[]> = {
     { titleKey: "nav.courses", url: "/courses", icon: BookOpen },
     { titleKey: "nav.mentorship", url: "/mentorship", icon: Users },
     { titleKey: "nav.organizations", url: "/organizations", icon: Building2 },
+    { titleKey: "nav.challenges", url: "/challenges", icon: Trophy },
+    { titleKey: "nav.challengeProjects", url: "/challenge-projects", icon: FolderKanban },
     { titleKey: "nav.programs", url: "/programs", icon: Rocket },
     { titleKey: "nav.events", url: "/events", icon: Calendar },
     { titleKey: "nav.reports", url: "/reports", icon: Target },
