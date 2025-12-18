@@ -1,0 +1,44 @@
+
+DP CH challenge. Representa un reto concreto que aparece en una escuela, ONG, biblioteca, barrio, ciudad o institución, y que puede dar origen a uno o varios proyectos GA4SI. 
+DP CH 01 challengeId	Contenido: Identificador único del reto en el sistema. 
+Method: generate, read. 
+User: Sistema (lo genera automáticamente), Admin GA4SI (lo consulta).
+DP CH 02 title	Contenido: Título corto del reto (ej.: “Mejorar la participación estudiantil en el consejo escolar”).
+Method: create, update, read.
+User: Admin GA4SI, Partner institucional autorizado (en algunos flujos), Sistema (lo muestra en listados y tarjetas).
+DP CH 03 description	Contenido: Descripción narrativa del reto: contexto, problema, población afectada. 
+Method: create, update, read. 
+User: Admin GA4SI (redacta/edita), Partner institucional (puede complementar), Sistema (muestra en vistas detalladas).
+DP CH 03 contextOrganizationId	Contenido: Referencia a la organización donde se origina el reto (escuela, ONG, biblioteca, etc.). 
+Method: link, read. 
+User: Admin GA4SI (asocia el reto a una organización), Sistema (usa la relación para reportes y mapas de impacto).
+DP CH 04 city	Contenido: Ciudad donde se manifiesta el reto. 
+Method: create, update, read. 
+User: Admin GA4SI, Sistema (usa para filtros geográficos y análisis territorial).
+DP CH 05 country	Contenido: País donde ocurre el reto. 
+Method: create, update, read. 
+User: Admin GA4SI, Sistema (usa para reportes comparativos por país).
+DP CH 06 sdgTags	Contenido: Lista de etiquetas de ODS/temas (ej.: SDG4, SDG5, SDG11; educación, género, ciudad sostenible). 
+Method: assign, update, read. 
+User: Admin GA4SI (clasifica el reto), Sistema (usa para analítica y filtros temáticos).
+DP CH 07 status	Contenido: Estado del reto (ej.: “draft”, “open”, “in_progress”, “completed”, “archived”).
+Method: setStatus, update, read.
+User: Admin GA4SI (cambia el estado), Sistema (aplica lógicas: permitir/no permitir nuevos proyectos, etc.).
+DP CH 08 createdByUserId	Contenido: Persona (usuario) que registró el reto en el sistema. 
+Method: link, read. 
+User: Admin GA4SI o Partner autorizado (quien lo crea), Sistema (usa para trazabilidad).
+DP CH 09 openFrom	Contenido: Fecha desde la cual el reto está oficialmente abierto para recibir proyectos/soluciones.
+Method: create, update, read.
+User: Admin GA4SI, Sistema (usa para controlar ventanas de postulación).
+DP CH 10 openUntil	Contenido: Fecha límite para recibir propuestas o iniciar proyectos vinculados al reto. 
+Method: create, update, read. 
+User: Admin GA4SI, Sistema (bloquea nuevas asignaciones después de la fecha).
+DP CH 11 maxProjects	Contenido: Número máximo de proyectos que se quieren vincular a ese reto (ej.: solo 3 pilotos). 
+Method: create, update, read. 
+User: Admin GA4SI, Sistema (controla no exceder este límite).
+DP CH 012 createdAt	Contenido: Fecha y hora de creación del reto. 
+Method: generate, read. 
+User: Sistema (genera automáticamente), Admin GA4SI (consulta).
+DP CH 13 updatedAt	Contenido: Fecha y hora de la última actualización del reto. 
+Method: update, read. 
+User: Sistema (actualiza automáticamente), Admin GA4SI (consulta)
