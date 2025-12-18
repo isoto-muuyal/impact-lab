@@ -1,0 +1,37 @@
+PROJECT PARTICIPANT . Representa la participación de una persona específica en un proyecto, con un rol concreto (líder, consultora, mentora, voluntaria, etc.).
+projectParticipantId	Contenido: Identificador único del registro de participación. 
+Method: generate, read. 
+User: Sistema (genera), Admin GA4SI (consulta).
+projectId	Contenido: Proyecto al que está asociada la persona. 
+Method: link, read. 
+User: Admin GA4SI (asigna la persona al proyecto), Sistema (usa para construir el equipo del proyecto).
+userId	Contenido: Persona (usuario) que participa en el proyecto. 
+Method: link, read. 
+User: Admin GA4SI (vincula el talento al proyecto), Sistema (usa para mostrar equipamiento de proyectos).
+role	Contenido: Rol dentro del proyecto (ej.: “Project Lead”, “Volunteer Consultant”, “Mentor”, “Evaluator”). 
+Method: assign, update, read. 
+User: Admin GA4SI, en algunos escenarios Líder del proyecto (puede proponer cambios), Sistema (usa para permisos y filtros).
+assignedHours	Contenido: Horas estimadas o acordadas de contribución de esa persona al proyecto. 
+Method: create, update, read. 
+User: Admin GA4SI, Sistema (usa para métricas de aportes de voluntariado).
+isLead	Contenido: Marca si la persona es líder/co-líder del proyecto. 
+Method: assign, update, read. 
+User: Admin GA4SI, Sistema (usa para mostrar responsables principales).
+startDate	Contenido: Fecha en la que la persona comenzó su participación en el proyecto. 
+Method: create, read. 
+User: Admin GA4SI, Sistema (usa para calcular duración de participación).
+endDate	Contenido: Fecha en la que termina la participación (puede ser null si sigue activa). 
+Method: update, read. 
+User: Admin GA4SI, Sistema (marca cierre de participación).
+isActive	Contenido: Indica si la persona sigue participando activamente en el proyecto.
+Method: update, read.
+User: Admin GA4SI, Sistema (filtra activos vs. históricos).
+notes	Contenido: Notas internas sobre la participación: acuerdos, observaciones, ajustes de rol, desempeño cualitativo, etc. 
+Method: create, update, read. 
+User: Admin GA4SI, Sistema (solo muestra en vistas internas).
+createdAt	Contenido: Fecha de creación del registro de participante. 
+Method: generate, read. 
+User: Sistema (genera), Admin GA4SI (consulta).
+updatedAt	Contenido: Fecha de última actualización. 
+Method: update, read. 
+User: Sistema (actualiza), Admin GA4SI (consulta).
