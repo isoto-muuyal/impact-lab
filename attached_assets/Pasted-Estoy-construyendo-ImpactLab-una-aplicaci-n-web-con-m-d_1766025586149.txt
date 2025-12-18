@@ -1,0 +1,136 @@
+Estoy construyendo ImpactLab, una aplicación web con módulos ya implementados:
+
+Users (usuarios y seguridad)
+
+Organizations (organizaciones participantes)
+
+ImpactLab conecta desafíos urbanos con proyectos y con talento voluntario (facilitadores, mentores, proyectistas).
+
+Objetivo del módulo a construir
+
+Desarrollar el módulo Desafíos & Proyectos, incluyendo:
+
+Registrar Challenges (desafíos) creados por ciudades/organizaciones
+
+Crear y gestionar Projects para abordar esos desafíos
+
+Gestionar ProjectParticipants (roles, estados, participación)
+
+Implementar Matching inteligente para sugerir:
+
+Talentos ↔ Proyectos
+
+Talentos ↔ Roles dentro de proyectos
+
+Proyectos ↔ Desafíos
+
+Voluntarios (facilitadores/mentores/proyectistas) ↔ Proyectos específicos
+
+Condición obligatoria (NO avanzar sin inputs)
+
+Voy a compartir información detallada en 4 grupos:
+
+Challenge
+
+Project
+
+ProjectParticipant
+
+MatchRecord
+
+Cada grupo vendrá como “cajas de clases” con:
+
+Título
+
+Contenido (elementos a gestionar)
+
+Method
+
+User
+
+Debes esperar a que yo comparta esos 4 grupos antes de diseñar relaciones, DB o endpoints.
+Hasta entonces, solo puedes:
+
+preparar el plan de implementación,
+
+y un checklist de lo que necesitas para proceder.
+
+Stack (si no indico lo contrario)
+
+Asume una arquitectura estándar Replit:
+
+Backend: Node.js + Express
+
+DB: SQLite + Prisma
+
+Front: el existente (solo consumir endpoints)
+
+Autenticación: usar el módulo Users ya existente (no reinventar)
+
+Requisitos de entrega (cuando tenga los 4 grupos)
+
+Cuando te entregue las 4 cajas, debes producir:
+
+A) Modelo de datos + DB
+
+Esquema Prisma completo para Challenge/Project/ProjectParticipant/MatchRecord
+
+Relaciones (FK, many-to-many si aplica)
+
+Migración y seed mínimo (datos de ejemplo)
+
+B) API REST funcional
+
+Endpoints CRUD por entidad (incluye validaciones)
+
+Endpoints de workflow (ej: activar/cerrar challenge, publicar proyecto, asignar participante, etc.)
+
+Respuestas JSON consistentes
+
+C) Matching inteligente (MVP pero escalable)
+
+Un servicio de matching con scoring:
+
+habilidades, intereses, experiencia, ubicación/idioma (si aplica), disponibilidad, requisitos del challenge/proyecto
+
+Explicar fórmula de scoring y dejarla configurable
+
+Endpoints:
+
+sugerir talentos para proyecto
+
+sugerir proyectos para challenge
+
+sugerir roles para usuario en proyecto
+
+D) Arquitectura limpia
+
+Estructura de carpetas clara:
+
+src/models (o Prisma)
+
+src/routes
+
+src/controllers
+
+src/services/matching
+
+src/validators
+
+Código comentado y listo para correr en Replit
+
+Instrucciones “Run” y variables de entorno
+
+E) Integración con módulos existentes
+
+Reutilizar IDs de User y Organization del sistema existente
+
+No duplicar tablas ya implementadas: solo referenciarlas
+
+Reglas
+
+No inventes campos: usa exactamente los “Contenido” que yo comparta.
+
+Si detectas ambigüedades en mis cajas, propones un default razonable y lo marcas como “ASUNCIÓN” (sin bloquear el avance).
+
+Entrega siempre código ejecutable + pasos de instalación.
