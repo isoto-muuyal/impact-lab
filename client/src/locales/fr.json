@@ -19,7 +19,9 @@
     "reports": "Rapports",
     "assignedProjects": "Projets Assignés",
     "myMentorships": "Mes Mentorats",
-    "organizations": "Organisations"
+    "organizations": "Organisations",
+    "challenges": "Défis",
+    "challengeProjects": "Projets de Défi"
   },
   "auth": {
     "login": "Se Connecter",
@@ -206,5 +208,138 @@
     "success": "Succès",
     "selectLanguage": "Choisir la langue",
     "accessDenied": "Accès Refusé"
+  },
+  "challenges": {
+    "title": "Défis",
+    "allChallenges": "Tous les Défis",
+    "newChallenge": "Nouveau Défi",
+    "editChallenge": "Modifier le Défi",
+    "challengeDetails": "Détails du Défi",
+    "name": "Titre du Défi",
+    "description": "Description",
+    "contextOrganization": "Organisation Contexte",
+    "city": "Ville",
+    "country": "Pays",
+    "sdgTags": "Étiquettes ODD",
+    "status": "Statut",
+    "openFrom": "Ouvert à partir de",
+    "openUntil": "Ouvert jusqu'au",
+    "maxProjects": "Projets Maximum",
+    "projectCount": "Projets Soumis",
+    "noChallenges": "Pas encore de défis",
+    "createFirst": "Créez le premier défi pour commencer",
+    "facilitadorOnly": "Seuls les facilitateurs peuvent gérer les défis.",
+    "statuses": {
+      "draft": "Brouillon",
+      "open": "Ouvert",
+      "in_progress": "En Cours",
+      "completed": "Terminé",
+      "archived": "Archivé"
+    },
+    "actions": {
+      "open": "Ouvrir l'Appel",
+      "start": "Démarrer le Défi",
+      "complete": "Marquer Terminé",
+      "archive": "Archiver"
+    }
+  },
+  "challengeProjects": {
+    "title": "Projets de Défi",
+    "allProjects": "Tous les Projets",
+    "newProject": "Nouveau Projet",
+    "editProject": "Modifier le Projet",
+    "projectDetails": "Détails du Projet",
+    "name": "Titre du Projet",
+    "summary": "Résumé",
+    "challenge": "Défi Associé",
+    "leadOrganization": "Organisation Principale",
+    "locationCity": "Ville",
+    "locationCountry": "Pays",
+    "sdgTags": "Étiquettes ODD",
+    "impactFocus": "Focus Impact",
+    "startDate": "Date de Début",
+    "endDate": "Date de Fin",
+    "isPilot": "Projet Pilote",
+    "status": "Statut",
+    "participants": "Participants",
+    "noProjects": "Pas encore de projets",
+    "createFirst": "Proposez le premier projet pour commencer",
+    "challengeClosed": "Ce défi n'est pas ouvert aux propositions",
+    "maxReached": "Nombre maximum de projets atteint pour ce défi",
+    "statuses": {
+      "idea": "Idée",
+      "design": "Conception",
+      "pilot": "Pilote",
+      "active": "Actif",
+      "completed": "Terminé",
+      "on_hold": "En Pause",
+      "cancelled": "Annulé"
+    },
+    "actions": {
+      "submit": "Soumettre le Projet",
+      "advance": "Avancer l'Étape",
+      "pause": "Mettre en Pause",
+      "cancel": "Annuler le Projet"
+    }
+  },
+  "participants": {
+    "title": "Participants",
+    "addParticipant": "Ajouter un Participant",
+    "editParticipant": "Modifier le Participant",
+    "selectUser": "Sélectionner un Utilisateur",
+    "role": "Rôle",
+    "assignedHours": "Heures Assignées",
+    "isLead": "Est Responsable",
+    "startDate": "Date de Début",
+    "endDate": "Date de Fin",
+    "isActive": "Actif",
+    "notes": "Notes",
+    "noParticipants": "Ce projet n'a pas de participants",
+    "roles": {
+      "project_lead": "Chef de Projet",
+      "volunteer_consultant": "Consultant Bénévole",
+      "mentor": "Mentor",
+      "evaluator": "Évaluateur",
+      "team_member": "Membre de l'Équipe",
+      "advisor": "Conseiller",
+      "other": "Autre"
+    }
+  },
+  "matches": {
+    "title": "Correspondances Intelligentes",
+    "allMatches": "Toutes les Correspondances",
+    "newMatch": "Nouvelle Correspondance",
+    "matchDetails": "Détails de la Correspondance",
+    "matchType": "Type de Correspondance",
+    "status": "Statut",
+    "score": "Score",
+    "challenge": "Défi",
+    "project": "Projet",
+    "organization": "Organisation",
+    "professional": "Professionnel",
+    "decidedBy": "Décidé Par",
+    "decidedAt": "Date de Décision",
+    "notes": "Notes",
+    "noMatches": "Pas encore de correspondances",
+    "facilitadorOnly": "Seuls les facilitateurs peuvent gérer les correspondances.",
+    "matchTypes": {
+      "challenge_project": "Défi - Projet",
+      "project_talent": "Projet - Talent",
+      "organization_talent": "Organisation - Talent",
+      "organization_project": "Organisation - Projet"
+    },
+    "statuses": {
+      "suggested": "Suggéré",
+      "pending_approval": "En Attente d'Approbation",
+      "accepted": "Accepté",
+      "rejected": "Rejeté",
+      "cancelled": "Annulé"
+    },
+    "actions": {
+      "suggest": "Suggérer une Correspondance",
+      "approve": "Approuver",
+      "reject": "Rejeter",
+      "cancel": "Annuler"
+    }
   }
 }

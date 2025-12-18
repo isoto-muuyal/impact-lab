@@ -19,7 +19,9 @@
     "reports": "报告",
     "assignedProjects": "分配的项目",
     "myMentorships": "我的导师",
-    "organizations": "组织"
+    "organizations": "组织",
+    "challenges": "挑战",
+    "challengeProjects": "挑战项目"
   },
   "auth": {
     "login": "登录",
@@ -206,5 +208,138 @@
     "success": "成功",
     "selectLanguage": "选择语言",
     "accessDenied": "访问被拒绝"
+  },
+  "challenges": {
+    "title": "挑战",
+    "allChallenges": "所有挑战",
+    "newChallenge": "新挑战",
+    "editChallenge": "编辑挑战",
+    "challengeDetails": "挑战详情",
+    "name": "挑战标题",
+    "description": "描述",
+    "contextOrganization": "相关组织",
+    "city": "城市",
+    "country": "国家",
+    "sdgTags": "可持续发展目标标签",
+    "status": "状态",
+    "openFrom": "开放时间",
+    "openUntil": "截止时间",
+    "maxProjects": "最大项目数",
+    "projectCount": "已提交项目",
+    "noChallenges": "暂无挑战",
+    "createFirst": "创建第一个挑战开始",
+    "facilitadorOnly": "只有协调员可以管理挑战。",
+    "statuses": {
+      "draft": "草稿",
+      "open": "开放",
+      "in_progress": "进行中",
+      "completed": "已完成",
+      "archived": "已归档"
+    },
+    "actions": {
+      "open": "开放征集",
+      "start": "开始挑战",
+      "complete": "标记完成",
+      "archive": "归档"
+    }
+  },
+  "challengeProjects": {
+    "title": "挑战项目",
+    "allProjects": "所有项目",
+    "newProject": "新项目",
+    "editProject": "编辑项目",
+    "projectDetails": "项目详情",
+    "name": "项目标题",
+    "summary": "摘要",
+    "challenge": "关联挑战",
+    "leadOrganization": "牵头组织",
+    "locationCity": "城市",
+    "locationCountry": "国家",
+    "sdgTags": "可持续发展目标标签",
+    "impactFocus": "影响重点",
+    "startDate": "开始日期",
+    "endDate": "结束日期",
+    "isPilot": "试点项目",
+    "status": "状态",
+    "participants": "参与者",
+    "noProjects": "暂无项目",
+    "createFirst": "提交第一个项目开始",
+    "challengeClosed": "此挑战未开放提案",
+    "maxReached": "此挑战已达到最大项目数",
+    "statuses": {
+      "idea": "创意",
+      "design": "设计",
+      "pilot": "试点",
+      "active": "活跃",
+      "completed": "已完成",
+      "on_hold": "暂停",
+      "cancelled": "已取消"
+    },
+    "actions": {
+      "submit": "提交项目",
+      "advance": "推进阶段",
+      "pause": "暂停",
+      "cancel": "取消项目"
+    }
+  },
+  "participants": {
+    "title": "参与者",
+    "addParticipant": "添加参与者",
+    "editParticipant": "编辑参与者",
+    "selectUser": "选择用户",
+    "role": "角色",
+    "assignedHours": "分配工时",
+    "isLead": "是否负责人",
+    "startDate": "开始日期",
+    "endDate": "结束日期",
+    "isActive": "活跃",
+    "notes": "备注",
+    "noParticipants": "此项目暂无参与者",
+    "roles": {
+      "project_lead": "项目负责人",
+      "volunteer_consultant": "志愿顾问",
+      "mentor": "导师",
+      "evaluator": "评估员",
+      "team_member": "团队成员",
+      "advisor": "顾问",
+      "other": "其他"
+    }
+  },
+  "matches": {
+    "title": "智能匹配",
+    "allMatches": "所有匹配",
+    "newMatch": "新匹配",
+    "matchDetails": "匹配详情",
+    "matchType": "匹配类型",
+    "status": "状态",
+    "score": "分数",
+    "challenge": "挑战",
+    "project": "项目",
+    "organization": "组织",
+    "professional": "专业人士",
+    "decidedBy": "决定者",
+    "decidedAt": "决定日期",
+    "notes": "备注",
+    "noMatches": "暂无匹配",
+    "facilitadorOnly": "只有协调员可以管理匹配。",
+    "matchTypes": {
+      "challenge_project": "挑战 - 项目",
+      "project_talent": "项目 - 人才",
+      "organization_talent": "组织 - 人才",
+      "organization_project": "组织 - 项目"
+    },
+    "statuses": {
+      "suggested": "建议",
+      "pending_approval": "待批准",
+      "accepted": "已接受",
+      "rejected": "已拒绝",
+      "cancelled": "已取消"
+    },
+    "actions": {
+      "suggest": "建议匹配",
+      "approve": "批准",
+      "reject": "拒绝",
+      "cancel": "取消"
+    }
   }
 }

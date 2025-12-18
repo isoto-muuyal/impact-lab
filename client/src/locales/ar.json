@@ -19,7 +19,9 @@
     "reports": "التقارير",
     "assignedProjects": "المشاريع المعينة",
     "myMentorships": "إرشاداتي",
-    "organizations": "المنظمات"
+    "organizations": "المنظمات",
+    "challenges": "التحديات",
+    "challengeProjects": "مشاريع التحدي"
   },
   "auth": {
     "login": "تسجيل الدخول",
@@ -206,5 +208,138 @@
     "success": "نجاح",
     "selectLanguage": "اختر اللغة",
     "accessDenied": "تم رفض الوصول"
+  },
+  "challenges": {
+    "title": "التحديات",
+    "allChallenges": "جميع التحديات",
+    "newChallenge": "تحدٍ جديد",
+    "editChallenge": "تعديل التحدي",
+    "challengeDetails": "تفاصيل التحدي",
+    "name": "عنوان التحدي",
+    "description": "الوصف",
+    "contextOrganization": "المنظمة السياقية",
+    "city": "المدينة",
+    "country": "البلد",
+    "sdgTags": "علامات أهداف التنمية المستدامة",
+    "status": "الحالة",
+    "openFrom": "مفتوح من",
+    "openUntil": "مفتوح حتى",
+    "maxProjects": "الحد الأقصى للمشاريع",
+    "projectCount": "المشاريع المقدمة",
+    "noChallenges": "لا توجد تحديات بعد",
+    "createFirst": "أنشئ التحدي الأول للبدء",
+    "facilitadorOnly": "فقط المنسقون يمكنهم إدارة التحديات.",
+    "statuses": {
+      "draft": "مسودة",
+      "open": "مفتوح",
+      "in_progress": "قيد التنفيذ",
+      "completed": "مكتمل",
+      "archived": "مؤرشف"
+    },
+    "actions": {
+      "open": "فتح الدعوة",
+      "start": "بدء التحدي",
+      "complete": "وضع علامة مكتمل",
+      "archive": "أرشفة"
+    }
+  },
+  "challengeProjects": {
+    "title": "مشاريع التحدي",
+    "allProjects": "جميع المشاريع",
+    "newProject": "مشروع جديد",
+    "editProject": "تعديل المشروع",
+    "projectDetails": "تفاصيل المشروع",
+    "name": "عنوان المشروع",
+    "summary": "ملخص",
+    "challenge": "التحدي المرتبط",
+    "leadOrganization": "المنظمة الرائدة",
+    "locationCity": "المدينة",
+    "locationCountry": "البلد",
+    "sdgTags": "علامات أهداف التنمية المستدامة",
+    "impactFocus": "تركيز التأثير",
+    "startDate": "تاريخ البدء",
+    "endDate": "تاريخ الانتهاء",
+    "isPilot": "مشروع تجريبي",
+    "status": "الحالة",
+    "participants": "المشاركون",
+    "noProjects": "لا توجد مشاريع بعد",
+    "createFirst": "اقترح المشروع الأول للبدء",
+    "challengeClosed": "هذا التحدي غير مفتوح للمقترحات",
+    "maxReached": "تم الوصول إلى الحد الأقصى للمشاريع لهذا التحدي",
+    "statuses": {
+      "idea": "فكرة",
+      "design": "تصميم",
+      "pilot": "تجريبي",
+      "active": "نشط",
+      "completed": "مكتمل",
+      "on_hold": "معلق",
+      "cancelled": "ملغى"
+    },
+    "actions": {
+      "submit": "تقديم المشروع",
+      "advance": "تقدم المرحلة",
+      "pause": "إيقاف مؤقت",
+      "cancel": "إلغاء المشروع"
+    }
+  },
+  "participants": {
+    "title": "المشاركون",
+    "addParticipant": "إضافة مشارك",
+    "editParticipant": "تعديل المشارك",
+    "selectUser": "اختر مستخدم",
+    "role": "الدور",
+    "assignedHours": "الساعات المخصصة",
+    "isLead": "قائد",
+    "startDate": "تاريخ البدء",
+    "endDate": "تاريخ الانتهاء",
+    "isActive": "نشط",
+    "notes": "ملاحظات",
+    "noParticipants": "هذا المشروع ليس لديه مشاركين",
+    "roles": {
+      "project_lead": "قائد المشروع",
+      "volunteer_consultant": "استشاري متطوع",
+      "mentor": "مرشد",
+      "evaluator": "مقيم",
+      "team_member": "عضو الفريق",
+      "advisor": "مستشار",
+      "other": "آخر"
+    }
+  },
+  "matches": {
+    "title": "المطابقات الذكية",
+    "allMatches": "جميع المطابقات",
+    "newMatch": "مطابقة جديدة",
+    "matchDetails": "تفاصيل المطابقة",
+    "matchType": "نوع المطابقة",
+    "status": "الحالة",
+    "score": "النتيجة",
+    "challenge": "التحدي",
+    "project": "المشروع",
+    "organization": "المنظمة",
+    "professional": "المحترف",
+    "decidedBy": "قرر بواسطة",
+    "decidedAt": "تاريخ القرار",
+    "notes": "ملاحظات",
+    "noMatches": "لا توجد مطابقات بعد",
+    "facilitadorOnly": "فقط المنسقون يمكنهم إدارة المطابقات.",
+    "matchTypes": {
+      "challenge_project": "تحدي - مشروع",
+      "project_talent": "مشروع - موهبة",
+      "organization_talent": "منظمة - موهبة",
+      "organization_project": "منظمة - مشروع"
+    },
+    "statuses": {
+      "suggested": "مقترح",
+      "pending_approval": "في انتظار الموافقة",
+      "accepted": "مقبول",
+      "rejected": "مرفوض",
+      "cancelled": "ملغى"
+    },
+    "actions": {
+      "suggest": "اقتراح مطابقة",
+      "approve": "موافقة",
+      "reject": "رفض",
+      "cancel": "إلغاء"
+    }
   }
 }

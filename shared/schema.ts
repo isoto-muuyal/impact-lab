@@ -7,6 +7,9 @@ import {
   varchar,
   text,
   pgEnum,
+  integer,
+  boolean,
+  date,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -478,4 +481,279 @@ export type OrganizationMembershipWithUser = OrganizationMembership & {
 export type OrganizationMembershipWithDetails = OrganizationMembership & {
   user?: User;
   organization?: Organization;
+};
+
+// ============================================
+// CHALLENGES - Urban/institutional challenges
+// ============================================
+
+// Challenge status enum
+export const challengeStatusEnum = pgEnum('challenge_status', [
+  'draft',
+  'open',
+  'in_progress',
+  'completed',
+  'archived'
+]);
+
+// Challenges table - DP CH from diagram
+export const challenges = pgTable("challenges", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title").notNull(),
+  description: text("description"),
+  contextOrganizationId: varchar("context_organization_id").references(() => organizations.id),
+  city: varchar("city"),
+  country: varchar("country"),
+  sdgTags: text("sdg_tags").array(),
+  status: challengeStatusEnum("status").default('draft'),
+  createdByUserId: varchar("created_by_user_id").references(() => users.id),
+  openFrom: date("open_from"),
+  openUntil: date("open_until"),
+  maxProjects: integer("max_projects"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Challenge relations
+export const challengesRelations = relations(challenges, ({ one, many }) => ({
+  contextOrganization: one(organizations, {
+    fields: [challenges.contextOrganizationId],
+    references: [organizations.id],
+  }),
+  createdBy: one(users, {
+    fields: [challenges.createdByUserId],
+    references: [users.id],
+  }),
+  challengeProjects: many(challengeProjects),
+}));
+
+// Insert schema for challenges
+export const insertChallengeSchema = createInsertSchema(challenges).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Challenge types
+export type Challenge = typeof challenges.$inferSelect;
+export type InsertChallenge = z.infer<typeof insertChallengeSchema>;
+
+export type ChallengeWithDetails = Challenge & {
+  contextOrganization?: Organization | null;
+  createdBy?: User | null;
+};
+
+// ============================================
+// CHALLENGE PROJECTS - Projects linked to challenges
+// ============================================
+
+// Challenge project status enum
+export const challengeProjectStatusEnum = pgEnum('challenge_project_status', [
+  'idea',
+  'design',
+  'pilot',
+  'active',
+  'completed',
+  'on_hold',
+  'cancelled'
+]);
+
+// Challenge Projects table - DP PROJECT from diagram
+export const challengeProjects = pgTable("challenge_projects", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  challengeId: varchar("challenge_id").references(() => challenges.id),
+  title: varchar("title").notNull(),
+  summary: text("summary"),
+  status: challengeProjectStatusEnum("status").default('idea'),
+  leadOrganizationId: varchar("lead_organization_id").references(() => organizations.id),
+  locationCity: varchar("location_city"),
+  locationCountry: varchar("location_country"),
+  sdgTags: text("sdg_tags").array(),
+  impactFocus: varchar("impact_focus"),
+  startDate: date("start_date"),
+  endDate: date("end_date"),
+  isPilot: boolean("is_pilot").default(true),
+  createdByUserId: varchar("created_by_user_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Challenge Projects relations
+export const challengeProjectsRelations = relations(challengeProjects, ({ one, many }) => ({
+  challenge: one(challenges, {
+    fields: [challengeProjects.challengeId],
+    references: [challenges.id],
+  }),
+  leadOrganization: one(organizations, {
+    fields: [challengeProjects.leadOrganizationId],
+    references: [organizations.id],
+  }),
+  createdBy: one(users, {
+    fields: [challengeProjects.createdByUserId],
+    references: [users.id],
+  }),
+  participants: many(projectParticipants),
+}));
+
+// Insert schema for challenge projects
+export const insertChallengeProjectSchema = createInsertSchema(challengeProjects).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Challenge Project types
+export type ChallengeProject = typeof challengeProjects.$inferSelect;
+export type InsertChallengeProject = z.infer<typeof insertChallengeProjectSchema>;
+
+export type ChallengeProjectWithDetails = ChallengeProject & {
+  challenge?: Challenge | null;
+  leadOrganization?: Organization | null;
+  createdBy?: User | null;
+  participants?: ProjectParticipantWithUser[];
+};
+
+// ============================================
+// PROJECT PARTICIPANTS - Team members in projects
+// ============================================
+
+// Project participant role enum
+export const projectParticipantRoleEnum = pgEnum('project_participant_role', [
+  'project_lead',
+  'volunteer_consultant',
+  'mentor',
+  'evaluator',
+  'team_member',
+  'advisor',
+  'other'
+]);
+
+// Project Participants table - DP PROJECT PARTICIPANT from diagram
+export const projectParticipants = pgTable("project_participants", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  projectId: varchar("project_id").notNull().references(() => challengeProjects.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  role: projectParticipantRoleEnum("role").default('team_member'),
+  assignedHours: integer("assigned_hours"),
+  isLead: boolean("is_lead").default(false),
+  startDate: date("start_date"),
+  endDate: date("end_date"),
+  isActive: boolean("is_active").default(true),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Project Participants relations
+export const projectParticipantsRelations = relations(projectParticipants, ({ one }) => ({
+  project: one(challengeProjects, {
+    fields: [projectParticipants.projectId],
+    references: [challengeProjects.id],
+  }),
+  user: one(users, {
+    fields: [projectParticipants.userId],
+    references: [users.id],
+  }),
+}));
+
+// Insert schema for project participants
+export const insertProjectParticipantSchema = createInsertSchema(projectParticipants).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Project Participant types
+export type ProjectParticipant = typeof projectParticipants.$inferSelect;
+export type InsertProjectParticipant = z.infer<typeof insertProjectParticipantSchema>;
+
+export type ProjectParticipantWithUser = ProjectParticipant & {
+  user?: User;
+};
+
+export type ProjectParticipantWithDetails = ProjectParticipant & {
+  user?: User;
+  project?: ChallengeProject;
+};
+
+// ============================================
+// MATCH RECORDS - Intelligent matching system
+// ============================================
+
+// Match type enum
+export const matchTypeEnum = pgEnum('match_type', [
+  'challenge_project',
+  'project_talent',
+  'organization_talent',
+  'organization_project'
+]);
+
+// Match status enum
+export const matchStatusEnum = pgEnum('match_status', [
+  'suggested',
+  'pending_approval',
+  'accepted',
+  'rejected',
+  'cancelled'
+]);
+
+// Match Records table - DP MATCH RECORD from diagram
+export const matchRecords = pgTable("match_records", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  challengeId: varchar("challenge_id").references(() => challenges.id),
+  projectId: varchar("project_id").references(() => challengeProjects.id),
+  organizationId: varchar("organization_id").references(() => organizations.id),
+  professionalUserId: varchar("professional_user_id").references(() => users.id),
+  matchType: matchTypeEnum("match_type").notNull(),
+  status: matchStatusEnum("status").default('suggested'),
+  score: integer("score"),
+  scoreDetails: jsonb("score_details"),
+  createdAt: timestamp("created_at").defaultNow(),
+  decidedAt: timestamp("decided_at"),
+  decidedByUserId: varchar("decided_by_user_id").references(() => users.id),
+  notes: text("notes"),
+});
+
+// Match Records relations
+export const matchRecordsRelations = relations(matchRecords, ({ one }) => ({
+  challenge: one(challenges, {
+    fields: [matchRecords.challengeId],
+    references: [challenges.id],
+  }),
+  project: one(challengeProjects, {
+    fields: [matchRecords.projectId],
+    references: [challengeProjects.id],
+  }),
+  organization: one(organizations, {
+    fields: [matchRecords.organizationId],
+    references: [organizations.id],
+  }),
+  professionalUser: one(users, {
+    fields: [matchRecords.professionalUserId],
+    references: [users.id],
+    relationName: 'matchProfessional',
+  }),
+  decidedBy: one(users, {
+    fields: [matchRecords.decidedByUserId],
+    references: [users.id],
+    relationName: 'matchDecider',
+  }),
+}));
+
+// Insert schema for match records
+export const insertMatchRecordSchema = createInsertSchema(matchRecords).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Match Record types
+export type MatchRecord = typeof matchRecords.$inferSelect;
+export type InsertMatchRecord = z.infer<typeof insertMatchRecordSchema>;
+
+export type MatchRecordWithDetails = MatchRecord & {
+  challenge?: Challenge | null;
+  project?: ChallengeProject | null;
+  organization?: Organization | null;
+  professionalUser?: User | null;
+  decidedBy?: User | null;
 };

@@ -19,7 +19,9 @@
     "reports": "Reports",
     "assignedProjects": "Assigned Projects",
     "myMentorships": "My Mentorships",
-    "organizations": "Organizations"
+    "organizations": "Organizations",
+    "challenges": "Challenges",
+    "challengeProjects": "Challenge Projects"
   },
   "auth": {
     "login": "Log In",
@@ -206,5 +208,138 @@
     "success": "Success",
     "selectLanguage": "Select language",
     "accessDenied": "Access Denied"
+  },
+  "challenges": {
+    "title": "Challenges",
+    "allChallenges": "All Challenges",
+    "newChallenge": "New Challenge",
+    "editChallenge": "Edit Challenge",
+    "challengeDetails": "Challenge Details",
+    "name": "Challenge Title",
+    "description": "Description",
+    "contextOrganization": "Context Organization",
+    "city": "City",
+    "country": "Country",
+    "sdgTags": "SDG Tags",
+    "status": "Status",
+    "openFrom": "Open From",
+    "openUntil": "Open Until",
+    "maxProjects": "Maximum Projects",
+    "projectCount": "Submitted Projects",
+    "noChallenges": "No challenges yet",
+    "createFirst": "Create the first challenge to get started",
+    "facilitadorOnly": "Only facilitators can manage challenges.",
+    "statuses": {
+      "draft": "Draft",
+      "open": "Open",
+      "in_progress": "In Progress",
+      "completed": "Completed",
+      "archived": "Archived"
+    },
+    "actions": {
+      "open": "Open Call",
+      "start": "Start Challenge",
+      "complete": "Mark Completed",
+      "archive": "Archive"
+    }
+  },
+  "challengeProjects": {
+    "title": "Challenge Projects",
+    "allProjects": "All Projects",
+    "newProject": "New Project",
+    "editProject": "Edit Project",
+    "projectDetails": "Project Details",
+    "name": "Project Title",
+    "summary": "Summary",
+    "challenge": "Associated Challenge",
+    "leadOrganization": "Lead Organization",
+    "locationCity": "City",
+    "locationCountry": "Country",
+    "sdgTags": "SDG Tags",
+    "impactFocus": "Impact Focus",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "isPilot": "Pilot Project",
+    "status": "Status",
+    "participants": "Participants",
+    "noProjects": "No projects yet",
+    "createFirst": "Propose the first project to get started",
+    "challengeClosed": "This challenge is not open for proposals",
+    "maxReached": "Maximum projects reached for this challenge",
+    "statuses": {
+      "idea": "Idea",
+      "design": "Design",
+      "pilot": "Pilot",
+      "active": "Active",
+      "completed": "Completed",
+      "on_hold": "On Hold",
+      "cancelled": "Cancelled"
+    },
+    "actions": {
+      "submit": "Submit Project",
+      "advance": "Advance Stage",
+      "pause": "Pause",
+      "cancel": "Cancel Project"
+    }
+  },
+  "participants": {
+    "title": "Participants",
+    "addParticipant": "Add Participant",
+    "editParticipant": "Edit Participant",
+    "selectUser": "Select User",
+    "role": "Role",
+    "assignedHours": "Assigned Hours",
+    "isLead": "Is Lead",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "isActive": "Active",
+    "notes": "Notes",
+    "noParticipants": "This project has no participants",
+    "roles": {
+      "project_lead": "Project Lead",
+      "volunteer_consultant": "Volunteer Consultant",
+      "mentor": "Mentor",
+      "evaluator": "Evaluator",
+      "team_member": "Team Member",
+      "advisor": "Advisor",
+      "other": "Other"
+    }
+  },
+  "matches": {
+    "title": "Intelligent Matches",
+    "allMatches": "All Matches",
+    "newMatch": "New Match",
+    "matchDetails": "Match Details",
+    "matchType": "Match Type",
+    "status": "Status",
+    "score": "Score",
+    "challenge": "Challenge",
+    "project": "Project",
+    "organization": "Organization",
+    "professional": "Professional",
+    "decidedBy": "Decided By",
+    "decidedAt": "Decision Date",
+    "notes": "Notes",
+    "noMatches": "No matches yet",
+    "facilitadorOnly": "Only facilitators can manage matches.",
+    "matchTypes": {
+      "challenge_project": "Challenge - Project",
+      "project_talent": "Project - Talent",
+      "organization_talent": "Organization - Talent",
+      "organization_project": "Organization - Project"
+    },
+    "statuses": {
+      "suggested": "Suggested",
+      "pending_approval": "Pending Approval",
+      "accepted": "Accepted",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled"
+    },
+    "actions": {
+      "suggest": "Suggest Match",
+      "approve": "Approve",
+      "reject": "Reject",
+      "cancel": "Cancel"
+    }
   }
 }

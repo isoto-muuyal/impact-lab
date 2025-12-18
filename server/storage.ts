@@ -10,6 +10,10 @@ import {
   mentorshipSessions,
   organizations,
   organizationMemberships,
+  challenges,
+  challengeProjects,
+  projectParticipants,
+  matchRecords,
   type User,
   type UpsertUser,
   type UserProfile,
@@ -38,9 +42,22 @@ import {
   type InsertOrganizationMembership,
   type OrganizationMembershipWithUser,
   type OrganizationMembershipWithDetails,
+  type Challenge,
+  type InsertChallenge,
+  type ChallengeWithDetails,
+  type ChallengeProject,
+  type InsertChallengeProject,
+  type ChallengeProjectWithDetails,
+  type ProjectParticipant,
+  type InsertProjectParticipant,
+  type ProjectParticipantWithUser,
+  type ProjectParticipantWithDetails,
+  type MatchRecord,
+  type InsertMatchRecord,
+  type MatchRecordWithDetails,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, or, and } from "drizzle-orm";
+import { eq, desc, or, and, isNull, gte, lte } from "drizzle-orm";
 
 export interface IStorage {
   // User operations (mandatory for Replit Auth)
@@ -122,6 +139,39 @@ export interface IStorage {
   updateOrganizationMembership(id: string, data: Partial<InsertOrganizationMembership>): Promise<OrganizationMembership | undefined>;
   deleteOrganizationMembership(id: string): Promise<boolean>;
   getAllUsers(): Promise<User[]>;
+  
+  // Challenge operations
+  getChallenges(filters?: { status?: string; organizationId?: string }): Promise<ChallengeWithDetails[]>;
+  getChallenge(id: string): Promise<ChallengeWithDetails | undefined>;
+  createChallenge(data: InsertChallenge): Promise<Challenge>;
+  updateChallenge(id: string, data: Partial<InsertChallenge>): Promise<Challenge | undefined>;
+  deleteChallenge(id: string): Promise<boolean>;
+  setChallengeStatus(id: string, status: 'draft' | 'open' | 'in_progress' | 'completed' | 'archived'): Promise<Challenge | undefined>;
+  
+  // Challenge Project operations
+  getChallengeProjects(filters?: { challengeId?: string; status?: string; organizationId?: string }): Promise<ChallengeProjectWithDetails[]>;
+  getChallengeProject(id: string): Promise<ChallengeProjectWithDetails | undefined>;
+  createChallengeProject(data: InsertChallengeProject): Promise<ChallengeProject>;
+  updateChallengeProject(id: string, data: Partial<InsertChallengeProject>): Promise<ChallengeProject | undefined>;
+  deleteChallengeProject(id: string): Promise<boolean>;
+  setChallengeProjectStatus(id: string, status: 'idea' | 'design' | 'pilot' | 'active' | 'completed' | 'on_hold' | 'cancelled'): Promise<ChallengeProject | undefined>;
+  countProjectsByChallenge(challengeId: string): Promise<number>;
+  
+  // Project Participant operations
+  getProjectParticipants(projectId: string): Promise<ProjectParticipantWithUser[]>;
+  getParticipantsByUser(userId: string): Promise<ProjectParticipantWithDetails[]>;
+  getProjectParticipant(id: string): Promise<ProjectParticipantWithDetails | undefined>;
+  createProjectParticipant(data: InsertProjectParticipant): Promise<ProjectParticipant>;
+  updateProjectParticipant(id: string, data: Partial<InsertProjectParticipant>): Promise<ProjectParticipant | undefined>;
+  deleteProjectParticipant(id: string): Promise<boolean>;
+  
+  // Match Record operations
+  getMatchRecords(filters?: { matchType?: string; status?: string; projectId?: string; challengeId?: string }): Promise<MatchRecordWithDetails[]>;
+  getMatchRecord(id: string): Promise<MatchRecordWithDetails | undefined>;
+  createMatchRecord(data: InsertMatchRecord): Promise<MatchRecord>;
+  updateMatchRecord(id: string, data: Partial<InsertMatchRecord>): Promise<MatchRecord | undefined>;
+  deleteMatchRecord(id: string): Promise<boolean>;
+  setMatchStatus(id: string, status: 'suggested' | 'pending_approval' | 'accepted' | 'rejected' | 'cancelled', decidedByUserId?: string, notes?: string): Promise<MatchRecord | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -796,6 +846,338 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(users)
       .orderBy(desc(users.createdAt));
+  }
+
+  // ============================================
+  // CHALLENGE OPERATIONS
+  // ============================================
+  
+  private async enrichChallenge(challenge: Challenge): Promise<ChallengeWithDetails> {
+    let contextOrganization = null;
+    let createdBy = null;
+    
+    if (challenge.contextOrganizationId) {
+      const [org] = await db.select().from(organizations).where(eq(organizations.id, challenge.contextOrganizationId));
+      contextOrganization = org || null;
+    }
+    if (challenge.createdByUserId) {
+      createdBy = await this.getUser(challenge.createdByUserId) || null;
+    }
+    
+    return { ...challenge, contextOrganization, createdBy };
+  }
+
+  async getChallenges(filters?: { status?: string; organizationId?: string }): Promise<ChallengeWithDetails[]> {
+    let query = db.select().from(challenges).orderBy(desc(challenges.createdAt));
+    
+    const challengeList = await query;
+    
+    let filtered = challengeList;
+    if (filters?.status) {
+      filtered = filtered.filter(c => c.status === filters.status);
+    }
+    if (filters?.organizationId) {
+      filtered = filtered.filter(c => c.contextOrganizationId === filters.organizationId);
+    }
+    
+    return Promise.all(filtered.map(c => this.enrichChallenge(c)));
+  }
+
+  async getChallenge(id: string): Promise<ChallengeWithDetails | undefined> {
+    const [challenge] = await db.select().from(challenges).where(eq(challenges.id, id));
+    if (!challenge) return undefined;
+    return this.enrichChallenge(challenge);
+  }
+
+  async createChallenge(data: InsertChallenge): Promise<Challenge> {
+    const [challenge] = await db.insert(challenges).values(data).returning();
+    return challenge;
+  }
+
+  async updateChallenge(id: string, data: Partial<InsertChallenge>): Promise<Challenge | undefined> {
+    const [challenge] = await db
+      .update(challenges)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(challenges.id, id))
+      .returning();
+    return challenge;
+  }
+
+  async deleteChallenge(id: string): Promise<boolean> {
+    await db.delete(challenges).where(eq(challenges.id, id));
+    return true;
+  }
+
+  async setChallengeStatus(id: string, status: 'draft' | 'open' | 'in_progress' | 'completed' | 'archived'): Promise<Challenge | undefined> {
+    const [challenge] = await db
+      .update(challenges)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(challenges.id, id))
+      .returning();
+    return challenge;
+  }
+
+  // ============================================
+  // CHALLENGE PROJECT OPERATIONS
+  // ============================================
+  
+  private async enrichChallengeProject(project: ChallengeProject): Promise<ChallengeProjectWithDetails> {
+    let challenge = null;
+    let leadOrganization = null;
+    let createdBy = null;
+    
+    if (project.challengeId) {
+      const [ch] = await db.select().from(challenges).where(eq(challenges.id, project.challengeId));
+      challenge = ch || null;
+    }
+    if (project.leadOrganizationId) {
+      const [org] = await db.select().from(organizations).where(eq(organizations.id, project.leadOrganizationId));
+      leadOrganization = org || null;
+    }
+    if (project.createdByUserId) {
+      createdBy = await this.getUser(project.createdByUserId) || null;
+    }
+    
+    const participants = await this.getProjectParticipants(project.id);
+    
+    return { ...project, challenge, leadOrganization, createdBy, participants };
+  }
+
+  async getChallengeProjects(filters?: { challengeId?: string; status?: string; organizationId?: string }): Promise<ChallengeProjectWithDetails[]> {
+    const projectList = await db.select().from(challengeProjects).orderBy(desc(challengeProjects.createdAt));
+    
+    let filtered = projectList;
+    if (filters?.challengeId) {
+      filtered = filtered.filter(p => p.challengeId === filters.challengeId);
+    }
+    if (filters?.status) {
+      filtered = filtered.filter(p => p.status === filters.status);
+    }
+    if (filters?.organizationId) {
+      filtered = filtered.filter(p => p.leadOrganizationId === filters.organizationId);
+    }
+    
+    return Promise.all(filtered.map(p => this.enrichChallengeProject(p)));
+  }
+
+  async getChallengeProject(id: string): Promise<ChallengeProjectWithDetails | undefined> {
+    const [project] = await db.select().from(challengeProjects).where(eq(challengeProjects.id, id));
+    if (!project) return undefined;
+    return this.enrichChallengeProject(project);
+  }
+
+  async createChallengeProject(data: InsertChallengeProject): Promise<ChallengeProject> {
+    const [project] = await db.insert(challengeProjects).values(data).returning();
+    return project;
+  }
+
+  async updateChallengeProject(id: string, data: Partial<InsertChallengeProject>): Promise<ChallengeProject | undefined> {
+    const [project] = await db
+      .update(challengeProjects)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(challengeProjects.id, id))
+      .returning();
+    return project;
+  }
+
+  async deleteChallengeProject(id: string): Promise<boolean> {
+    await db.delete(projectParticipants).where(eq(projectParticipants.projectId, id));
+    await db.delete(challengeProjects).where(eq(challengeProjects.id, id));
+    return true;
+  }
+
+  async setChallengeProjectStatus(id: string, status: 'idea' | 'design' | 'pilot' | 'active' | 'completed' | 'on_hold' | 'cancelled'): Promise<ChallengeProject | undefined> {
+    const [project] = await db
+      .update(challengeProjects)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(challengeProjects.id, id))
+      .returning();
+    return project;
+  }
+
+  async countProjectsByChallenge(challengeId: string): Promise<number> {
+    const projects = await db
+      .select()
+      .from(challengeProjects)
+      .where(eq(challengeProjects.challengeId, challengeId));
+    return projects.length;
+  }
+
+  // ============================================
+  // PROJECT PARTICIPANT OPERATIONS
+  // ============================================
+  
+  async getProjectParticipants(projectId: string): Promise<ProjectParticipantWithUser[]> {
+    const participants = await db
+      .select()
+      .from(projectParticipants)
+      .where(eq(projectParticipants.projectId, projectId))
+      .orderBy(desc(projectParticipants.createdAt));
+    
+    const participantsWithUsers = await Promise.all(
+      participants.map(async (p) => {
+        const user = await this.getUser(p.userId);
+        return { ...p, user };
+      })
+    );
+    
+    return participantsWithUsers;
+  }
+
+  async getParticipantsByUser(userId: string): Promise<ProjectParticipantWithDetails[]> {
+    const participants = await db
+      .select()
+      .from(projectParticipants)
+      .where(eq(projectParticipants.userId, userId))
+      .orderBy(desc(projectParticipants.createdAt));
+    
+    const participantsWithDetails = await Promise.all(
+      participants.map(async (p) => {
+        const user = await this.getUser(p.userId);
+        const [project] = await db.select().from(challengeProjects).where(eq(challengeProjects.id, p.projectId));
+        return { ...p, user, project };
+      })
+    );
+    
+    return participantsWithDetails;
+  }
+
+  async getProjectParticipant(id: string): Promise<ProjectParticipantWithDetails | undefined> {
+    const [participant] = await db
+      .select()
+      .from(projectParticipants)
+      .where(eq(projectParticipants.id, id));
+    
+    if (!participant) return undefined;
+    
+    const user = await this.getUser(participant.userId);
+    const [project] = await db.select().from(challengeProjects).where(eq(challengeProjects.id, participant.projectId));
+    
+    return { ...participant, user, project };
+  }
+
+  async createProjectParticipant(data: InsertProjectParticipant): Promise<ProjectParticipant> {
+    const [participant] = await db.insert(projectParticipants).values(data).returning();
+    return participant;
+  }
+
+  async updateProjectParticipant(id: string, data: Partial<InsertProjectParticipant>): Promise<ProjectParticipant | undefined> {
+    const [participant] = await db
+      .update(projectParticipants)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(projectParticipants.id, id))
+      .returning();
+    return participant;
+  }
+
+  async deleteProjectParticipant(id: string): Promise<boolean> {
+    await db.delete(projectParticipants).where(eq(projectParticipants.id, id));
+    return true;
+  }
+
+  // ============================================
+  // MATCH RECORD OPERATIONS
+  // ============================================
+  
+  private async enrichMatchRecord(match: MatchRecord): Promise<MatchRecordWithDetails> {
+    let challenge = null;
+    let project = null;
+    let organization = null;
+    let professionalUser = null;
+    let decidedBy = null;
+    
+    if (match.challengeId) {
+      const [ch] = await db.select().from(challenges).where(eq(challenges.id, match.challengeId));
+      challenge = ch || null;
+    }
+    if (match.projectId) {
+      const [proj] = await db.select().from(challengeProjects).where(eq(challengeProjects.id, match.projectId));
+      project = proj || null;
+    }
+    if (match.organizationId) {
+      const [org] = await db.select().from(organizations).where(eq(organizations.id, match.organizationId));
+      organization = org || null;
+    }
+    if (match.professionalUserId) {
+      professionalUser = await this.getUser(match.professionalUserId) || null;
+    }
+    if (match.decidedByUserId) {
+      decidedBy = await this.getUser(match.decidedByUserId) || null;
+    }
+    
+    return { ...match, challenge, project, organization, professionalUser, decidedBy };
+  }
+
+  async getMatchRecords(filters?: { matchType?: string; status?: string; projectId?: string; challengeId?: string }): Promise<MatchRecordWithDetails[]> {
+    const matchList = await db.select().from(matchRecords).orderBy(desc(matchRecords.createdAt));
+    
+    let filtered = matchList;
+    if (filters?.matchType) {
+      filtered = filtered.filter(m => m.matchType === filters.matchType);
+    }
+    if (filters?.status) {
+      filtered = filtered.filter(m => m.status === filters.status);
+    }
+    if (filters?.projectId) {
+      filtered = filtered.filter(m => m.projectId === filters.projectId);
+    }
+    if (filters?.challengeId) {
+      filtered = filtered.filter(m => m.challengeId === filters.challengeId);
+    }
+    
+    return Promise.all(filtered.map(m => this.enrichMatchRecord(m)));
+  }
+
+  async getMatchRecord(id: string): Promise<MatchRecordWithDetails | undefined> {
+    const [match] = await db.select().from(matchRecords).where(eq(matchRecords.id, id));
+    if (!match) return undefined;
+    return this.enrichMatchRecord(match);
+  }
+
+  async createMatchRecord(data: InsertMatchRecord): Promise<MatchRecord> {
+    const [match] = await db.insert(matchRecords).values(data).returning();
+    return match;
+  }
+
+  async updateMatchRecord(id: string, data: Partial<InsertMatchRecord>): Promise<MatchRecord | undefined> {
+    const [match] = await db
+      .update(matchRecords)
+      .set(data)
+      .where(eq(matchRecords.id, id))
+      .returning();
+    return match;
+  }
+
+  async deleteMatchRecord(id: string): Promise<boolean> {
+    await db.delete(matchRecords).where(eq(matchRecords.id, id));
+    return true;
+  }
+
+  async setMatchStatus(
+    id: string, 
+    status: 'suggested' | 'pending_approval' | 'accepted' | 'rejected' | 'cancelled',
+    decidedByUserId?: string,
+    notes?: string
+  ): Promise<MatchRecord | undefined> {
+    const updateData: any = { status };
+    
+    if (status === 'accepted' || status === 'rejected' || status === 'cancelled') {
+      updateData.decidedAt = new Date();
+      if (decidedByUserId) {
+        updateData.decidedByUserId = decidedByUserId;
+      }
+    }
+    
+    if (notes) {
+      updateData.notes = notes;
+    }
+    
+    const [match] = await db
+      .update(matchRecords)
+      .set(updateData)
+      .where(eq(matchRecords.id, id))
+      .returning();
+    return match;
   }
 }
 

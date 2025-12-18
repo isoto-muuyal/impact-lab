@@ -1,0 +1,34 @@
+ENTITY: MATCH RECORD . Representa un “match” o emparejamiento entre:
+matchId	Contenido: Identificador único del match. 
+Method: generate, read. 
+User: Sistema (genera), Admin GA4SI (consulta).
+challengeId	Contenido: Reto asociado al match (si aplica). 
+Method: link, read. 
+User: Admin GA4SI, Sistema (usa para trazabilidad reto–proyecto/talento).
+projectId	Contenido: Proyecto asociado al match.
+Method: link, read.
+User: Admin GA4SI, Sistema (usa para saber qué proyectos responden a qué matches).
+organizationId	Contenido: Organización que está en el centro del match (por ejemplo, la que se beneficia de la solución). 
+Method: link, read. 
+User: Admin GA4SI, Sistema (relación con el mapa institucional).
+professionalUserId	Contenido: Talento/profesional vinculado en ese match (cuando el match es reto+proyecto+persona, por ejemplo). 
+Method: link, read. 
+User: Admin GA4SI, Sistema (usa para ver qué persona fue asignada a qué reto/proyecto).
+matchType	Contenido: Tipo de match (ej.: “Challenge–Project”, “Project–Talent”, “Organization–Talent”, “Organization–Project”). 
+Method: create, update, read. 
+User: Admin GA4SI, Sistema (usa para lógica de negocio).
+status	Contenido: Estado del match (ej.: “suggested”, “pending_approval”, “accepted”, “rejected”, “cancelled”). 
+Method: setStatus, update, read. 
+User: Admin GA4SI (aprueba/rechaza), en algunos casos Partner (acepta/rechaza propuesta), Sistema (hace propuestas automáticas).
+createdAt	Contenido: Fecha y hora en que se generó el match. 
+Method: generate, read. 
+User: Sistema (genera), Admin GA4SI (consulta).
+decidedAt	Contenido: Fecha y hora en que el match fue aceptado/rechazado. 
+Method: update, read. 
+User: Admin GA4SI, Sistema (registra cuando hay decisión).
+decidedByUserId	Contenido: Persona que tomó la decisión sobre el match (aceptar/rechazar). 
+Method: link, read. 
+User: Admin GA4SI o Partner autorizado (según el flujo), Sistema (usa para trazabilidad).
+notes	Contenido: Comentarios sobre por qué se aceptó o rechazó el match, acuerdos específicos, condiciones. 
+Method: create, update, read. 
+User: Admin GA4SI, Sistema (solo muestra en vistas internas).

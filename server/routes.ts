@@ -2,7 +2,18 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertProjectSchema, insertCourseSchema, insertMentorshipSchema, insertMentorshipSessionSchema, insertOrganizationSchema, insertOrganizationMembershipSchema } from "@shared/schema";
+import { 
+  insertProjectSchema, 
+  insertCourseSchema, 
+  insertMentorshipSchema, 
+  insertMentorshipSessionSchema, 
+  insertOrganizationSchema, 
+  insertOrganizationMembershipSchema,
+  insertChallengeSchema,
+  insertChallengeProjectSchema,
+  insertProjectParticipantSchema,
+  insertMatchRecordSchema
+} from "@shared/schema";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -1000,6 +1011,586 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error deleting membership:", error);
       res.status(500).json({ message: "Failed to delete membership" });
+    }
+  });
+
+  // ===== CHALLENGE ROUTES =====
+  
+  // Get all challenges (filtered by role and query params)
+  app.get('/api/challenges', isAuthenticated, async (req: any, res) => {
+    try {
+      const filters: { status?: string; organizationId?: string } = {};
+      if (req.query.status) filters.status = req.query.status;
+      if (req.query.organizationId) filters.organizationId = req.query.organizationId;
+      
+      const challenges = await storage.getChallenges(filters);
+      res.json(challenges);
+    } catch (error) {
+      console.error("Error fetching challenges:", error);
+      res.status(500).json({ message: "Failed to fetch challenges" });
+    }
+  });
+
+  // Get single challenge
+  app.get('/api/challenges/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const challenge = await storage.getChallenge(req.params.id);
+      if (!challenge) {
+        return res.status(404).json({ message: "Challenge not found" });
+      }
+      res.json(challenge);
+    } catch (error) {
+      console.error("Error fetching challenge:", error);
+      res.status(500).json({ message: "Failed to fetch challenge" });
+    }
+  });
+
+  // Create challenge (facilitador only)
+  app.post('/api/challenges', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const userRole = userWithProfile?.userRoles?.[0]?.role?.name;
+      
+      if (userRole !== 'facilitador') {
+        return res.status(403).json({ message: "Only facilitadores can create challenges" });
+      }
+      
+      const challengeData = {
+        ...req.body,
+        createdByUserId: userId,
+      };
+      
+      const validationResult = insertChallengeSchema.safeParse(challengeData);
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          message: "Invalid challenge data", 
+          errors: validationResult.error.flatten().fieldErrors 
+        });
+      }
+      
+      const challenge = await storage.createChallenge(validationResult.data);
+      res.status(201).json(challenge);
+    } catch (error) {
+      console.error("Error creating challenge:", error);
+      res.status(500).json({ message: "Failed to create challenge" });
+    }
+  });
+
+  // Update challenge (facilitador only)
+  app.patch('/api/challenges/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const userRole = userWithProfile?.userRoles?.[0]?.role?.name;
+      
+      if (userRole !== 'facilitador') {
+        return res.status(403).json({ message: "Only facilitadores can update challenges" });
+      }
+      
+      const challenge = await storage.getChallenge(req.params.id);
+      if (!challenge) {
+        return res.status(404).json({ message: "Challenge not found" });
+      }
+      
+      const allowedFields = ['title', 'description', 'contextOrganizationId', 'city', 'country', 'sdgTags', 'openFrom', 'openUntil', 'maxProjects'];
+      const sanitizedData: Record<string, any> = {};
+      for (const field of allowedFields) {
+        if (req.body[field] !== undefined) {
+          sanitizedData[field] = req.body[field];
+        }
+      }
+      
+      const updated = await storage.updateChallenge(req.params.id, sanitizedData);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating challenge:", error);
+      res.status(500).json({ message: "Failed to update challenge" });
+    }
+  });
+
+  // Change challenge status (workflow action)
+  app.post('/api/challenges/:id/status', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const userRole = userWithProfile?.userRoles?.[0]?.role?.name;
+      
+      if (userRole !== 'facilitador') {
+        return res.status(403).json({ message: "Only facilitadores can change challenge status" });
+      }
+      
+      const { status } = req.body;
+      const validStatuses = ['draft', 'open', 'in_progress', 'completed', 'archived'];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+      
+      const challenge = await storage.setChallengeStatus(req.params.id, status);
+      if (!challenge) {
+        return res.status(404).json({ message: "Challenge not found" });
+      }
+      
+      res.json(challenge);
+    } catch (error) {
+      console.error("Error changing challenge status:", error);
+      res.status(500).json({ message: "Failed to change challenge status" });
+    }
+  });
+
+  // Delete challenge (facilitador only)
+  app.delete('/api/challenges/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const userRole = userWithProfile?.userRoles?.[0]?.role?.name;
+      
+      if (userRole !== 'facilitador') {
+        return res.status(403).json({ message: "Only facilitadores can delete challenges" });
+      }
+      
+      const challenge = await storage.getChallenge(req.params.id);
+      if (!challenge) {
+        return res.status(404).json({ message: "Challenge not found" });
+      }
+      
+      await storage.deleteChallenge(req.params.id);
+      res.json({ message: "Challenge deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting challenge:", error);
+      res.status(500).json({ message: "Failed to delete challenge" });
+    }
+  });
+
+  // ===== CHALLENGE PROJECT ROUTES =====
+  
+  // Get all challenge projects (filtered by query params)
+  app.get('/api/challenge-projects', isAuthenticated, async (req: any, res) => {
+    try {
+      const filters: { challengeId?: string; status?: string; organizationId?: string } = {};
+      if (req.query.challengeId) filters.challengeId = req.query.challengeId;
+      if (req.query.status) filters.status = req.query.status;
+      if (req.query.organizationId) filters.organizationId = req.query.organizationId;
+      
+      const projects = await storage.getChallengeProjects(filters);
+      res.json(projects);
+    } catch (error) {
+      console.error("Error fetching challenge projects:", error);
+      res.status(500).json({ message: "Failed to fetch challenge projects" });
+    }
+  });
+
+  // Get projects for a specific challenge
+  app.get('/api/challenges/:id/projects', isAuthenticated, async (req: any, res) => {
+    try {
+      const projects = await storage.getChallengeProjects({ challengeId: req.params.id });
+      res.json(projects);
+    } catch (error) {
+      console.error("Error fetching challenge projects:", error);
+      res.status(500).json({ message: "Failed to fetch challenge projects" });
+    }
+  });
+
+  // Get single challenge project
+  app.get('/api/challenge-projects/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const project = await storage.getChallengeProject(req.params.id);
+      if (!project) {
+        return res.status(404).json({ message: "Challenge project not found" });
+      }
+      res.json(project);
+    } catch (error) {
+      console.error("Error fetching challenge project:", error);
+      res.status(500).json({ message: "Failed to fetch challenge project" });
+    }
+  });
+
+  // Create challenge project (any authenticated user can propose)
+  app.post('/api/challenge-projects', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      // Check if challenge is open (if linked to a challenge)
+      if (req.body.challengeId) {
+        const challenge = await storage.getChallenge(req.body.challengeId);
+        if (!challenge) {
+          return res.status(404).json({ message: "Challenge not found" });
+        }
+        if (challenge.status !== 'open') {
+          return res.status(400).json({ message: "Challenge is not open for project submissions" });
+        }
+        // Check max projects limit
+        if (challenge.maxProjects) {
+          const count = await storage.countProjectsByChallenge(challenge.id);
+          if (count >= challenge.maxProjects) {
+            return res.status(400).json({ message: "Challenge has reached maximum number of projects" });
+          }
+        }
+      }
+      
+      const projectData = {
+        ...req.body,
+        createdByUserId: userId,
+      };
+      
+      const validationResult = insertChallengeProjectSchema.safeParse(projectData);
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          message: "Invalid project data", 
+          errors: validationResult.error.flatten().fieldErrors 
+        });
+      }
+      
+      const project = await storage.createChallengeProject(validationResult.data);
+      res.status(201).json(project);
+    } catch (error) {
+      console.error("Error creating challenge project:", error);
+      res.status(500).json({ message: "Failed to create challenge project" });
+    }
+  });
+
+  // Update challenge project
+  app.patch('/api/challenge-projects/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const project = await storage.getChallengeProject(req.params.id);
+      
+      if (!project) {
+        return res.status(404).json({ message: "Challenge project not found" });
+      }
+      
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const userRole = userWithProfile?.userRoles?.[0]?.role?.name;
+      
+      // Only creator, lead org admin, or facilitador can update
+      if (project.createdByUserId !== userId && userRole !== 'facilitador') {
+        return res.status(403).json({ message: "Not authorized to update this project" });
+      }
+      
+      const allowedFields = ['title', 'summary', 'leadOrganizationId', 'locationCity', 'locationCountry', 'sdgTags', 'impactFocus', 'startDate', 'endDate', 'isPilot'];
+      const sanitizedData: Record<string, any> = {};
+      for (const field of allowedFields) {
+        if (req.body[field] !== undefined) {
+          sanitizedData[field] = req.body[field];
+        }
+      }
+      
+      const updated = await storage.updateChallengeProject(req.params.id, sanitizedData);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating challenge project:", error);
+      res.status(500).json({ message: "Failed to update challenge project" });
+    }
+  });
+
+  // Change challenge project status (workflow action)
+  app.post('/api/challenge-projects/:id/status', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const project = await storage.getChallengeProject(req.params.id);
+      
+      if (!project) {
+        return res.status(404).json({ message: "Challenge project not found" });
+      }
+      
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const userRole = userWithProfile?.userRoles?.[0]?.role?.name;
+      
+      // Only creator, lead org admin, or facilitador can change status
+      if (project.createdByUserId !== userId && userRole !== 'facilitador') {
+        return res.status(403).json({ message: "Not authorized to change project status" });
+      }
+      
+      const { status } = req.body;
+      const validStatuses = ['idea', 'design', 'pilot', 'active', 'completed', 'on_hold', 'cancelled'];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+      
+      const updated = await storage.setChallengeProjectStatus(req.params.id, status);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error changing project status:", error);
+      res.status(500).json({ message: "Failed to change project status" });
+    }
+  });
+
+  // Delete challenge project (facilitador or creator only)
+  app.delete('/api/challenge-projects/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const project = await storage.getChallengeProject(req.params.id);
+      
+      if (!project) {
+        return res.status(404).json({ message: "Challenge project not found" });
+      }
+      
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const userRole = userWithProfile?.userRoles?.[0]?.role?.name;
+      
+      if (project.createdByUserId !== userId && userRole !== 'facilitador') {
+        return res.status(403).json({ message: "Not authorized to delete this project" });
+      }
+      
+      await storage.deleteChallengeProject(req.params.id);
+      res.json({ message: "Challenge project deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting challenge project:", error);
+      res.status(500).json({ message: "Failed to delete challenge project" });
+    }
+  });
+
+  // ===== PROJECT PARTICIPANT ROUTES =====
+  
+  // Get participants for a project
+  app.get('/api/challenge-projects/:id/participants', isAuthenticated, async (req: any, res) => {
+    try {
+      const participants = await storage.getProjectParticipants(req.params.id);
+      res.json(participants);
+    } catch (error) {
+      console.error("Error fetching project participants:", error);
+      res.status(500).json({ message: "Failed to fetch participants" });
+    }
+  });
+
+  // Get user's project participations
+  app.get('/api/my-participations', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const participations = await storage.getParticipantsByUser(userId);
+      res.json(participations);
+    } catch (error) {
+      console.error("Error fetching user participations:", error);
+      res.status(500).json({ message: "Failed to fetch participations" });
+    }
+  });
+
+  // Add participant to project
+  app.post('/api/challenge-projects/:id/participants', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const project = await storage.getChallengeProject(req.params.id);
+      
+      if (!project) {
+        return res.status(404).json({ message: "Challenge project not found" });
+      }
+      
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const userRole = userWithProfile?.userRoles?.[0]?.role?.name;
+      
+      // Only creator, lead org admin, or facilitador can add participants
+      if (project.createdByUserId !== userId && userRole !== 'facilitador') {
+        return res.status(403).json({ message: "Not authorized to add participants" });
+      }
+      
+      const participantData = {
+        ...req.body,
+        projectId: req.params.id,
+      };
+      
+      const validationResult = insertProjectParticipantSchema.safeParse(participantData);
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          message: "Invalid participant data", 
+          errors: validationResult.error.flatten().fieldErrors 
+        });
+      }
+      
+      const participant = await storage.createProjectParticipant(validationResult.data);
+      res.status(201).json(participant);
+    } catch (error) {
+      console.error("Error adding participant:", error);
+      res.status(500).json({ message: "Failed to add participant" });
+    }
+  });
+
+  // Update participant
+  app.patch('/api/participants/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const participant = await storage.getProjectParticipant(req.params.id);
+      
+      if (!participant) {
+        return res.status(404).json({ message: "Participant not found" });
+      }
+      
+      const project = await storage.getChallengeProject(participant.projectId);
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const userRole = userWithProfile?.userRoles?.[0]?.role?.name;
+      
+      // Only project creator or facilitador can update participants
+      if (project?.createdByUserId !== userId && userRole !== 'facilitador') {
+        return res.status(403).json({ message: "Not authorized to update participant" });
+      }
+      
+      const allowedFields = ['role', 'assignedHours', 'isLead', 'startDate', 'endDate', 'isActive', 'notes'];
+      const sanitizedData: Record<string, any> = {};
+      for (const field of allowedFields) {
+        if (req.body[field] !== undefined) {
+          sanitizedData[field] = req.body[field];
+        }
+      }
+      
+      const updated = await storage.updateProjectParticipant(req.params.id, sanitizedData);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating participant:", error);
+      res.status(500).json({ message: "Failed to update participant" });
+    }
+  });
+
+  // Remove participant
+  app.delete('/api/participants/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const participant = await storage.getProjectParticipant(req.params.id);
+      
+      if (!participant) {
+        return res.status(404).json({ message: "Participant not found" });
+      }
+      
+      const project = await storage.getChallengeProject(participant.projectId);
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const userRole = userWithProfile?.userRoles?.[0]?.role?.name;
+      
+      // Only project creator or facilitador can remove participants
+      if (project?.createdByUserId !== userId && userRole !== 'facilitador') {
+        return res.status(403).json({ message: "Not authorized to remove participant" });
+      }
+      
+      await storage.deleteProjectParticipant(req.params.id);
+      res.json({ message: "Participant removed successfully" });
+    } catch (error) {
+      console.error("Error removing participant:", error);
+      res.status(500).json({ message: "Failed to remove participant" });
+    }
+  });
+
+  // ===== MATCH RECORD ROUTES =====
+  
+  // Get match records (filtered by query params)
+  app.get('/api/matches', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const userRole = userWithProfile?.userRoles?.[0]?.role?.name;
+      
+      // Only facilitadores can view all matches
+      if (userRole !== 'facilitador') {
+        return res.status(403).json({ message: "Only facilitadores can view matches" });
+      }
+      
+      const filters: { matchType?: string; status?: string; projectId?: string; challengeId?: string } = {};
+      if (req.query.matchType) filters.matchType = req.query.matchType;
+      if (req.query.status) filters.status = req.query.status;
+      if (req.query.projectId) filters.projectId = req.query.projectId;
+      if (req.query.challengeId) filters.challengeId = req.query.challengeId;
+      
+      const matches = await storage.getMatchRecords(filters);
+      res.json(matches);
+    } catch (error) {
+      console.error("Error fetching matches:", error);
+      res.status(500).json({ message: "Failed to fetch matches" });
+    }
+  });
+
+  // Get single match record
+  app.get('/api/matches/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const match = await storage.getMatchRecord(req.params.id);
+      if (!match) {
+        return res.status(404).json({ message: "Match not found" });
+      }
+      res.json(match);
+    } catch (error) {
+      console.error("Error fetching match:", error);
+      res.status(500).json({ message: "Failed to fetch match" });
+    }
+  });
+
+  // Create match record (facilitador only - intelligent matching)
+  app.post('/api/matches', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const userRole = userWithProfile?.userRoles?.[0]?.role?.name;
+      
+      if (userRole !== 'facilitador') {
+        return res.status(403).json({ message: "Only facilitadores can create matches" });
+      }
+      
+      const validationResult = insertMatchRecordSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          message: "Invalid match data", 
+          errors: validationResult.error.flatten().fieldErrors 
+        });
+      }
+      
+      const match = await storage.createMatchRecord(validationResult.data);
+      res.status(201).json(match);
+    } catch (error) {
+      console.error("Error creating match:", error);
+      res.status(500).json({ message: "Failed to create match" });
+    }
+  });
+
+  // Update match status (approve/reject)
+  app.post('/api/matches/:id/status', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const userRole = userWithProfile?.userRoles?.[0]?.role?.name;
+      
+      const match = await storage.getMatchRecord(req.params.id);
+      if (!match) {
+        return res.status(404).json({ message: "Match not found" });
+      }
+      
+      // Only facilitador or involved parties can change status
+      if (userRole !== 'facilitador') {
+        // Check if user is involved in this match
+        const isInvolved = match.professionalUserId === userId;
+        if (!isInvolved) {
+          return res.status(403).json({ message: "Not authorized to change match status" });
+        }
+      }
+      
+      const { status, notes } = req.body;
+      const validStatuses = ['suggested', 'pending_approval', 'accepted', 'rejected', 'cancelled'];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+      
+      const updated = await storage.setMatchStatus(req.params.id, status, userId, notes);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating match status:", error);
+      res.status(500).json({ message: "Failed to update match status" });
+    }
+  });
+
+  // Delete match record (facilitador only)
+  app.delete('/api/matches/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const userRole = userWithProfile?.userRoles?.[0]?.role?.name;
+      
+      if (userRole !== 'facilitador') {
+        return res.status(403).json({ message: "Only facilitadores can delete matches" });
+      }
+      
+      const match = await storage.getMatchRecord(req.params.id);
+      if (!match) {
+        return res.status(404).json({ message: "Match not found" });
+      }
+      
+      await storage.deleteMatchRecord(req.params.id);
+      res.json({ message: "Match deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting match:", error);
+      res.status(500).json({ message: "Failed to delete match" });
     }
   });
 
