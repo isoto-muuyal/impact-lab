@@ -1,0 +1,49 @@
+ PROJECT. Representa un proyecto, piloto o iniciativa concreta diseñada para responder a un reto y/o para ser incubada/acelerada dentro de GA4SI/ImpactLab.
+projectId	Contenido: Identificador único del proyecto en el sistema.
+Method: generate, read.
+User: Sistema (genera), Admin GA4SI (consulta).
+challengeId	Contenido: Reto al que responde el proyecto (puede ser null si el proyecto no viene de un reto explícito). 
+Method: link, read. 
+User: Admin GA4SI (asocia el proyecto a un challenge), Sistema (usa para análisis Challenge → Proyectos).
+title	Contenido: Título del proyecto. 
+Method: create, update, read. 
+User: Admin GA4SI, Líder del proyecto (en algunos flujos), Sistema (muestra en listados/tarjetas).
+summary	Contenido: Resumen ejecutivo: qué se quiere lograr, con quién, cómo y dónde. 
+Method: create, update, read. 
+User: Admin GA4SI, Líder del proyecto (puede editar), Sistema (muestra en fichas y reportes).
+status	Contenido: Estado del proyecto (ej.: “idea”, “design”, “pilot”, “active”, “completed”, “on_hold”, “cancelled”). 
+Method: setStatus, update, read. 
+User: Admin GA4SI (gestiona el ciclo), Sistema (aplica reglas según estado).
+leadOrganizationId	Contenido: Organización principal responsable o anfitriona del proyecto. 
+Method: link, update, read. 
+User: Admin GA4SI (define/cambia la entidad líder), Sistema (usa para reportes por organización).
+locationCity	Contenido: Ciudad donde se implementa el proyecto. 
+Method: create, update, read. 
+User: Admin GA4SI, Sistema (usa para mapas y segmentación).
+locationCountry	Contenido: País donde se ejecuta el proyecto.
+Method: create, update, read.
+User: Admin GA4SI, Sistema (usa para reportes comparativos).
+sdgTags	Contenido: Etiquetas de ODS/temáticas del proyecto. 
+Method: assign, update, read. 
+User: Admin GA4SI, Sistema (analítica, filtros, informes).
+impactFocus	Contenido: Foco de impacto (ej.: “female entrepreneurs”, “youth leadership”, “urban innovation”, etc.). 
+Method: create, update, read. 
+User: Admin GA4SI, Líder del proyecto, Sistema (usa para agrupar proyectos por foco).
+startDate	Contenido: Fecha de inicio del proyecto.
+Method: create, update, read.
+User: Admin GA4SI, Sistema (usa para cronogramas y KPIs de tiempo).
+endDate	Contenido: Fecha de cierre del proyecto (puede ser null si sigue en curso). 
+Method: update, read. 
+User: Admin GA4SI, Sistema (marca cierre y alimenta métricas históricas).
+isPilot	Contenido: Indica si el proyecto es un piloto (TRUE) o un despliegue ya escalado (FALSE). 
+Method: create, update, read. 
+User: Admin GA4SI, Sistema (usa para clasificar proyectos piloto vs. escalados).
+createdByUserId	Contenido: Persona que registró el proyecto inicialmente. 
+Method: link, read. 
+User: Admin GA4SI o Líder de proyecto (quien lo crea), Sistema (trazabilidad).
+createdAt	Contenido: Fecha de creación del proyecto.
+Method: generate, read.
+User: Sistema (genera), Admin GA4SI (consulta).
+updatedAt	Contenido: Fecha de última actualización.
+Method: update, read.
+User: Sistema (actualiza), Admin GA4SI (consulta).
