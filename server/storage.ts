@@ -14,6 +14,8 @@ import {
   challengeProjects,
   projectParticipants,
   matchRecords,
+  events,
+  eventRegistrations,
   type User,
   type UpsertUser,
   type UserProfile,
@@ -55,6 +57,10 @@ import {
   type MatchRecord,
   type InsertMatchRecord,
   type MatchRecordWithDetails,
+  type Event,
+  type InsertEvent,
+  type EventWithDetails,
+  type EventRegistration,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, or, and, isNull, gte, lte } from "drizzle-orm";
@@ -160,6 +166,21 @@ export interface IStorage {
   updateChallengeProject(id: string, data: Partial<InsertChallengeProject>): Promise<ChallengeProject | undefined>;
   deleteChallengeProject(id: string): Promise<boolean>;
   setChallengeProjectStatus(id: string, status: 'idea' | 'design' | 'pilot' | 'active' | 'completed' | 'on_hold' | 'cancelled'): Promise<ChallengeProject | undefined>;
+  
+  // Event operations
+  getEvents(includeUnpublished?: boolean): Promise<EventWithDetails[]>;
+  getEvent(id: string): Promise<EventWithDetails | undefined>;
+  createEvent(event: InsertEvent): Promise<Event>;
+  updateEvent(id: string, event: Partial<InsertEvent>): Promise<Event | undefined>;
+  deleteEvent(id: string): Promise<boolean>;
+  publishEvent(id: string): Promise<Event | undefined>;
+  
+  // Event registration operations
+  getEventRegistrations(eventId: string): Promise<(EventRegistration & { user?: User })[]>;
+  getUserEventRegistrations(userId: string): Promise<(EventRegistration & { event?: Event })[]>;
+  registerForEvent(eventId: string, userId: string): Promise<EventRegistration>;
+  cancelEventRegistration(eventId: string, userId: string): Promise<boolean>;
+  isUserRegisteredForEvent(eventId: string, userId: string): Promise<boolean>;
   countProjectsByChallenge(challengeId: string): Promise<number>;
   
   // Project Participant operations
@@ -1375,6 +1396,111 @@ export class DatabaseStorage implements IStorage {
       .where(eq(matchRecords.id, id))
       .returning();
     return match;
+  }
+
+  // ============================================
+  // EVENT OPERATIONS
+  // ============================================
+
+  async getEvents(includeUnpublished: boolean = false): Promise<EventWithDetails[]> {
+    let eventList;
+    if (includeUnpublished) {
+      eventList = await db.select().from(events).orderBy(desc(events.eventDate));
+    } else {
+      eventList = await db.select().from(events).where(eq(events.status, 'published')).orderBy(desc(events.eventDate));
+    }
+    
+    return Promise.all(eventList.map(async (event) => {
+      const [createdBy] = await db.select().from(users).where(eq(users.id, event.createdByUserId));
+      const registrations = await db.select().from(eventRegistrations).where(eq(eventRegistrations.eventId, event.id));
+      return { ...event, createdBy, registrations, registrationCount: registrations.length };
+    }));
+  }
+
+  async getEvent(id: string): Promise<EventWithDetails | undefined> {
+    const [event] = await db.select().from(events).where(eq(events.id, id));
+    if (!event) return undefined;
+    
+    const [createdBy] = await db.select().from(users).where(eq(users.id, event.createdByUserId));
+    const registrations = await db.select().from(eventRegistrations).where(eq(eventRegistrations.eventId, event.id));
+    return { ...event, createdBy, registrations, registrationCount: registrations.length };
+  }
+
+  async createEvent(eventData: InsertEvent): Promise<Event> {
+    const [event] = await db.insert(events).values(eventData).returning();
+    return event;
+  }
+
+  async updateEvent(id: string, eventData: Partial<InsertEvent>): Promise<Event | undefined> {
+    const [event] = await db
+      .update(events)
+      .set({ ...eventData, updatedAt: new Date() })
+      .where(eq(events.id, id))
+      .returning();
+    return event;
+  }
+
+  async deleteEvent(id: string): Promise<boolean> {
+    await db.delete(eventRegistrations).where(eq(eventRegistrations.eventId, id));
+    await db.delete(events).where(eq(events.id, id));
+    return true;
+  }
+
+  async publishEvent(id: string): Promise<Event | undefined> {
+    const [event] = await db
+      .update(events)
+      .set({ status: 'published', updatedAt: new Date() })
+      .where(eq(events.id, id))
+      .returning();
+    return event;
+  }
+
+  async getEventRegistrations(eventId: string): Promise<(EventRegistration & { user?: User })[]> {
+    const registrations = await db.select().from(eventRegistrations).where(eq(eventRegistrations.eventId, eventId));
+    return Promise.all(registrations.map(async (reg) => {
+      const [user] = await db.select().from(users).where(eq(users.id, reg.userId));
+      return { ...reg, user };
+    }));
+  }
+
+  async getUserEventRegistrations(userId: string): Promise<(EventRegistration & { event?: Event })[]> {
+    const registrations = await db.select().from(eventRegistrations).where(eq(eventRegistrations.userId, userId));
+    return Promise.all(registrations.map(async (reg) => {
+      const [event] = await db.select().from(events).where(eq(events.id, reg.eventId));
+      return { ...reg, event };
+    }));
+  }
+
+  async registerForEvent(eventId: string, userId: string): Promise<EventRegistration> {
+    const [registration] = await db.insert(eventRegistrations).values({
+      eventId,
+      userId,
+      status: 'registered',
+    }).returning();
+    return registration;
+  }
+
+  async cancelEventRegistration(eventId: string, userId: string): Promise<boolean> {
+    await db
+      .update(eventRegistrations)
+      .set({ status: 'cancelled', cancelledAt: new Date() })
+      .where(and(
+        eq(eventRegistrations.eventId, eventId),
+        eq(eventRegistrations.userId, userId)
+      ));
+    return true;
+  }
+
+  async isUserRegisteredForEvent(eventId: string, userId: string): Promise<boolean> {
+    const [registration] = await db
+      .select()
+      .from(eventRegistrations)
+      .where(and(
+        eq(eventRegistrations.eventId, eventId),
+        eq(eventRegistrations.userId, userId),
+        eq(eventRegistrations.status, 'registered')
+      ));
+    return !!registration;
   }
 }
 

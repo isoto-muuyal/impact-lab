@@ -757,3 +757,98 @@ export type MatchRecordWithDetails = MatchRecord & {
   professionalUser?: User | null;
   decidedBy?: User | null;
 };
+
+// ============================================
+// EVENTS - Platform events and registrations
+// ============================================
+
+// Event status enum
+export const eventStatusEnum = pgEnum('event_status', [
+  'draft',
+  'published',
+  'cancelled',
+  'completed'
+]);
+
+// Events table
+export const events = pgTable("events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title").notNull(),
+  description: text("description"),
+  eventDate: timestamp("event_date").notNull(),
+  endDate: timestamp("end_date"),
+  location: varchar("location"),
+  isOnline: varchar("is_online").default('false'),
+  meetingUrl: varchar("meeting_url"),
+  maxAttendees: integer("max_attendees"),
+  category: varchar("category"),
+  status: eventStatusEnum("status").default('draft'),
+  createdByUserId: varchar("created_by_user_id").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Event registration status enum
+export const eventRegistrationStatusEnum = pgEnum('event_registration_status', [
+  'registered',
+  'attended',
+  'cancelled',
+  'no_show'
+]);
+
+// Event registrations table
+export const eventRegistrations = pgTable("event_registrations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  eventId: varchar("event_id").notNull().references(() => events.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  status: eventRegistrationStatusEnum("status").default('registered'),
+  registeredAt: timestamp("registered_at").defaultNow(),
+  attendedAt: timestamp("attended_at"),
+  cancelledAt: timestamp("cancelled_at"),
+});
+
+// Events relations
+export const eventsRelations = relations(events, ({ one, many }) => ({
+  createdBy: one(users, {
+    fields: [events.createdByUserId],
+    references: [users.id],
+  }),
+  registrations: many(eventRegistrations),
+}));
+
+// Event registrations relations
+export const eventRegistrationsRelations = relations(eventRegistrations, ({ one }) => ({
+  event: one(events, {
+    fields: [eventRegistrations.eventId],
+    references: [events.id],
+  }),
+  user: one(users, {
+    fields: [eventRegistrations.userId],
+    references: [users.id],
+  }),
+}));
+
+// Insert schemas for events
+export const insertEventSchema = createInsertSchema(events).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertEventRegistrationSchema = createInsertSchema(eventRegistrations).omit({
+  id: true,
+  registeredAt: true,
+});
+
+// Event types
+export type Event = typeof events.$inferSelect;
+export type InsertEvent = z.infer<typeof insertEventSchema>;
+
+export type EventRegistration = typeof eventRegistrations.$inferSelect;
+export type InsertEventRegistration = z.infer<typeof insertEventRegistrationSchema>;
+
+export type EventWithDetails = Event & {
+  createdBy?: User | null;
+  registrations?: EventRegistration[];
+  registrationCount?: number;
+};

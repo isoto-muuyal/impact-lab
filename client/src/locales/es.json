@@ -357,5 +357,77 @@
       "reject": "Rechazar",
       "cancel": "Cancelar"
     }
+  },
+  "events": {
+    "title": "Eventos",
+    "subtitle": "Descubre y participa en eventos de la comunidad",
+    "create": "Crear Evento",
+    "createNew": "Crear Nuevo Evento",
+    "createDescription": "Crea un evento para la comunidad",
+    "created": "Evento creado exitosamente",
+    "createError": "Error al crear el evento",
+    "published": "Evento publicado",
+    "publishError": "Error al publicar el evento",
+    "publish": "Publicar",
+    "register": "Inscribirse",
+    "registered": "Inscripcion exitosa",
+    "registerError": "Error al inscribirse",
+    "cancelRegistration": "Cancelar Inscripcion",
+    "registrationCancelled": "Inscripcion cancelada",
+    "cancelError": "Error al cancelar inscripcion",
+    "empty": "No hay eventos programados",
+    "emptyDescription": "Los facilitadores y mentores pueden crear nuevos eventos",
+    "online": "Evento en linea",
+    "attendees": "asistentes",
+    "organizedBy": "Organizado por",
+    "form": {
+      "title": "Titulo del Evento",
+      "description": "Descripcion",
+      "startDate": "Fecha de Inicio",
+      "endDate": "Fecha de Fin",
+      "category": "Categoria",
+      "selectCategory": "Seleccionar categoria",
+      "isOnline": "Es un evento en linea",
+      "location": "Ubicacion",
+      "meetingUrl": "URL de la reunion",
+      "maxAttendees": "Maximo de asistentes"
+    },
+    "categories": {
+      "workshop": "Taller",
+      "webinar": "Webinar",
+      "networking": "Networking",
+      "training": "Capacitacion",
+      "conference": "Conferencia"
+    },
+    "status": {
+      "draft": "Borrador",
+      "published": "Publicado",
+      "cancelled": "Cancelado",
+      "completed": "Completado"
+    }
+  },
+  "settings": {
+    "title": "Configuracion",
+    "subtitle": "Personaliza tu experiencia en la plataforma",
+    "theme": {
+      "title": "Tema de la Aplicacion",
+      "description": "Selecciona el tema visual de la aplicacion",
+      "light": "Claro",
+      "dark": "Oscuro",
+      "system": "Sistema"
+    },
+    "language": {
+      "title": "Idioma",
+      "description": "Selecciona tu idioma preferido",
+      "select": "Seleccionar idioma"
+    }
+  },
+  "common": {
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "create": "Crear",
+    "loading": "Cargando..."
   }
 }

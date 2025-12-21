@@ -1751,6 +1751,198 @@ export async function registerRoutes(
     }
   });
 
+  // ===== EVENT ROUTES =====
+  
+  // Get all events (everyone can see published events)
+  app.get('/api/events', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const isFacilitadorOrMentor = userWithProfile?.userRoles?.some((ur: any) => 
+        ur.role?.name === 'facilitador' || ur.role?.name === 'mentor'
+      );
+      
+      const events = await storage.getEvents(isFacilitadorOrMentor);
+      res.json(events);
+    } catch (error) {
+      console.error("Error fetching events:", error);
+      res.status(500).json({ message: "Failed to fetch events" });
+    }
+  });
+
+  // Get single event
+  app.get('/api/events/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const event = await storage.getEvent(req.params.id);
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+      res.json(event);
+    } catch (error) {
+      console.error("Error fetching event:", error);
+      res.status(500).json({ message: "Failed to fetch event" });
+    }
+  });
+
+  // Create event (facilitador or mentor only)
+  app.post('/api/events', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const canCreate = userWithProfile?.userRoles?.some((ur: any) => 
+        ur.role?.name === 'facilitador' || ur.role?.name === 'mentor'
+      );
+      
+      if (!canCreate) {
+        return res.status(403).json({ message: "Only facilitadores and mentors can create events" });
+      }
+      
+      const eventData = {
+        ...req.body,
+        createdByUserId: userId,
+        eventDate: new Date(req.body.eventDate),
+        endDate: req.body.endDate ? new Date(req.body.endDate) : null,
+      };
+      
+      const event = await storage.createEvent(eventData);
+      res.status(201).json(event);
+    } catch (error) {
+      console.error("Error creating event:", error);
+      res.status(500).json({ message: "Failed to create event" });
+    }
+  });
+
+  // Update event (creator or facilitador only)
+  app.patch('/api/events/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const isFacilitador = userWithProfile?.userRoles?.some((ur: any) => ur.role?.name === 'facilitador');
+      
+      const event = await storage.getEvent(req.params.id);
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+      
+      if (event.createdByUserId !== userId && !isFacilitador) {
+        return res.status(403).json({ message: "Not authorized to update this event" });
+      }
+      
+      const updateData = { ...req.body };
+      if (req.body.eventDate) updateData.eventDate = new Date(req.body.eventDate);
+      if (req.body.endDate) updateData.endDate = new Date(req.body.endDate);
+      
+      const updated = await storage.updateEvent(req.params.id, updateData);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating event:", error);
+      res.status(500).json({ message: "Failed to update event" });
+    }
+  });
+
+  // Delete event (creator or facilitador only)
+  app.delete('/api/events/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const isFacilitador = userWithProfile?.userRoles?.some((ur: any) => ur.role?.name === 'facilitador');
+      
+      const event = await storage.getEvent(req.params.id);
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+      
+      if (event.createdByUserId !== userId && !isFacilitador) {
+        return res.status(403).json({ message: "Not authorized to delete this event" });
+      }
+      
+      await storage.deleteEvent(req.params.id);
+      res.json({ message: "Event deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting event:", error);
+      res.status(500).json({ message: "Failed to delete event" });
+    }
+  });
+
+  // Publish event
+  app.post('/api/events/:id/publish', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const isFacilitador = userWithProfile?.userRoles?.some((ur: any) => ur.role?.name === 'facilitador');
+      
+      const event = await storage.getEvent(req.params.id);
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+      
+      if (event.createdByUserId !== userId && !isFacilitador) {
+        return res.status(403).json({ message: "Not authorized to publish this event" });
+      }
+      
+      const published = await storage.publishEvent(req.params.id);
+      res.json(published);
+    } catch (error) {
+      console.error("Error publishing event:", error);
+      res.status(500).json({ message: "Failed to publish event" });
+    }
+  });
+
+  // Register for event (any authenticated user)
+  app.post('/api/events/:id/register', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const event = await storage.getEvent(req.params.id);
+      
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+      
+      if (event.status !== 'published') {
+        return res.status(400).json({ message: "Cannot register for unpublished event" });
+      }
+      
+      const isRegistered = await storage.isUserRegisteredForEvent(req.params.id, userId);
+      if (isRegistered) {
+        return res.status(400).json({ message: "Already registered for this event" });
+      }
+      
+      if (event.maxAttendees && event.registrationCount && event.registrationCount >= event.maxAttendees) {
+        return res.status(400).json({ message: "Event is full" });
+      }
+      
+      const registration = await storage.registerForEvent(req.params.id, userId);
+      res.status(201).json(registration);
+    } catch (error) {
+      console.error("Error registering for event:", error);
+      res.status(500).json({ message: "Failed to register for event" });
+    }
+  });
+
+  // Cancel event registration
+  app.delete('/api/events/:id/register', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      await storage.cancelEventRegistration(req.params.id, userId);
+      res.json({ message: "Registration cancelled successfully" });
+    } catch (error) {
+      console.error("Error cancelling registration:", error);
+      res.status(500).json({ message: "Failed to cancel registration" });
+    }
+  });
+
+  // Get user's event registrations
+  app.get('/api/my-events', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const registrations = await storage.getUserEventRegistrations(userId);
+      res.json(registrations);
+    } catch (error) {
+      console.error("Error fetching user events:", error);
+      res.status(500).json({ message: "Failed to fetch user events" });
+    }
+  });
+
   return httpServer;
 }
 
