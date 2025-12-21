@@ -17,7 +17,7 @@ import { relations } from "drizzle-orm";
 
 // Enums for user status and role types
 export const userStatusEnum = pgEnum('user_status', ['active', 'inactive', 'suspended']);
-export const roleTypeEnum = pgEnum('role_type', ['usuario', 'mentor', 'facilitador']);
+export const roleTypeEnum = pgEnum('role_type', ['usuario', 'mentor', 'facilitador', 'proponente', 'acreditador']);
 export const profileStatusEnum = pgEnum('profile_status', ['complete', 'incomplete', 'pending']);
 
 // Session storage table.

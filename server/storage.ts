@@ -72,11 +72,13 @@ export interface IStorage {
   // Role operations
   getRoles(): Promise<Role[]>;
   getRoleByName(name: string): Promise<Role | undefined>;
-  createRole(role: { name: 'usuario' | 'mentor' | 'facilitador'; description?: string }): Promise<Role>;
+  createRole(role: { name: 'usuario' | 'mentor' | 'facilitador' | 'proponente' | 'acreditador'; description?: string }): Promise<Role>;
   
   // UserRole operations
   getUserRoles(userId: string): Promise<(UserRole & { role?: Role })[]>;
   assignRole(userId: string, roleId: string): Promise<UserRole>;
+  removeRole(userId: string, roleId: string): Promise<boolean>;
+  setUserRoles(userId: string, roleIds: string[]): Promise<(UserRole & { role?: Role })[]>;
   
   // Seed operations
   seedRoles(): Promise<void>;
@@ -267,11 +269,11 @@ export class DatabaseStorage implements IStorage {
     const [role] = await db
       .select()
       .from(roles)
-      .where(eq(roles.name, name as 'usuario' | 'mentor' | 'facilitador'));
+      .where(eq(roles.name, name as 'usuario' | 'mentor' | 'facilitador' | 'proponente' | 'acreditador'));
     return role;
   }
 
-  async createRole(roleData: { name: 'usuario' | 'mentor' | 'facilitador'; description?: string }): Promise<Role> {
+  async createRole(roleData: { name: 'usuario' | 'mentor' | 'facilitador' | 'proponente' | 'acreditador'; description?: string }): Promise<Role> {
     const [role] = await db
       .insert(roles)
       .values(roleData)
@@ -300,16 +302,45 @@ export class DatabaseStorage implements IStorage {
   }
 
   async assignRole(userId: string, roleId: string): Promise<UserRole> {
+    // Check if already assigned
+    const existing = await db
+      .select()
+      .from(userRoles)
+      .where(and(eq(userRoles.userId, userId), eq(userRoles.roleId, roleId)));
+    
+    if (existing.length > 0) {
+      return existing[0];
+    }
+    
     const [userRole] = await db
       .insert(userRoles)
       .values({
         userId,
         roleId,
-        isPrimary: 'true',
+        isPrimary: 'false',
         status: 'active',
       })
       .returning();
     return userRole;
+  }
+
+  async removeRole(userId: string, roleId: string): Promise<boolean> {
+    await db
+      .delete(userRoles)
+      .where(and(eq(userRoles.userId, userId), eq(userRoles.roleId, roleId)));
+    return true;
+  }
+
+  async setUserRoles(userId: string, roleIds: string[]): Promise<(UserRole & { role?: Role })[]> {
+    // Remove all existing roles
+    await db.delete(userRoles).where(eq(userRoles.userId, userId));
+    
+    // Assign new roles
+    for (const roleId of roleIds) {
+      await this.assignRole(userId, roleId);
+    }
+    
+    return this.getUserRoles(userId);
   }
 
   // Seed roles
@@ -317,9 +348,11 @@ export class DatabaseStorage implements IStorage {
     const existingRoles = await this.getRoles();
     
     const rolesToCreate = [
-      { name: 'usuario' as const, description: 'Usuario estándar - puede crear proyectos, inscribirse a cursos y solicitar mentoría' },
-      { name: 'mentor' as const, description: 'Mentor - guía a emprendedores sociales y revisa proyectos' },
-      { name: 'facilitador' as const, description: 'Facilitador - gestiona programas, eventos y supervisa la plataforma' },
+      { name: 'usuario' as const, description: 'Usuario estándar - acceso básico a la plataforma' },
+      { name: 'mentor' as const, description: 'Mentor - puede crear mentorías, ejecutarlas y elegir proyectos para ser mentor' },
+      { name: 'facilitador' as const, description: 'Facilitador - puede crear cursos y subir videos educativos' },
+      { name: 'proponente' as const, description: 'Proponente - puede crear proyectos, buscar mentores e inscribirse a cursos' },
+      { name: 'acreditador' as const, description: 'Acreditador - instituto que certifica cursos y mentorías' },
     ];
 
     for (const roleData of rolesToCreate) {

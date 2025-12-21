@@ -81,6 +81,24 @@ export async function registerRoutes(
     }
   });
 
+  // Update user's own roles
+  app.put('/api/auth/user/roles', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { roleIds } = req.body;
+      
+      if (!Array.isArray(roleIds) || roleIds.length === 0) {
+        return res.status(400).json({ message: "At least one role must be selected" });
+      }
+      
+      const updatedRoles = await storage.setUserRoles(userId, roleIds);
+      res.json(updatedRoles);
+    } catch (error) {
+      console.error("Error updating user roles:", error);
+      res.status(500).json({ message: "Failed to update roles" });
+    }
+  });
+
   // ===== PROJECT ROUTES =====
   
   // Get all projects (for facilitators/mentors) or user's own projects
