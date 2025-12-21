@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
@@ -9,15 +12,29 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar, MapPin, Users, Clock, Plus, Globe, Video, Loader2, Check, X } from "lucide-react";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Calendar, MapPin, Users, Plus, Video, Loader2, Check, X } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import type { EventWithDetails } from "@shared/schema";
+
+const createEventSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  description: z.string().optional(),
+  eventDate: z.string().min(1, "Start date is required"),
+  endDate: z.string().optional(),
+  location: z.string().optional(),
+  isOnline: z.boolean().default(false),
+  meetingUrl: z.string().optional(),
+  maxAttendees: z.string().optional(),
+  category: z.string().optional(),
+});
+
+type CreateEventFormData = z.infer<typeof createEventSchema>;
 
 export default function Events() {
   const { user, hasAnyRole } = useAuth();
@@ -26,6 +43,21 @@ export default function Events() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   
   const canCreate = hasAnyRole(['facilitador', 'mentor']);
+
+  const form = useForm<CreateEventFormData>({
+    resolver: zodResolver(createEventSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+      eventDate: "",
+      endDate: "",
+      location: "",
+      isOnline: false,
+      meetingUrl: "",
+      maxAttendees: "",
+      category: "",
+    },
+  });
 
   const { data: events, isLoading } = useQuery<EventWithDetails[]>({
     queryKey: ['/api/events'],
@@ -39,6 +71,7 @@ export default function Events() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/events'] });
       setIsCreateDialogOpen(false);
+      form.reset();
       toast({ title: t('events.created') });
     },
     onError: () => {
@@ -87,20 +120,17 @@ export default function Events() {
     },
   });
 
-  const handleCreateEvent = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    
+  const onSubmit = (data: CreateEventFormData) => {
     const eventData = {
-      title: formData.get('title') as string,
-      description: formData.get('description') as string,
-      eventDate: formData.get('eventDate') as string,
-      endDate: formData.get('endDate') as string || null,
-      location: formData.get('location') as string,
-      isOnline: formData.get('isOnline') === 'on' ? 'true' : 'false',
-      meetingUrl: formData.get('meetingUrl') as string,
-      maxAttendees: formData.get('maxAttendees') ? parseInt(formData.get('maxAttendees') as string) : null,
-      category: formData.get('category') as string,
+      title: data.title,
+      description: data.description || null,
+      eventDate: data.eventDate,
+      endDate: data.endDate || null,
+      location: data.location || null,
+      isOnline: data.isOnline ? 'true' : 'false',
+      meetingUrl: data.meetingUrl || null,
+      maxAttendees: data.maxAttendees ? parseInt(data.maxAttendees) : null,
+      category: data.category || null,
       status: 'draft',
     };
     
@@ -151,74 +181,160 @@ export default function Events() {
                 <DialogDescription>{t('events.createDescription')}</DialogDescription>
               </DialogHeader>
               
-              <form onSubmit={handleCreateEvent} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="title">{t('events.form.title')}</Label>
-                  <Input id="title" name="title" required data-testid="input-event-title" />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="description">{t('events.form.description')}</Label>
-                  <Textarea id="description" name="description" rows={3} data-testid="input-event-description" />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="eventDate">{t('events.form.startDate')}</Label>
-                    <Input id="eventDate" name="eventDate" type="datetime-local" required data-testid="input-event-date" />
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('events.form.title')}</FormLabel>
+                        <FormControl>
+                          <Input {...field} data-testid="input-event-title" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('events.form.description')}</FormLabel>
+                        <FormControl>
+                          <Textarea {...field} rows={3} data-testid="input-event-description" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="eventDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t('events.form.startDate')}</FormLabel>
+                          <FormControl>
+                            <Input type="datetime-local" {...field} data-testid="input-event-date" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="endDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t('events.form.endDate')}</FormLabel>
+                          <FormControl>
+                            <Input type="datetime-local" {...field} data-testid="input-event-end-date" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="endDate">{t('events.form.endDate')}</Label>
-                    <Input id="endDate" name="endDate" type="datetime-local" data-testid="input-event-end-date" />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="category">{t('events.form.category')}</Label>
-                  <Select name="category">
-                    <SelectTrigger data-testid="select-event-category">
-                      <SelectValue placeholder={t('events.form.selectCategory')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="workshop">{t('events.categories.workshop')}</SelectItem>
-                      <SelectItem value="webinar">{t('events.categories.webinar')}</SelectItem>
-                      <SelectItem value="networking">{t('events.categories.networking')}</SelectItem>
-                      <SelectItem value="training">{t('events.categories.training')}</SelectItem>
-                      <SelectItem value="conference">{t('events.categories.conference')}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <Checkbox id="isOnline" name="isOnline" data-testid="checkbox-is-online" />
-                  <Label htmlFor="isOnline" className="cursor-pointer">{t('events.form.isOnline')}</Label>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="location">{t('events.form.location')}</Label>
-                  <Input id="location" name="location" data-testid="input-event-location" />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="meetingUrl">{t('events.form.meetingUrl')}</Label>
-                  <Input id="meetingUrl" name="meetingUrl" type="url" data-testid="input-meeting-url" />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="maxAttendees">{t('events.form.maxAttendees')}</Label>
-                  <Input id="maxAttendees" name="maxAttendees" type="number" min="1" data-testid="input-max-attendees" />
-                </div>
-                
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                    {t('common.cancel')}
-                  </Button>
-                  <Button type="submit" disabled={createEventMutation.isPending} data-testid="button-submit-event">
-                    {createEventMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                    {t('events.create')}
-                  </Button>
-                </DialogFooter>
-              </form>
+                  
+                  <FormField
+                    control={form.control}
+                    name="category"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('events.form.category')}</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-event-category">
+                              <SelectValue placeholder={t('events.form.selectCategory')} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="workshop">{t('events.categories.workshop')}</SelectItem>
+                            <SelectItem value="webinar">{t('events.categories.webinar')}</SelectItem>
+                            <SelectItem value="networking">{t('events.categories.networking')}</SelectItem>
+                            <SelectItem value="training">{t('events.categories.training')}</SelectItem>
+                            <SelectItem value="conference">{t('events.categories.conference')}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="isOnline"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center gap-2">
+                        <FormControl>
+                          <Checkbox 
+                            checked={field.value} 
+                            onCheckedChange={field.onChange}
+                            data-testid="checkbox-is-online" 
+                          />
+                        </FormControl>
+                        <FormLabel className="cursor-pointer !mt-0">{t('events.form.isOnline')}</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="location"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('events.form.location')}</FormLabel>
+                        <FormControl>
+                          <Input {...field} data-testid="input-event-location" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="meetingUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('events.form.meetingUrl')}</FormLabel>
+                        <FormControl>
+                          <Input type="url" {...field} data-testid="input-meeting-url" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="maxAttendees"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('events.form.maxAttendees')}</FormLabel>
+                        <FormControl>
+                          <Input type="number" min="1" {...field} data-testid="input-max-attendees" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <DialogFooter>
+                    <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                      {t('common.cancel')}
+                    </Button>
+                    <Button type="submit" disabled={createEventMutation.isPending} data-testid="button-submit-event">
+                      {createEventMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                      {t('events.create')}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </Form>
             </DialogContent>
           </Dialog>
         )}
