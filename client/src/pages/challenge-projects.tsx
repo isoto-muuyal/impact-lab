@@ -63,8 +63,8 @@ export default function ChallengeProjects() {
   const [editingProject, setEditingProject] = useState<ChallengeProject | null>(null);
   const [filterChallengeId, setFilterChallengeId] = useState<string | null>(null);
 
-  const userRole = (user as any)?.userRoles?.[0]?.role?.name || "usuario";
-  const isFacilitador = userRole === "facilitador";
+  const { hasRole } = useAuth();
+  const isFacilitador = hasRole('facilitador');
 
   const form = useForm<ProjectFormData>({
     resolver: zodResolver(projectFormSchema),

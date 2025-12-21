@@ -59,8 +59,8 @@ export default function Organizations() {
   const [editingOrg, setEditingOrg] = useState<Organization | null>(null);
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
 
-  const userRole = (user as any)?.userRoles?.[0]?.role?.name || "usuario";
-  const isFacilitador = userRole === "facilitador";
+  const { hasRole } = useAuth();
+  const isFacilitador = hasRole('facilitador');
 
   const form = useForm<OrganizationFormData>({
     resolver: zodResolver(organizationFormSchema),

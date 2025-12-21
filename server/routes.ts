@@ -25,6 +25,28 @@ export async function registerRoutes(
   // Seed roles on startup
   await storage.seedRoles();
 
+  // Seed test data endpoint (facilitadors only)
+  app.post('/api/seed-test-data', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const isFacilitador = userWithProfile?.userRoles?.some((ur: any) => ur.role?.name === 'facilitador');
+      
+      if (!isFacilitador) {
+        return res.status(403).json({ message: "Only facilitators can seed test data" });
+      }
+      
+      const result = await storage.seedTestData(userId);
+      res.json({ 
+        message: "Test data seeded successfully", 
+        created: result 
+      });
+    } catch (error) {
+      console.error("Error seeding test data:", error);
+      res.status(500).json({ message: "Failed to seed test data" });
+    }
+  });
+
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
@@ -89,6 +111,32 @@ export async function registerRoutes(
       
       if (!Array.isArray(roleIds) || roleIds.length === 0) {
         return res.status(400).json({ message: "At least one role must be selected" });
+      }
+      
+      // Get all roles to validate the request
+      const allRoles = await storage.getRoles();
+      const roleMap = new Map(allRoles.map(r => [r.id, r]));
+      
+      // Define self-assignable roles (non-privileged roles)
+      const selfAssignableRoles = ['usuario', 'proponente'];
+      
+      // Check if user is a facilitador (can assign any role)
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const isFacilitador = userWithProfile?.userRoles?.some((ur: any) => ur.role?.name === 'facilitador');
+      
+      // Validate requested roles
+      for (const roleId of roleIds) {
+        const role = roleMap.get(roleId);
+        if (!role) {
+          return res.status(400).json({ message: `Invalid role ID: ${roleId}` });
+        }
+        
+        // If user is not facilitador, they can only assign self-assignable roles
+        if (!isFacilitador && !selfAssignableRoles.includes(role.name)) {
+          return res.status(403).json({ 
+            message: `Cannot self-assign privileged role: ${role.name}. Contact a facilitator.` 
+          });
+        }
       }
       
       const updatedRoles = await storage.setUserRoles(userId, roleIds);
@@ -1443,6 +1491,22 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching project participants:", error);
       res.status(500).json({ message: "Failed to fetch participants" });
+    }
+  });
+
+  // Get mentor matches for a project
+  app.get('/api/challenge-projects/:id/mentor-matches', isAuthenticated, async (req: any, res) => {
+    try {
+      const project = await storage.getChallengeProject(req.params.id);
+      if (!project) {
+        return res.status(404).json({ message: "Challenge project not found" });
+      }
+      
+      const matches = await storage.findMentorMatchesForProject(req.params.id);
+      res.json(matches);
+    } catch (error) {
+      console.error("Error finding mentor matches:", error);
+      res.status(500).json({ message: "Failed to find mentor matches" });
     }
   });
 

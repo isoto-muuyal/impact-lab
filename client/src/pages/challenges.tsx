@@ -66,8 +66,8 @@ export default function Challenges() {
   const [editingChallenge, setEditingChallenge] = useState<Challenge | null>(null);
   const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
 
-  const userRole = (user as any)?.userRoles?.[0]?.role?.name || "usuario";
-  const isFacilitador = userRole === "facilitador";
+  const { hasRole } = useAuth();
+  const isFacilitador = hasRole('facilitador');
 
   const form = useForm<ChallengeFormData>({
     resolver: zodResolver(challengeFormSchema),

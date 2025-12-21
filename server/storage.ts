@@ -82,6 +82,7 @@ export interface IStorage {
   
   // Seed operations
   seedRoles(): Promise<void>;
+  seedTestData(userId: string): Promise<{ organizations: number; challenges: number; projects: number; courses: number }>;
   
   // Project operations
   getProjects(): Promise<ProjectWithOwner[]>;
@@ -124,6 +125,8 @@ export interface IStorage {
   
   // Mentor list for assignments
   getMentors(): Promise<User[]>;
+  getMentorsWithProfiles(): Promise<UserWithProfile[]>;
+  findMentorMatchesForProject(projectId: string): Promise<{ mentor: UserWithProfile; score: number; reasons: string[] }[]>;
   
   // Organization operations
   getOrganizations(activeOnly?: boolean): Promise<Organization[]>;
@@ -361,6 +364,83 @@ export class DatabaseStorage implements IStorage {
         await this.createRole(roleData);
       }
     }
+  }
+
+  // Seed sample data for testing
+  async seedTestData(userId: string): Promise<{ organizations: number; challenges: number; projects: number; courses: number }> {
+    // Sample organizations
+    const sampleOrgs = [
+      { name: 'Fundacion Educativa Nueva York', legalStatus: 'nonprofit' as const, description: 'Organizacion dedicada a promover la educacion en comunidades desatendidas', country: 'Estados Unidos', city: 'Nueva York', website: 'https://example.org/fundacion-educativa', createdByUserId: userId },
+      { name: 'Instituto de Desarrollo Sostenible', legalStatus: 'educational' as const, description: 'Centro de investigacion y capacitacion en desarrollo sostenible', country: 'Mexico', city: 'Ciudad de Mexico', createdByUserId: userId },
+      { name: 'Red Comunitaria de Brooklyn', legalStatus: 'community_based' as const, description: 'Red de organizaciones comunitarias para el empoderamiento local', country: 'Estados Unidos', city: 'Brooklyn', createdByUserId: userId },
+    ];
+
+    let orgCount = 0;
+    const createdOrgs: Organization[] = [];
+    for (const orgData of sampleOrgs) {
+      const exists = await db.select().from(organizations).where(eq(organizations.name, orgData.name));
+      if (exists.length === 0) {
+        const org = await this.createOrganization(orgData);
+        createdOrgs.push(org);
+        orgCount++;
+      }
+    }
+
+    // Sample challenges
+    const sampleChallenges = [
+      { title: 'Innovacion Social para la Educacion', description: 'Buscamos proyectos innovadores que mejoren el acceso a la educacion en comunidades marginadas', city: 'Nueva York', country: 'Estados Unidos', sdgTags: ['SDG4', 'SDG10'], status: 'open' as const, openFrom: new Date('2024-01-01'), openUntil: new Date('2025-12-31'), maxProjects: 20, createdByUserId: userId },
+      { title: 'Economia Circular y Medio Ambiente', description: 'Iniciativas para reducir residuos y promover la economia circular', city: 'Ciudad de Mexico', country: 'Mexico', sdgTags: ['SDG12', 'SDG13'], status: 'open' as const, openFrom: new Date('2024-06-01'), openUntil: new Date('2025-06-01'), maxProjects: 15, createdByUserId: userId },
+      { title: 'Salud Comunitaria en Brooklyn', description: 'Proyectos para mejorar el acceso a servicios de salud en la comunidad', city: 'Brooklyn', country: 'Estados Unidos', sdgTags: ['SDG3', 'SDG11'], status: 'in_progress' as const, openFrom: new Date('2024-03-01'), openUntil: new Date('2024-12-01'), maxProjects: 10, createdByUserId: userId },
+    ];
+
+    let challengeCount = 0;
+    const createdChallenges: Challenge[] = [];
+    for (const challengeData of sampleChallenges) {
+      const exists = await db.select().from(challenges).where(eq(challenges.title, challengeData.title));
+      if (exists.length === 0) {
+        const challenge = await this.createChallenge(challengeData);
+        createdChallenges.push(challenge);
+        challengeCount++;
+      }
+    }
+
+    // Sample challenge projects
+    let projectCount = 0;
+    if (createdChallenges.length > 0) {
+      const sampleProjects = [
+        { title: 'Aulas Digitales para Todos', summary: 'Creacion de laboratorios de computacion en escuelas rurales', challengeId: createdChallenges[0]?.id, locationCity: 'Nueva York', locationCountry: 'Estados Unidos', sdgTags: ['SDG4', 'SDG9'], impactFocus: 'educacion tecnologia inclusion', status: 'design' as const, isPilot: 'false' as const, createdByUserId: userId },
+        { title: 'Reciclaje Comunitario Inteligente', summary: 'Sistema de reciclaje con incentivos para comunidades locales', challengeId: createdChallenges[1]?.id, locationCity: 'Ciudad de Mexico', locationCountry: 'Mexico', sdgTags: ['SDG12', 'SDG11'], impactFocus: 'medio ambiente reciclaje comunidad', status: 'pilot' as const, isPilot: 'true' as const, createdByUserId: userId },
+        { title: 'Clinica Movil de Salud', summary: 'Unidad movil de atencion medica primaria para barrios vulnerables', challengeId: createdChallenges[2]?.id, locationCity: 'Brooklyn', locationCountry: 'Estados Unidos', sdgTags: ['SDG3', 'SDG10'], impactFocus: 'salud acceso comunidad vulnerable', status: 'active' as const, isPilot: 'false' as const, createdByUserId: userId },
+      ];
+
+      for (const projectData of sampleProjects) {
+        if (projectData.challengeId) {
+          const exists = await db.select().from(challengeProjects).where(eq(challengeProjects.title, projectData.title));
+          if (exists.length === 0) {
+            await this.createChallengeProject(projectData);
+            projectCount++;
+          }
+        }
+      }
+    }
+
+    // Sample courses
+    const sampleCourses = [
+      { title: 'Fundamentos de Emprendimiento Social', description: 'Curso introductorio sobre como crear y gestionar proyectos de impacto social', instructorId: userId, duration: '8 semanas', level: 'principiante', category: 'emprendimiento', isPublished: 'true' as const },
+      { title: 'Gestion de Proyectos Comunitarios', description: 'Metodologias y herramientas para gestionar proyectos de desarrollo comunitario', instructorId: userId, duration: '6 semanas', level: 'intermedio', category: 'gestion', isPublished: 'true' as const },
+      { title: 'Financiamiento para Impacto', description: 'Estrategias de financiamiento y recaudacion de fondos para proyectos sociales', instructorId: userId, duration: '4 semanas', level: 'avanzado', category: 'finanzas', isPublished: 'true' as const },
+    ];
+
+    let courseCount = 0;
+    for (const courseData of sampleCourses) {
+      const exists = await db.select().from(courses).where(eq(courses.title, courseData.title));
+      if (exists.length === 0) {
+        await this.createCourse(courseData);
+        courseCount++;
+      }
+    }
+
+    return { organizations: orgCount, challenges: challengeCount, projects: projectCount, courses: courseCount };
   }
 
   // Project operations
@@ -735,6 +815,90 @@ export class DatabaseStorage implements IStorage {
     );
     
     return mentors.filter((u): u is User => u !== undefined);
+  }
+
+  // Get mentors with profiles for matching
+  async getMentorsWithProfiles(): Promise<UserWithProfile[]> {
+    const mentors = await this.getMentors();
+    const mentorsWithProfiles = await Promise.all(
+      mentors.map(async (mentor) => {
+        const profile = await this.getProfile(mentor.id);
+        const userRolesWithRole = await this.getUserRoles(mentor.id);
+        return {
+          ...mentor,
+          profile,
+          userRoles: userRolesWithRole,
+        };
+      })
+    );
+    return mentorsWithProfiles;
+  }
+
+  // Find matching mentors for a challenge project
+  async findMentorMatchesForProject(projectId: string): Promise<{ mentor: UserWithProfile; score: number; reasons: string[] }[]> {
+    const project = await this.getChallengeProject(projectId);
+    if (!project) return [];
+
+    const mentors = await this.getMentorsWithProfiles();
+    const matches: { mentor: UserWithProfile; score: number; reasons: string[] }[] = [];
+
+    for (const mentor of mentors) {
+      let score = 0;
+      const reasons: string[] = [];
+      const profile = mentor.profile;
+
+      // Match based on SDG tags
+      const projectSdgTags = project.sdgTags || [];
+      const mentorInterests = profile?.interests || [];
+      
+      for (const sdg of projectSdgTags) {
+        if (mentorInterests.some(interest => interest.toLowerCase().includes(sdg.toLowerCase().replace('SDG', '')))) {
+          score += 15;
+          reasons.push(`Interest match: ${sdg}`);
+        }
+      }
+
+      // Match based on skills
+      const mentorSkills = profile?.skills || [];
+      const projectImpactFocus = project.impactFocus?.toLowerCase() || '';
+      
+      for (const skill of mentorSkills) {
+        if (projectImpactFocus.includes(skill.toLowerCase())) {
+          score += 20;
+          reasons.push(`Skill match: ${skill}`);
+        }
+      }
+
+      // Match based on location (city or country)
+      if (profile?.city && project.locationCity && 
+          profile.city.toLowerCase() === project.locationCity.toLowerCase()) {
+        score += 25;
+        reasons.push(`Same city: ${profile.city}`);
+      } else if (profile?.country && project.locationCountry && 
+                 profile.country.toLowerCase() === project.locationCountry.toLowerCase()) {
+        score += 10;
+        reasons.push(`Same country: ${profile.country}`);
+      }
+
+      // Check mentor's existing workload (fewer active mentorships = higher score)
+      const activeMentorships = await this.getMentorshipsByMentor(mentor.id);
+      const activeMentorshipCount = activeMentorships.filter(m => m.status === 'active').length;
+      if (activeMentorshipCount === 0) {
+        score += 15;
+        reasons.push('Available: No active mentorships');
+      } else if (activeMentorshipCount < 3) {
+        score += 5;
+        reasons.push(`Light workload: ${activeMentorshipCount} active mentorships`);
+      }
+
+      // Only include mentors with at least some matching criteria
+      if (score > 0) {
+        matches.push({ mentor, score, reasons });
+      }
+    }
+
+    // Sort by score descending
+    return matches.sort((a, b) => b.score - a.score);
   }
 
   // Organization operations

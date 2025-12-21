@@ -4,16 +4,18 @@ import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
+import type { Role } from "@shared/schema";
 import {
   Form,
   FormControl,
@@ -39,7 +41,9 @@ import {
   Link2,
   Save,
   Edit,
-  X
+  X,
+  Shield,
+  Check
 } from "lucide-react";
 
 const profileFormSchema = z.object({
@@ -68,10 +72,25 @@ const timezones = [
 ];
 
 export default function Profile() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, hasRole } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
+  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+  
+  const isFacilitador = hasRole('facilitador');
+  const selfAssignableRoles = ['usuario', 'proponente'];
+
+  const { data: allRoles } = useQuery<Role[]>({
+    queryKey: ['/api/roles'],
+    enabled: !!user,
+  });
+
+  useEffect(() => {
+    if (user?.userRoles) {
+      setSelectedRoles(user.userRoles.map((ur: any) => ur.roleId));
+    }
+  }, [user]);
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileFormSchema),
@@ -156,6 +175,56 @@ export default function Profile() {
     },
   });
 
+  const updateRolesMutation = useMutation({
+    mutationFn: async (roleIds: string[]) => {
+      await apiRequest('PUT', '/api/auth/user/roles', { roleIds });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+      toast({
+        title: "Roles actualizados",
+        description: "Tus roles han sido actualizados correctamente.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "No se pudieron actualizar los roles.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleRoleToggle = (roleId: string) => {
+    setSelectedRoles(prev => {
+      if (prev.includes(roleId)) {
+        if (prev.length === 1) return prev;
+        return prev.filter(id => id !== roleId);
+      }
+      return [...prev, roleId];
+    });
+  };
+
+  const handleSaveRoles = () => {
+    if (selectedRoles.length === 0) {
+      toast({
+        title: "Error",
+        description: "Debes seleccionar al menos un rol.",
+        variant: "destructive",
+      });
+      return;
+    }
+    updateRolesMutation.mutate(selectedRoles);
+  };
+
+  const hasRoleChanges = () => {
+    if (!user?.userRoles) return false;
+    const currentRoles = user.userRoles.map((ur: any) => ur.roleId).sort();
+    const newRoles = [...selectedRoles].sort();
+    if (currentRoles.length !== newRoles.length) return true;
+    return currentRoles.some((id: string, index: number) => id !== newRoles[index]);
+  };
+
   const onSubmit = (data: ProfileFormData) => {
     updateProfileMutation.mutate(data);
   };
@@ -165,11 +234,22 @@ export default function Profile() {
     usuario: "Usuario",
     mentor: "Mentor",
     facilitador: "Facilitador",
+    proponente: "Proponente",
+    acreditador: "Acreditador",
   };
   const roleBadgeColors: Record<string, string> = {
     usuario: "bg-primary/10 text-primary",
     mentor: "bg-chart-2/10 text-chart-2",
     facilitador: "bg-chart-4/10 text-chart-4",
+    proponente: "bg-chart-1/10 text-chart-1",
+    acreditador: "bg-chart-3/10 text-chart-3",
+  };
+  const roleDescriptions: Record<string, string> = {
+    usuario: "Acceso basico a la plataforma",
+    mentor: "Puede crear y ejecutar mentorias, elegir proyectos para guiar",
+    facilitador: "Puede crear cursos y subir contenido educativo",
+    proponente: "Puede crear proyectos, buscar mentores e inscribirse a cursos",
+    acreditador: "Instituto que certifica cursos y mentorias",
   };
 
   const getInitials = () => {
@@ -514,6 +594,83 @@ export default function Profile() {
           </Card>
         </form>
       </Form>
+
+      {/* Role Selection Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5 text-muted-foreground" />
+            Mis Roles
+          </CardTitle>
+          <CardDescription>
+            Selecciona los roles que deseas desempeñar en la plataforma. Puedes tener múltiples roles.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {allRoles?.map((role) => {
+              const canSelfAssign = isFacilitador || selfAssignableRoles.includes(role.name);
+              const isPrivileged = !selfAssignableRoles.includes(role.name);
+              
+              return (
+                <div
+                  key={role.id}
+                  className={`flex items-start gap-4 p-4 border rounded-md ${canSelfAssign ? 'hover-elevate cursor-pointer' : 'opacity-60 cursor-not-allowed'}`}
+                  onClick={() => canSelfAssign && handleRoleToggle(role.id)}
+                  data-testid={`role-option-${role.name}`}
+                >
+                  <Checkbox
+                    id={`role-${role.id}`}
+                    checked={selectedRoles.includes(role.id)}
+                    onCheckedChange={() => canSelfAssign && handleRoleToggle(role.id)}
+                    disabled={!canSelfAssign}
+                    className="mt-1"
+                    data-testid={`checkbox-role-${role.name}`}
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <label 
+                        htmlFor={`role-${role.id}`}
+                        className={`font-medium ${canSelfAssign ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+                      >
+                        {roleLabels[role.name] || role.name}
+                      </label>
+                      {isPrivileged && !isFacilitador && (
+                        <span className="px-2 py-0.5 bg-muted text-muted-foreground rounded text-xs">
+                          Requiere facilitador
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {roleDescriptions[role.name] || role.description}
+                    </p>
+                  </div>
+                  {selectedRoles.includes(role.id) && (
+                    <Check className="h-5 w-5 text-primary" />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          
+          <div className="mt-6 flex justify-end">
+            <Button 
+              onClick={handleSaveRoles}
+              disabled={!hasRoleChanges() || updateRolesMutation.isPending}
+              data-testid="button-save-roles"
+            >
+              {updateRolesMutation.isPending ? (
+                "Guardando..."
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Guardar Roles
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

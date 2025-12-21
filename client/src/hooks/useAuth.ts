@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import type { UserWithProfile } from "@shared/schema";
 
+export type RoleName = 'usuario' | 'mentor' | 'facilitador' | 'proponente' | 'acreditador';
+
 async function fetchUser(): Promise<UserWithProfile | null> {
   const res = await fetch("/api/auth/user", {
     credentials: "include",
@@ -25,10 +27,28 @@ export function useAuth() {
     staleTime: 5 * 60 * 1000,
   });
 
+  const hasRole = (roleName: RoleName): boolean => {
+    if (!user?.userRoles) return false;
+    return user.userRoles.some((ur: any) => ur.role?.name === roleName);
+  };
+
+  const hasAnyRole = (roleNames: RoleName[]): boolean => {
+    if (!user?.userRoles) return false;
+    return roleNames.some(roleName => hasRole(roleName));
+  };
+
+  const getUserRoles = (): RoleName[] => {
+    if (!user?.userRoles) return [];
+    return user.userRoles.map((ur: any) => ur.role?.name as RoleName).filter(Boolean);
+  };
+
   return {
     user: user ?? null,
     isLoading,
     isAuthenticated: !!user,
     error,
+    hasRole,
+    hasAnyRole,
+    getUserRoles,
   };
 }

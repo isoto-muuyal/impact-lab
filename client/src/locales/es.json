@@ -30,8 +30,22 @@
   },
   "roles": {
     "user": "Usuario",
+    "usuario": "Usuario",
     "mentor": "Mentor",
-    "facilitator": "Facilitador"
+    "facilitator": "Facilitador",
+    "facilitador": "Facilitador",
+    "proponente": "Proponente",
+    "acreditador": "Acreditador",
+    "selectRoles": "Seleccionar Roles",
+    "rolesUpdated": "Roles actualizados correctamente",
+    "updateError": "Error al actualizar roles",
+    "descriptions": {
+      "usuario": "Acceso básico a la plataforma",
+      "mentor": "Puede crear y ejecutar mentorías, elegir proyectos para guiar",
+      "facilitador": "Puede crear cursos y subir contenido educativo",
+      "proponente": "Puede crear proyectos, buscar mentores e inscribirse a cursos",
+      "acreditador": "Instituto que certifica cursos y mentorías"
+    }
   },
   "landing": {
     "platform": "Plataforma de Impacto Social",
@@ -101,7 +115,9 @@
     "phone": "Teléfono",
     "bio": "Biografía",
     "save": "Guardar",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "myRoles": "Mis Roles",
+    "selectRolesDescription": "Selecciona los roles que deseas desempeñar en la plataforma"
   },
   "projects": {
     "title": "Proyectos",
