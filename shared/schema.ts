@@ -841,6 +841,289 @@ export type ColabMilestone = typeof colabMilestones.$inferSelect;
 export type InsertColabMilestone = z.infer<typeof insertColabMilestoneSchema>;
 
 // ============================================
+// CO-LAB SPECIALIZATION: UNA GRAN IDEA
+// ============================================
+
+// Confidentiality level enum
+export const colabConfidentialityEnum = pgEnum('colab_confidentiality', ['public', 'internal', 'confidential', 'restricted']);
+
+// CoLab program status enum
+export const colabProgramStatusEnum = pgEnum('colab_program_status', ['draft', 'active', 'paused', 'completed', 'archived']);
+
+// CoLabProgram_OneBigIdea table - Programa Co-Lab para una gran idea central
+export const colabProgramOneBigIdea = pgTable("colab_program_one_big_idea", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  cohortId: varchar("cohort_id").notNull().references(() => colabCohorts.id),
+  focusIdeaId: varchar("focus_idea_id"),
+  collaborationRules: text("collaboration_rules"),
+  confidentialityLevel: colabConfidentialityEnum("confidentiality_level").default('internal'),
+  expectedResults: text("expected_results"),
+  successCriteria: text("success_criteria"),
+  contributionPolicy: text("contribution_policy"),
+  status: colabProgramStatusEnum("status").default('draft'),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  createdByUserId: varchar("created_by_user_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Idea maturity level enum
+export const ideaMaturityEnum = pgEnum('idea_maturity', ['concept', 'validated_problem', 'solution_design', 'prototype', 'pilot', 'scaling']);
+
+// CoLabFocusIdea table - Idea central del laboratorio
+export const colabFocusIdeas = pgTable("colab_focus_ideas", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  programId: varchar("program_id").notNull().references(() => colabProgramOneBigIdea.id),
+  title: varchar("title").notNull(),
+  summary: text("summary"),
+  problemOpportunity: text("problem_opportunity"),
+  targetBeneficiaries: text("target_beneficiaries"),
+  proposedSolution: text("proposed_solution"),
+  impactTags: text("impact_tags"),
+  challengeId: varchar("challenge_id"),
+  projectId: varchar("project_id").references(() => projects.id),
+  maturityLevel: ideaMaturityEnum("maturity_level").default('concept'),
+  keyAssumptions: text("key_assumptions"),
+  identifiedRisks: text("identified_risks"),
+  strategicQuestions: text("strategic_questions"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Team role status enum
+export const teamRoleStatusEnum = pgEnum('team_role_status', ['active', 'inactive']);
+
+// CoLabIdeaTeamRole table - Roles dentro del equipo
+export const colabIdeaTeamRoles = pgTable("colab_idea_team_roles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  programId: varchar("program_id").notNull().references(() => colabProgramOneBigIdea.id),
+  roleName: varchar("role_name").notNull(),
+  description: text("description"),
+  responsibilities: text("responsibilities"),
+  dedicationLevel: varchar("dedication_level"),
+  selectionCriteria: text("selection_criteria"),
+  status: teamRoleStatusEnum("status").default('active'),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Contribution type enum
+export const contributionTypeEnum = pgEnum('contribution_type', ['research', 'design', 'feedback', 'artifact', 'mentoring', 'technical', 'other']);
+
+// Contribution validation status enum
+export const contributionValidationEnum = pgEnum('contribution_validation', ['pending', 'approved', 'rejected', 'needs_revision']);
+
+// CoLabIdeaContribution table - Contribuciones de participantes
+export const colabIdeaContributions = pgTable("colab_idea_contributions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  programId: varchar("program_id").notNull().references(() => colabProgramOneBigIdea.id),
+  contributorUserId: varchar("contributor_user_id").notNull().references(() => users.id),
+  roleId: varchar("role_id").references(() => colabIdeaTeamRoles.id),
+  contributionType: contributionTypeEnum("contribution_type"),
+  briefDescription: varchar("brief_description"),
+  detailedContribution: text("detailed_contribution"),
+  artifactUrl: varchar("artifact_url"),
+  sessionId: varchar("session_id").references(() => colabSessions.id),
+  milestoneId: varchar("milestone_id").references(() => colabMilestones.id),
+  timeSpentMinutes: integer("time_spent_minutes"),
+  validationStatus: contributionValidationEnum("validation_status").default('pending'),
+  reviewerUserId: varchar("reviewer_user_id").references(() => users.id),
+  reviewerNotes: text("reviewer_notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Decision type enum
+export const decisionTypeEnum = pgEnum('decision_type', ['scope', 'pivot', 'priority', 'alliance', 'resource', 'timeline', 'other']);
+
+// CoLabIdeaDecisionLog table - Registro de decisiones
+export const colabIdeaDecisionLogs = pgTable("colab_idea_decision_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  programId: varchar("program_id").notNull().references(() => colabProgramOneBigIdea.id),
+  focusIdeaId: varchar("focus_idea_id").references(() => colabFocusIdeas.id),
+  decisionType: decisionTypeEnum("decision_type"),
+  description: text("description"),
+  justification: text("justification"),
+  decidedByUserId: varchar("decided_by_user_id").references(() => users.id),
+  decidedAt: timestamp("decided_at").defaultNow(),
+  artifactUrl: varchar("artifact_url"),
+  notes: text("notes"),
+});
+
+// Review moment enum
+export const reviewMomentEnum = pgEnum('review_moment', ['initial', 'intermediate', 'final', 'other']);
+
+// CoLabIdeaReview table - Revisiones de la idea
+export const colabIdeaReviews = pgTable("colab_idea_reviews", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  programId: varchar("program_id").notNull().references(() => colabProgramOneBigIdea.id),
+  focusIdeaId: varchar("focus_idea_id").references(() => colabFocusIdeas.id),
+  reviewMoment: reviewMomentEnum("review_moment"),
+  rubricReference: varchar("rubric_reference"),
+  overallEvaluation: text("overall_evaluation"),
+  strengths: text("strengths"),
+  areasToImprove: text("areas_to_improve"),
+  recommendations: text("recommendations"),
+  reviewerUserId: varchar("reviewer_user_id").references(() => users.id),
+  reviewedAt: timestamp("reviewed_at").defaultNow(),
+  artifactsConsidered: text("artifacts_considered"),
+});
+
+// ============================================
+// CO-LAB SPECIALIZATION: UN GRAN MÉTODO
+// ============================================
+
+// CoLabProgram_OneBigMethod table - Programa Co-Lab metodológico
+export const colabProgramOneBigMethod = pgTable("colab_program_one_big_method", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  cohortId: varchar("cohort_id").notNull().references(() => colabCohorts.id),
+  methodName: varchar("method_name").notNull(),
+  methodDescription: text("method_description"),
+  methodObjective: text("method_objective"),
+  eligibleIdeaTypes: text("eligible_idea_types"),
+  maxParallelIdeas: integer("max_parallel_ideas"),
+  maxParticipantsPerCohort: integer("max_participants_per_cohort"),
+  expectedResults: text("expected_results"),
+  successCriteria: text("success_criteria"),
+  evaluationModel: text("evaluation_model"),
+  usagePolicy: text("usage_policy"),
+  status: colabProgramStatusEnum("status").default('draft'),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  createdByUserId: varchar("created_by_user_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// CoLabMethodFramework table - Marco metodológico
+export const colabMethodFrameworks = pgTable("colab_method_frameworks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  programId: varchar("program_id").notNull().references(() => colabProgramOneBigMethod.id),
+  frameworkName: varchar("framework_name").notNull(),
+  description: text("description"),
+  stagesList: text("stages_list"),
+  stagesDescription: text("stages_description"),
+  toolsPerStage: text("tools_per_stage"),
+  artifactsPerStage: text("artifacts_per_stage"),
+  evaluationCriteriaPerStage: text("evaluation_criteria_per_stage"),
+  version: varchar("version").default('1.0'),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Idea track status enum
+export const ideaTrackStatusEnum = pgEnum('idea_track_status', ['enrolled', 'in_progress', 'completed', 'withdrawn', 'graduated']);
+
+// CoLabIdeaTrack table - Track de ideas dentro del método
+export const colabIdeaTracks = pgTable("colab_idea_tracks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  programId: varchar("program_id").notNull().references(() => colabProgramOneBigMethod.id),
+  cohortId: varchar("cohort_id").references(() => colabCohorts.id),
+  ideaTitle: varchar("idea_title").notNull(),
+  ideaSummary: text("idea_summary"),
+  ownerUserId: varchar("owner_user_id").references(() => users.id),
+  organizationId: varchar("organization_id").references(() => organizations.id),
+  status: ideaTrackStatusEnum("status").default('enrolled'),
+  startedAt: timestamp("started_at"),
+  closedAt: timestamp("closed_at"),
+  projectId: varchar("project_id").references(() => projects.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Stage progress status enum
+export const stageProgressStatusEnum = pgEnum('stage_progress_status', ['not_started', 'in_progress', 'completed']);
+
+// CoLabTrackStageProgress table - Progreso por etapa
+export const colabTrackStageProgress = pgTable("colab_track_stage_progress", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  ideaTrackId: varchar("idea_track_id").notNull().references(() => colabIdeaTracks.id),
+  stageName: varchar("stage_name").notNull(),
+  status: stageProgressStatusEnum("status").default('not_started'),
+  evaluationResult: text("evaluation_result"),
+  facilitatorNotes: text("facilitator_notes"),
+  blockers: text("blockers"),
+  evidenceArtifacts: text("evidence_artifacts"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Method decision type enum
+export const methodDecisionTypeEnum = pgEnum('method_decision_type', ['method_adjustment', 'exception', 'pivot', 'acceleration', 'pause', 'other']);
+
+// CoLabMethodDecisionLog table - Registro de decisiones metodológicas
+export const colabMethodDecisionLogs = pgTable("colab_method_decision_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  programId: varchar("program_id").notNull().references(() => colabProgramOneBigMethod.id),
+  affectedStage: varchar("affected_stage"),
+  decisionType: methodDecisionTypeEnum("decision_type"),
+  description: text("description"),
+  justification: text("justification"),
+  decidedByUserId: varchar("decided_by_user_id").references(() => users.id),
+  decidedAt: timestamp("decided_at").defaultNow(),
+  notes: text("notes"),
+});
+
+// CoLabMethodReview table - Revisión del método
+export const colabMethodReviews = pgTable("colab_method_reviews", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  programId: varchar("program_id").notNull().references(() => colabProgramOneBigMethod.id),
+  cohortId: varchar("cohort_id").references(() => colabCohorts.id),
+  frameworkId: varchar("framework_id").references(() => colabMethodFrameworks.id),
+  overallEvaluation: text("overall_evaluation"),
+  patternsObserved: text("patterns_observed"),
+  methodStrengths: text("method_strengths"),
+  methodLimitations: text("method_limitations"),
+  improvementRecommendations: text("improvement_recommendations"),
+  reviewerUserId: varchar("reviewer_user_id").references(() => users.id),
+  reviewedAt: timestamp("reviewed_at").defaultNow(),
+});
+
+// Insert schemas for CO-LAB Gran Idea
+export const insertColabProgramOneBigIdeaSchema = createInsertSchema(colabProgramOneBigIdea).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertColabFocusIdeaSchema = createInsertSchema(colabFocusIdeas).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertColabIdeaTeamRoleSchema = createInsertSchema(colabIdeaTeamRoles).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertColabIdeaContributionSchema = createInsertSchema(colabIdeaContributions).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertColabIdeaDecisionLogSchema = createInsertSchema(colabIdeaDecisionLogs).omit({ id: true });
+export const insertColabIdeaReviewSchema = createInsertSchema(colabIdeaReviews).omit({ id: true });
+
+// Insert schemas for CO-LAB Gran Método
+export const insertColabProgramOneBigMethodSchema = createInsertSchema(colabProgramOneBigMethod).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertColabMethodFrameworkSchema = createInsertSchema(colabMethodFrameworks).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertColabIdeaTrackSchema = createInsertSchema(colabIdeaTracks).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertColabTrackStageProgressSchema = createInsertSchema(colabTrackStageProgress).omit({ id: true });
+export const insertColabMethodDecisionLogSchema = createInsertSchema(colabMethodDecisionLogs).omit({ id: true });
+export const insertColabMethodReviewSchema = createInsertSchema(colabMethodReviews).omit({ id: true });
+
+// Types for CO-LAB Gran Idea
+export type ColabProgramOneBigIdea = typeof colabProgramOneBigIdea.$inferSelect;
+export type InsertColabProgramOneBigIdea = z.infer<typeof insertColabProgramOneBigIdeaSchema>;
+export type ColabFocusIdea = typeof colabFocusIdeas.$inferSelect;
+export type InsertColabFocusIdea = z.infer<typeof insertColabFocusIdeaSchema>;
+export type ColabIdeaTeamRole = typeof colabIdeaTeamRoles.$inferSelect;
+export type InsertColabIdeaTeamRole = z.infer<typeof insertColabIdeaTeamRoleSchema>;
+export type ColabIdeaContribution = typeof colabIdeaContributions.$inferSelect;
+export type InsertColabIdeaContribution = z.infer<typeof insertColabIdeaContributionSchema>;
+export type ColabIdeaDecisionLog = typeof colabIdeaDecisionLogs.$inferSelect;
+export type InsertColabIdeaDecisionLog = z.infer<typeof insertColabIdeaDecisionLogSchema>;
+export type ColabIdeaReview = typeof colabIdeaReviews.$inferSelect;
+export type InsertColabIdeaReview = z.infer<typeof insertColabIdeaReviewSchema>;
+
+// Types for CO-LAB Gran Método
+export type ColabProgramOneBigMethod = typeof colabProgramOneBigMethod.$inferSelect;
+export type InsertColabProgramOneBigMethod = z.infer<typeof insertColabProgramOneBigMethodSchema>;
+export type ColabMethodFramework = typeof colabMethodFrameworks.$inferSelect;
+export type InsertColabMethodFramework = z.infer<typeof insertColabMethodFrameworkSchema>;
+export type ColabIdeaTrack = typeof colabIdeaTracks.$inferSelect;
+export type InsertColabIdeaTrack = z.infer<typeof insertColabIdeaTrackSchema>;
+export type ColabTrackStageProgress = typeof colabTrackStageProgress.$inferSelect;
+export type InsertColabTrackStageProgress = z.infer<typeof insertColabTrackStageProgressSchema>;
+export type ColabMethodDecisionLog = typeof colabMethodDecisionLogs.$inferSelect;
+export type InsertColabMethodDecisionLog = z.infer<typeof insertColabMethodDecisionLogSchema>;
+export type ColabMethodReview = typeof colabMethodReviews.$inferSelect;
+export type InsertColabMethodReview = z.infer<typeof insertColabMethodReviewSchema>;
+
+// ============================================
 // ORGANIZATIONS - Allied institutions registry
 // ============================================
 

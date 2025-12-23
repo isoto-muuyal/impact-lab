@@ -109,12 +109,12 @@
       "granIdea": {
         "title": "大创意协作",
         "description": "高影响力项目的协作开发",
-        "subgroups": []
+        "subgroups": ["大创意计划", "核心创意", "团队角色", "贡献", "决策", "评审"]
       },
       "metodologico": {
         "title": "方法论协作",
         "description": "应用方法论进行项目开发",
-        "subgroups": []
+        "subgroups": ["方法论计划", "方法论框架", "创意轨道", "阶段进度", "决策", "评审"]
       }
     }
   },

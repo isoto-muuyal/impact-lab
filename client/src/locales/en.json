@@ -109,12 +109,12 @@
       "granIdea": {
         "title": "CoLab for a Big Idea",
         "description": "Collaborative development of high-impact projects",
-        "subgroups": []
+        "subgroups": ["Big Idea Program", "Focus Idea", "Team Roles", "Contributions", "Decisions", "Reviews"]
       },
       "metodologico": {
         "title": "Methodological CoLab",
         "description": "Application of methodologies for project development",
-        "subgroups": []
+        "subgroups": ["Method Program", "Method Framework", "Idea Tracks", "Stage Progress", "Decisions", "Reviews"]
       }
     }
   },
