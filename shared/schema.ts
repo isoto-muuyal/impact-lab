@@ -725,6 +725,43 @@ export const insertColabEvaluationSchema = createInsertSchema(colabEvaluations).
 export type ColabEvaluation = typeof colabEvaluations.$inferSelect;
 export type InsertColabEvaluation = z.infer<typeof insertColabEvaluationSchema>;
 
+// CoLab cohort status enum
+export const colabCohortStatusEnum = pgEnum('colab_cohort_status', ['planned', 'active', 'completed']);
+
+// CoLabCohort table - "Cohorte seleccionada para participar en el Co-Lab"
+export const colabCohorts = pgTable("colab_cohorts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  callId: varchar("call_id").notNull().references(() => colabCalls.id),
+  title: varchar("title").notNull(),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  status: colabCohortStatusEnum("status").default('planned'),
+  leadFacilitatorUserId: varchar("lead_facilitator_user_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// CoLabCohort relations
+export const colabCohortsRelations = relations(colabCohorts, ({ one }) => ({
+  call: one(colabCalls, {
+    fields: [colabCohorts.callId],
+    references: [colabCalls.id],
+  }),
+  leadFacilitator: one(users, {
+    fields: [colabCohorts.leadFacilitatorUserId],
+    references: [users.id],
+  }),
+}));
+
+// Insert schema for CoLabCohort
+export const insertColabCohortSchema = createInsertSchema(colabCohorts).omit({
+  id: true,
+  createdAt: true,
+});
+
+// CoLabCohort types
+export type ColabCohort = typeof colabCohorts.$inferSelect;
+export type InsertColabCohort = z.infer<typeof insertColabCohortSchema>;
+
 // ============================================
 // ORGANIZATIONS - Allied institutions registry
 // ============================================
