@@ -803,6 +803,43 @@ export const insertColabSessionSchema = createInsertSchema(colabSessions).omit({
 export type ColabSession = typeof colabSessions.$inferSelect;
 export type InsertColabSession = z.infer<typeof insertColabSessionSchema>;
 
+// CoLab milestone status enum
+export const colabMilestoneStatusEnum = pgEnum('colab_milestone_status', ['planned', 'in_progress', 'completed', 'delayed']);
+
+// CoLabMilestone table - "Hitos de avance por proyecto dentro del Co-Lab"
+export const colabMilestones = pgTable("colab_milestones", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  cohortId: varchar("cohort_id").notNull().references(() => colabCohorts.id),
+  projectId: varchar("project_id").notNull().references(() => projects.id),
+  title: varchar("title").notNull(),
+  dueDate: timestamp("due_date"),
+  status: colabMilestoneStatusEnum("status").default('planned'),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// CoLabMilestone relations
+export const colabMilestonesRelations = relations(colabMilestones, ({ one }) => ({
+  cohort: one(colabCohorts, {
+    fields: [colabMilestones.cohortId],
+    references: [colabCohorts.id],
+  }),
+  project: one(projects, {
+    fields: [colabMilestones.projectId],
+    references: [projects.id],
+  }),
+}));
+
+// Insert schema for CoLabMilestone
+export const insertColabMilestoneSchema = createInsertSchema(colabMilestones).omit({
+  id: true,
+  createdAt: true,
+});
+
+// CoLabMilestone types
+export type ColabMilestone = typeof colabMilestones.$inferSelect;
+export type InsertColabMilestone = z.infer<typeof insertColabMilestoneSchema>;
+
 // ============================================
 // ORGANIZATIONS - Allied institutions registry
 // ============================================
