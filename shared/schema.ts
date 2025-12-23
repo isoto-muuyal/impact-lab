@@ -604,6 +604,48 @@ export type MentorshipSessionWithMentorship = MentorshipSession & {
 };
 
 // ============================================
+// CO-LAB - Collaborative acceleration programs
+// ============================================
+
+// CoLab type enum - big_idea, multi_idea, incubation_early_stage
+export const colabTypeEnum = pgEnum('colab_type', ['big_idea', 'multi_idea', 'incubation_early_stage']);
+
+// CoLab call status enum - draft, open, closed, archived
+export const colabCallStatusEnum = pgEnum('colab_call_status', ['draft', 'open', 'closed', 'archived']);
+
+// CoLabCall table - "Convocatoria para participar en un Co-Lab"
+export const colabCalls = pgTable("colab_calls", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title").notNull(),
+  description: text("description"),
+  type: colabTypeEnum("type").notNull(),
+  hostOrganizationId: varchar("host_organization_id").references(() => organizations.id),
+  openFrom: timestamp("open_from"),
+  openUntil: timestamp("open_until"),
+  maxApplications: integer("max_applications"),
+  status: colabCallStatusEnum("status").default('draft'),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// CoLabCall relations
+export const colabCallsRelations = relations(colabCalls, ({ one }) => ({
+  hostOrganization: one(organizations, {
+    fields: [colabCalls.hostOrganizationId],
+    references: [organizations.id],
+  }),
+}));
+
+// Insert schema for CoLabCall
+export const insertColabCallSchema = createInsertSchema(colabCalls).omit({
+  id: true,
+  createdAt: true,
+});
+
+// CoLabCall types
+export type ColabCall = typeof colabCalls.$inferSelect;
+export type InsertColabCall = z.infer<typeof insertColabCallSchema>;
+
+// ============================================
 // ORGANIZATIONS - Allied institutions registry
 // ============================================
 
