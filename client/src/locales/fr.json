@@ -99,7 +99,7 @@
       "mentorship": {
         "title": "Mentorats",
         "description": "Accompagnement personnalisé par des experts",
-        "subgroups": ["Catalogue de Mentorat", "Programme de Mentorat", "Mentors et Mentorés", "Séances", "Rapports"]
+        "subgroups": ["Catalogue de Mentorat", "Inscription au Programme de Mentorat", "Mentors et Mentorés", "Séances", "Rapports"]
       }
     },
     "coLab": {

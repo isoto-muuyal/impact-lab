@@ -113,7 +113,7 @@
       "mentorship": {
         "title": "Mentorías",
         "description": "Acompañamiento personalizado de expertos",
-        "subgroups": ["Oferta de Mentorías", "Programa de Mentoría", "Mentores y Mentees", "Sesiones", "Informes"]
+        "subgroups": ["Oferta de Mentorías", "Registro de Programa de Mentoría", "Mentores y Mentees", "Sesiones", "Informes"]
       }
     },
     "coLab": {
