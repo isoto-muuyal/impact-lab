@@ -380,6 +380,8 @@
     "online": "Evento en linea",
     "attendees": "asistentes",
     "organizedBy": "Organizado por",
+    "listView": "Lista",
+    "calendarView": "Calendario",
     "form": {
       "title": "Titulo del Evento",
       "description": "Descripcion",
@@ -390,7 +392,11 @@
       "isOnline": "Es un evento en linea",
       "location": "Ubicacion",
       "meetingUrl": "URL de la reunion",
-      "maxAttendees": "Maximo de asistentes"
+      "maxAttendees": "Maximo de asistentes",
+      "eventType": "Tipo de Evento",
+      "selectEventType": "Seleccionar tipo",
+      "accelerationProgram": "Programa de Aceleracion",
+      "selectProgram": "Seleccionar programa"
     },
     "categories": {
       "workshop": "Taller",
@@ -399,12 +405,56 @@
       "training": "Capacitacion",
       "conference": "Conferencia"
     },
+    "types": {
+      "general": "General",
+      "acceleration": "Aceleracion",
+      "workshop": "Taller",
+      "mentorship_session": "Sesion de Mentoria",
+      "demo_day": "Demo Day",
+      "pitch_practice": "Practica de Pitch",
+      "networking": "Networking"
+    },
     "status": {
       "draft": "Borrador",
       "published": "Publicado",
       "cancelled": "Cancelado",
       "completed": "Completado"
     }
+  },
+  "calendar": {
+    "today": "Hoy",
+    "selectDay": "Selecciona un dia",
+    "selectDayDescription": "Haz clic en un dia del calendario para ver los eventos programados",
+    "noEvents": "No hay eventos este dia"
+  },
+  "accelerationPrograms": {
+    "title": "Programas de Aceleracion",
+    "subtitle": "Gestiona programas de aceleracion y sus eventos",
+    "create": "Crear Programa",
+    "createNew": "Nuevo Programa de Aceleracion",
+    "createDescription": "Crea un programa para organizar eventos de aceleracion",
+    "created": "Programa creado exitosamente",
+    "createError": "Error al crear el programa",
+    "updated": "Programa actualizado",
+    "updateError": "Error al actualizar el programa",
+    "deleted": "Programa eliminado",
+    "deleteError": "Error al eliminar el programa",
+    "empty": "No hay programas de aceleracion",
+    "emptyDescription": "Los facilitadores pueden crear nuevos programas",
+    "form": {
+      "name": "Nombre del Programa",
+      "description": "Descripcion",
+      "startDate": "Fecha de Inicio",
+      "endDate": "Fecha de Fin",
+      "status": "Estado"
+    },
+    "statuses": {
+      "draft": "Borrador",
+      "active": "Activo",
+      "completed": "Completado",
+      "cancelled": "Cancelado"
+    },
+    "events": "eventos"
   },
   "settings": {
     "title": "Configuracion",

@@ -17,10 +17,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Calendar, MapPin, Users, Plus, Video, Loader2, Check, X } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Calendar as CalendarIcon, MapPin, Users, Plus, Video, Loader2, Check, X, List } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import type { EventWithDetails } from "@shared/schema";
+import EventCalendar from "@/components/EventCalendar";
 
 const createEventSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -41,6 +43,7 @@ export default function Events() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [activeView, setActiveView] = useState<'list' | 'calendar'>('list');
   
   const canCreate = hasAnyRole(['facilitador', 'mentor']);
 
@@ -161,20 +164,34 @@ export default function Events() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
-      <div className="flex items-center justify-between gap-4 mb-6">
+      <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold" data-testid="text-events-title">{t('events.title')}</h1>
           <p className="text-muted-foreground">{t('events.subtitle')}</p>
         </div>
         
-        {canCreate && (
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button data-testid="button-create-event">
-                <Plus className="h-4 w-4 mr-2" />
-                {t('events.create')}
-              </Button>
-            </DialogTrigger>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Tabs value={activeView} onValueChange={(v) => setActiveView(v as 'list' | 'calendar')} className="mr-2">
+            <TabsList>
+              <TabsTrigger value="list" data-testid="tab-list-view">
+                <List className="h-4 w-4 mr-1" />
+                {t('events.listView')}
+              </TabsTrigger>
+              <TabsTrigger value="calendar" data-testid="tab-calendar-view">
+                <CalendarIcon className="h-4 w-4 mr-1" />
+                {t('events.calendarView')}
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+          
+          {canCreate && (
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button data-testid="button-create-event">
+                  <Plus className="h-4 w-4 mr-2" />
+                  {t('events.create')}
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle>{t('events.createNew')}</DialogTitle>
@@ -338,124 +355,129 @@ export default function Events() {
             </DialogContent>
           </Dialog>
         )}
+        </div>
       </div>
 
-      {events?.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">{t('events.empty')}</h3>
-            <p className="text-muted-foreground text-center">{t('events.emptyDescription')}</p>
-          </CardContent>
-        </Card>
+      {activeView === 'calendar' ? (
+        <EventCalendar />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {events?.map((event) => (
-            <Card key={event.id} data-testid={`card-event-${event.id}`}>
-              <CardHeader>
-                <div className="flex items-start justify-between gap-2">
-                  <CardTitle className="text-lg">{event.title}</CardTitle>
-                  <Badge className={getStatusBadge(event.status || 'draft')}>
-                    {t(`events.status.${event.status}`)}
-                  </Badge>
-                </div>
-                {event.category && (
-                  <Badge variant="outline" className="w-fit">
-                    {t(`events.categories.${event.category}`)}
-                  </Badge>
-                )}
-              </CardHeader>
-              
-              <CardContent className="space-y-3">
-                {event.description && (
-                  <p className="text-sm text-muted-foreground line-clamp-2">{event.description}</p>
-                )}
-                
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Calendar className="h-4 w-4" />
-                    <span>{format(new Date(event.eventDate), "PPP 'a las' p", { locale: es })}</span>
+        events?.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <CalendarIcon className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium mb-2">{t('events.empty')}</h3>
+              <p className="text-muted-foreground text-center">{t('events.emptyDescription')}</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {events?.map((event) => (
+              <Card key={event.id} data-testid={`card-event-${event.id}`}>
+                <CardHeader>
+                  <div className="flex items-start justify-between gap-2">
+                    <CardTitle className="text-lg">{event.title}</CardTitle>
+                    <Badge className={getStatusBadge(event.status || 'draft')}>
+                      {t(`events.status.${event.status}`)}
+                    </Badge>
                   </div>
-                  
-                  {event.location && (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <MapPin className="h-4 w-4" />
-                      <span>{event.location}</span>
-                    </div>
+                  {event.category && (
+                    <Badge variant="outline" className="w-fit">
+                      {t(`events.categories.${event.category}`)}
+                    </Badge>
+                  )}
+                </CardHeader>
+                
+                <CardContent className="space-y-3">
+                  {event.description && (
+                    <p className="text-sm text-muted-foreground line-clamp-2">{event.description}</p>
                   )}
                   
-                  {event.isOnline === 'true' && (
+                  <div className="space-y-2 text-sm">
                     <div className="flex items-center gap-2 text-muted-foreground">
-                      <Video className="h-4 w-4" />
-                      <span>{t('events.online')}</span>
+                      <CalendarIcon className="h-4 w-4" />
+                      <span>{format(new Date(event.eventDate), "PPP 'a las' p", { locale: es })}</span>
+                    </div>
+                    
+                    {event.location && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <MapPin className="h-4 w-4" />
+                        <span>{event.location}</span>
+                      </div>
+                    )}
+                    
+                    {event.isOnline === 'true' && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Video className="h-4 w-4" />
+                        <span>{t('events.online')}</span>
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Users className="h-4 w-4" />
+                      <span>
+                        {event.registrationCount || 0}
+                        {event.maxAttendees && ` / ${event.maxAttendees}`}
+                        {' '}{t('events.attendees')}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {event.createdBy && (
+                    <div className="flex items-center gap-2 pt-2 border-t">
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage src={event.createdBy.profileImageUrl || undefined} />
+                        <AvatarFallback className="text-xs">
+                          {event.createdBy.firstName?.[0] || event.createdBy.email?.[0] || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-xs text-muted-foreground">
+                        {t('events.organizedBy')} {event.createdBy.firstName || event.createdBy.email}
+                      </span>
                     </div>
                   )}
-                  
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Users className="h-4 w-4" />
-                    <span>
-                      {event.registrationCount || 0}
-                      {event.maxAttendees && ` / ${event.maxAttendees}`}
-                      {' '}{t('events.attendees')}
-                    </span>
-                  </div>
-                </div>
+                </CardContent>
                 
-                {event.createdBy && (
-                  <div className="flex items-center gap-2 pt-2 border-t">
-                    <Avatar className="h-6 w-6">
-                      <AvatarImage src={event.createdBy.profileImageUrl || undefined} />
-                      <AvatarFallback className="text-xs">
-                        {event.createdBy.firstName?.[0] || event.createdBy.email?.[0] || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-xs text-muted-foreground">
-                      {t('events.organizedBy')} {event.createdBy.firstName || event.createdBy.email}
-                    </span>
-                  </div>
-                )}
-              </CardContent>
-              
-              <CardFooter className="flex gap-2">
-                {event.status === 'draft' && canCreate && event.createdByUserId === user?.id && (
-                  <Button 
-                    size="sm" 
-                    onClick={() => publishEventMutation.mutate(event.id)}
-                    disabled={publishEventMutation.isPending}
-                    data-testid={`button-publish-${event.id}`}
-                  >
-                    {t('events.publish')}
-                  </Button>
-                )}
-                
-                {event.status === 'published' && (
-                  isUserRegistered(event) ? (
+                <CardFooter className="flex gap-2">
+                  {event.status === 'draft' && canCreate && event.createdByUserId === user?.id && (
                     <Button 
                       size="sm" 
-                      variant="outline"
-                      onClick={() => cancelRegistrationMutation.mutate(event.id)}
-                      disabled={cancelRegistrationMutation.isPending}
-                      data-testid={`button-cancel-registration-${event.id}`}
+                      onClick={() => publishEventMutation.mutate(event.id)}
+                      disabled={publishEventMutation.isPending}
+                      data-testid={`button-publish-${event.id}`}
                     >
-                      <X className="h-4 w-4 mr-1" />
-                      {t('events.cancelRegistration')}
+                      {t('events.publish')}
                     </Button>
-                  ) : (
-                    <Button 
-                      size="sm"
-                      onClick={() => registerMutation.mutate(event.id)}
-                      disabled={registerMutation.isPending || !!(event.maxAttendees && event.registrationCount && event.registrationCount >= event.maxAttendees)}
-                      data-testid={`button-register-${event.id}`}
-                    >
-                      <Check className="h-4 w-4 mr-1" />
-                      {t('events.register')}
-                    </Button>
-                  )
-                )}
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
+                  )}
+                  
+                  {event.status === 'published' && (
+                    isUserRegistered(event) ? (
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => cancelRegistrationMutation.mutate(event.id)}
+                        disabled={cancelRegistrationMutation.isPending}
+                        data-testid={`button-cancel-registration-${event.id}`}
+                      >
+                        <X className="h-4 w-4 mr-1" />
+                        {t('events.cancelRegistration')}
+                      </Button>
+                    ) : (
+                      <Button 
+                        size="sm"
+                        onClick={() => registerMutation.mutate(event.id)}
+                        disabled={registerMutation.isPending || !!(event.maxAttendees && event.registrationCount && event.registrationCount >= event.maxAttendees)}
+                        data-testid={`button-register-${event.id}`}
+                      >
+                        <Check className="h-4 w-4 mr-1" />
+                        {t('events.register')}
+                      </Button>
+                    )
+                  )}
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        )
       )}
     </div>
   );
