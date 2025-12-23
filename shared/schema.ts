@@ -259,6 +259,17 @@ export const courseModules = pgTable("course_modules", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Course Evaluations table - "Evaluación" (Resultado de evaluaciones/cuestionarios)
+export const courseEvaluations = pgTable("course_evaluations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  courseId: varchar("course_id").notNull().references(() => courses.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  score: integer("score").notNull().default(0),
+  maxScore: integer("max_score").notNull().default(100),
+  passed: boolean("passed").default(false),
+  submittedAt: timestamp("submitted_at").defaultNow(),
+});
+
 // Course enrollments table - "Registro de Participante" + "Progreso del Participante"
 export const courseEnrollments = pgTable("course_enrollments", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -292,6 +303,18 @@ export const courseModulesRelations = relations(courseModules, ({ one }) => ({
   }),
 }));
 
+// Course evaluations relations
+export const courseEvaluationsRelations = relations(courseEvaluations, ({ one }) => ({
+  course: one(courses, {
+    fields: [courseEvaluations.courseId],
+    references: [courses.id],
+  }),
+  user: one(users, {
+    fields: [courseEvaluations.userId],
+    references: [users.id],
+  }),
+}));
+
 export const courseEnrollmentsRelations = relations(courseEnrollments, ({ one }) => ({
   course: one(courses, {
     fields: [courseEnrollments.courseId],
@@ -321,12 +344,20 @@ export const insertCourseModuleSchema = createInsertSchema(courseModules).omit({
   updatedAt: true,
 });
 
+export const insertCourseEvaluationSchema = createInsertSchema(courseEvaluations).omit({
+  id: true,
+  submittedAt: true,
+});
+
 // Course types
 export type Course = typeof courses.$inferSelect;
 export type InsertCourse = z.infer<typeof insertCourseSchema>;
 
 export type CourseModule = typeof courseModules.$inferSelect;
 export type InsertCourseModule = z.infer<typeof insertCourseModuleSchema>;
+
+export type CourseEvaluation = typeof courseEvaluations.$inferSelect;
+export type InsertCourseEvaluation = z.infer<typeof insertCourseEvaluationSchema>;
 
 export type CourseEnrollment = typeof courseEnrollments.$inferSelect;
 export type InsertCourseEnrollment = z.infer<typeof insertCourseEnrollmentSchema>;
