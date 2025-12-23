@@ -214,24 +214,31 @@ export type ProjectWithOwner = Project & {
   mentor?: User | null;
 };
 
-// Course status enum
-export const courseStatusEnum = pgEnum('course_status', ['draft', 'published', 'archived']);
+// Course status enum - Updated per class diagram: draft, open, ongoing, completed, archived
+export const courseStatusEnum = pgEnum('course_status', ['draft', 'open', 'ongoing', 'completed', 'archived']);
+
+// Course modality enum - online, presencial, híbrido, asíncrono, síncrono
+export const courseModalityEnum = pgEnum('course_modality', ['online', 'presencial', 'hibrido', 'asincrono', 'sincrono']);
+
+// Course level enum - introductorio, intermedio, avanzado
+export const courseLevelEnum = pgEnum('course_level', ['introductorio', 'intermedio', 'avanzado']);
 
 // Enrollment status enum
 export const enrollmentStatusEnum = pgEnum('enrollment_status', ['enrolled', 'in_progress', 'completed', 'dropped']);
 
-// Courses table
+// Courses table - Updated per class diagram for "Registro de Curso"
 export const courses = pgTable("courses", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   title: varchar("title").notNull(),
   description: text("description"),
-  content: text("content"),
-  category: varchar("category"),
-  difficulty: varchar("difficulty"),
-  duration: varchar("duration"),
-  instructorId: varchar("instructor_id").notNull().references(() => users.id),
+  modality: courseModalityEnum("modality").default('online'),
+  language: varchar("language").default('es'),
+  level: courseLevelEnum("level").default('introductorio'),
+  durationHours: integer("duration_hours"),
+  certifyingOrganizationId: varchar("certifying_organization_id"),
   status: courseStatusEnum("status").default('draft'),
   imageUrl: varchar("image_url"),
+  createdByUserId: varchar("created_by_user_id").notNull().references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -249,8 +256,8 @@ export const courseEnrollments = pgTable("course_enrollments", {
 
 // Course relations
 export const coursesRelations = relations(courses, ({ one, many }) => ({
-  instructor: one(users, {
-    fields: [courses.instructorId],
+  createdBy: one(users, {
+    fields: [courses.createdByUserId],
     references: [users.id],
   }),
   enrollments: many(courseEnrollments),
@@ -287,8 +294,8 @@ export type CourseEnrollment = typeof courseEnrollments.$inferSelect;
 export type InsertCourseEnrollment = z.infer<typeof insertCourseEnrollmentSchema>;
 
 // Extended types
-export type CourseWithInstructor = Course & {
-  instructor?: User;
+export type CourseWithCreator = Course & {
+  createdBy?: User;
 };
 
 export type EnrollmentWithCourse = CourseEnrollment & {
