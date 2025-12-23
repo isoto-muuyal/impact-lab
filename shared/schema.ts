@@ -693,6 +693,38 @@ export const insertColabApplicationSchema = createInsertSchema(colabApplications
 export type ColabApplication = typeof colabApplications.$inferSelect;
 export type InsertColabApplication = z.infer<typeof insertColabApplicationSchema>;
 
+// CoLabEvaluation table - "Evaluación de una aplicación por parte de un jurado"
+export const colabEvaluations = pgTable("colab_evaluations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  applicationId: varchar("application_id").notNull().references(() => colabApplications.id),
+  judgeUserId: varchar("judge_user_id").notNull().references(() => users.id),
+  score: integer("score"),
+  comments: text("comments"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// CoLabEvaluation relations
+export const colabEvaluationsRelations = relations(colabEvaluations, ({ one }) => ({
+  application: one(colabApplications, {
+    fields: [colabEvaluations.applicationId],
+    references: [colabApplications.id],
+  }),
+  judge: one(users, {
+    fields: [colabEvaluations.judgeUserId],
+    references: [users.id],
+  }),
+}));
+
+// Insert schema for CoLabEvaluation
+export const insertColabEvaluationSchema = createInsertSchema(colabEvaluations).omit({
+  id: true,
+  createdAt: true,
+});
+
+// CoLabEvaluation types
+export type ColabEvaluation = typeof colabEvaluations.$inferSelect;
+export type InsertColabEvaluation = z.infer<typeof insertColabEvaluationSchema>;
+
 // ============================================
 // ORGANIZATIONS - Allied institutions registry
 // ============================================
