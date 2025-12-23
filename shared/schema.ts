@@ -259,7 +259,7 @@ export const courseModules = pgTable("course_modules", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Course enrollments table
+// Course enrollments table - "Registro de Participante en un Curso"
 export const courseEnrollments = pgTable("course_enrollments", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   courseId: varchar("course_id").notNull().references(() => courses.id),
@@ -268,6 +268,7 @@ export const courseEnrollments = pgTable("course_enrollments", {
   progress: varchar("progress").default('0'),
   enrolledAt: timestamp("enrolled_at").defaultNow(),
   completedAt: timestamp("completed_at"),
+  certificateId: varchar("certificate_id"),
 });
 
 // Course relations
