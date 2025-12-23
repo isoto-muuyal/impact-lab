@@ -645,6 +645,54 @@ export const insertColabCallSchema = createInsertSchema(colabCalls).omit({
 export type ColabCall = typeof colabCalls.$inferSelect;
 export type InsertColabCall = z.infer<typeof insertColabCallSchema>;
 
+// CoLab application status enum
+export const colabApplicationStatusEnum = pgEnum('colab_application_status', ['submitted', 'under_review', 'accepted', 'rejected', 'withdrawn']);
+
+// CoLabApplication table - "Postulación de una idea/proyecto a la convocatoria"
+export const colabApplications = pgTable("colab_applications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  callId: varchar("call_id").notNull().references(() => colabCalls.id),
+  projectId: varchar("project_id").references(() => projects.id),
+  applicantUserId: varchar("applicant_user_id").notNull().references(() => users.id),
+  ideaTitle: varchar("idea_title").notNull(),
+  ideaSummary: text("idea_summary"),
+  status: colabApplicationStatusEnum("status").default('submitted'),
+  submittedAt: timestamp("submitted_at").defaultNow(),
+  decidedAt: timestamp("decided_at"),
+  decidedByUserId: varchar("decided_by_user_id").references(() => users.id),
+  scoreAverage: integer("score_average"),
+});
+
+// CoLabApplication relations
+export const colabApplicationsRelations = relations(colabApplications, ({ one }) => ({
+  call: one(colabCalls, {
+    fields: [colabApplications.callId],
+    references: [colabCalls.id],
+  }),
+  project: one(projects, {
+    fields: [colabApplications.projectId],
+    references: [projects.id],
+  }),
+  applicant: one(users, {
+    fields: [colabApplications.applicantUserId],
+    references: [users.id],
+  }),
+  decidedBy: one(users, {
+    fields: [colabApplications.decidedByUserId],
+    references: [users.id],
+  }),
+}));
+
+// Insert schema for CoLabApplication
+export const insertColabApplicationSchema = createInsertSchema(colabApplications).omit({
+  id: true,
+  submittedAt: true,
+});
+
+// CoLabApplication types
+export type ColabApplication = typeof colabApplications.$inferSelect;
+export type InsertColabApplication = z.infer<typeof insertColabApplicationSchema>;
+
 // ============================================
 // ORGANIZATIONS - Allied institutions registry
 // ============================================
