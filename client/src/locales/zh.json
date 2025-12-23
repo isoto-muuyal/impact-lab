@@ -105,6 +105,7 @@
     "coLab": {
       "title": "协作实验室",
       "description": "开发影响力创意的协作空间",
+      "subgroups": ["征集申请", "申请", "评审", "队列", "会议", "里程碑"],
       "granIdea": {
         "title": "大创意协作",
         "description": "高影响力项目的协作开发",

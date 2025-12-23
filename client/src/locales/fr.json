@@ -105,6 +105,7 @@
     "coLab": {
       "title": "Co-Lab",
       "description": "Espace collaboratif pour développer des idées d'impact",
+      "subgroups": ["Appel à Candidatures", "Candidature", "Évaluation", "Cohorte", "Séances", "Jalons"],
       "granIdea": {
         "title": "CoLab pour une Grande Idée",
         "description": "Développement collaboratif de projets à fort impact",
