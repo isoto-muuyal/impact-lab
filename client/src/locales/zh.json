@@ -87,6 +87,36 @@
       "roles": ["导师", "协调员"]
     }
   },
+  "labs": {
+    "learningLab": {
+      "title": "学习实验室",
+      "description": "学习和能力发展空间",
+      "courses": {
+        "title": "课程",
+        "description": "结构化培训以发展技能",
+        "subgroups": []
+      },
+      "mentorship": {
+        "title": "导师指导",
+        "description": "专家个性化指导",
+        "subgroups": []
+      }
+    },
+    "coLab": {
+      "title": "协作实验室",
+      "description": "开发影响力创意的协作空间",
+      "granIdea": {
+        "title": "大创意协作",
+        "description": "高影响力项目的协作开发",
+        "subgroups": []
+      },
+      "metodologico": {
+        "title": "方法论协作",
+        "description": "应用方法论进行项目开发",
+        "subgroups": []
+      }
+    }
+  },
   "home": {
     "welcome": "欢迎",
     "dashboard": "控制面板",

@@ -87,6 +87,36 @@
       "roles": ["Mentor", "Facilitateur"]
     }
   },
+  "labs": {
+    "learningLab": {
+      "title": "Learning-Lab",
+      "description": "Espace d'apprentissage et de développement des capacités",
+      "courses": {
+        "title": "Cours",
+        "description": "Formation structurée pour le développement des compétences",
+        "subgroups": []
+      },
+      "mentorship": {
+        "title": "Mentorats",
+        "description": "Accompagnement personnalisé par des experts",
+        "subgroups": []
+      }
+    },
+    "coLab": {
+      "title": "Co-Lab",
+      "description": "Espace collaboratif pour développer des idées d'impact",
+      "granIdea": {
+        "title": "CoLab pour une Grande Idée",
+        "description": "Développement collaboratif de projets à fort impact",
+        "subgroups": []
+      },
+      "metodologico": {
+        "title": "CoLab Méthodologique",
+        "description": "Application de méthodologies pour le développement de projets",
+        "subgroups": []
+      }
+    }
+  },
   "home": {
     "welcome": "Bienvenue",
     "dashboard": "Tableau de Bord",

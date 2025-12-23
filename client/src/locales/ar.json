@@ -87,6 +87,36 @@
       "roles": ["مرشد", "منسق"]
     }
   },
+  "labs": {
+    "learningLab": {
+      "title": "مختبر التعلم",
+      "description": "مساحة التعلم وتطوير القدرات",
+      "courses": {
+        "title": "الدورات",
+        "description": "تدريب منظم لتطوير المهارات",
+        "subgroups": []
+      },
+      "mentorship": {
+        "title": "الإرشاد",
+        "description": "توجيه شخصي من الخبراء",
+        "subgroups": []
+      }
+    },
+    "coLab": {
+      "title": "مختبر التعاون",
+      "description": "مساحة تعاونية لتطوير أفكار ذات تأثير",
+      "granIdea": {
+        "title": "تعاون لفكرة كبيرة",
+        "description": "التطوير التعاوني لمشاريع عالية التأثير",
+        "subgroups": []
+      },
+      "metodologico": {
+        "title": "التعاون المنهجي",
+        "description": "تطبيق المنهجيات لتطوير المشاريع",
+        "subgroups": []
+      }
+    }
+  },
   "home": {
     "welcome": "مرحبًا",
     "dashboard": "لوحة التحكم",

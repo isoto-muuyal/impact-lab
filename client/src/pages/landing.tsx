@@ -6,13 +6,17 @@ import { LanguageSelector } from "@/components/language-selector";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { 
   Users, 
-  Target, 
   BookOpen, 
   Rocket,
   ArrowRight,
   Sparkles,
   Globe,
-  Heart
+  Heart,
+  GraduationCap,
+  Lightbulb,
+  Handshake,
+  FlaskConical,
+  Beaker
 } from "lucide-react";
 
 export default function Landing() {
@@ -72,7 +76,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Features Section */}
+      {/* Features Section - Labs */}
       <section className="py-20 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-16">
@@ -81,26 +85,54 @@ export default function Landing() {
               {t("landing.featuresDescription")}
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <FeatureCard
-              icon={<Target className="h-6 w-6" />}
-              title={t("features.projects.title")}
-              description={t("features.projects.description")}
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* LEARNING-LAB */}
+            <LabSection
+              icon={<GraduationCap className="h-8 w-8" />}
+              title={t("labs.learningLab.title")}
+              description={t("labs.learningLab.description")}
+              color="primary"
+              modules={[
+                {
+                  id: "courses",
+                  icon: <BookOpen className="h-5 w-5" />,
+                  title: t("labs.learningLab.courses.title"),
+                  description: t("labs.learningLab.courses.description"),
+                  subgroups: tArray("labs.learningLab.courses.subgroups"),
+                },
+                {
+                  id: "mentorship",
+                  icon: <Handshake className="h-5 w-5" />,
+                  title: t("labs.learningLab.mentorship.title"),
+                  description: t("labs.learningLab.mentorship.description"),
+                  subgroups: tArray("labs.learningLab.mentorship.subgroups"),
+                },
+              ]}
             />
-            <FeatureCard
-              icon={<BookOpen className="h-6 w-6" />}
-              title={t("features.courses.title")}
-              description={t("features.courses.description")}
-            />
-            <FeatureCard
-              icon={<Users className="h-6 w-6" />}
-              title={t("features.mentorship.title")}
-              description={t("features.mentorship.description")}
-            />
-            <FeatureCard
-              icon={<Rocket className="h-6 w-6" />}
-              title={t("features.acceleration.title")}
-              description={t("features.acceleration.description")}
+
+            {/* CO-LAB */}
+            <LabSection
+              icon={<FlaskConical className="h-8 w-8" />}
+              title={t("labs.coLab.title")}
+              description={t("labs.coLab.description")}
+              color="chart-2"
+              modules={[
+                {
+                  id: "granIdea",
+                  icon: <Lightbulb className="h-5 w-5" />,
+                  title: t("labs.coLab.granIdea.title"),
+                  description: t("labs.coLab.granIdea.description"),
+                  subgroups: tArray("labs.coLab.granIdea.subgroups"),
+                },
+                {
+                  id: "metodologico",
+                  icon: <Beaker className="h-5 w-5" />,
+                  title: t("labs.coLab.metodologico.title"),
+                  description: t("labs.coLab.metodologico.description"),
+                  subgroups: tArray("labs.coLab.metodologico.subgroups"),
+                },
+              ]}
             />
           </div>
         </div>
@@ -237,6 +269,78 @@ function RoleCard({ title, description, features, roles, color }: {
             </li>
           ))}
         </ul>
+      </CardContent>
+    </Card>
+  );
+}
+
+interface LabModule {
+  id: string;
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  subgroups: string[];
+}
+
+function LabSection({ icon, title, description, color, modules }: { 
+  icon: React.ReactNode;
+  title: string; 
+  description: string;
+  color: string;
+  modules: LabModule[];
+}) {
+  const headerColors: Record<string, string> = {
+    "primary": "bg-primary text-primary-foreground",
+    "chart-2": "bg-chart-2 text-white",
+    "chart-4": "bg-chart-4 text-white",
+  };
+
+  const iconBgColors: Record<string, string> = {
+    "primary": "bg-primary/10 text-primary",
+    "chart-2": "bg-chart-2/10 text-chart-2",
+    "chart-4": "bg-chart-4/10 text-chart-4",
+  };
+
+  return (
+    <Card className="overflow-hidden" data-testid={`lab-section-${title.toLowerCase().replace(/\s+/g, '-')}`}>
+      <div className={`p-4 ${headerColors[color]}`}>
+        <div className="flex items-center gap-3">
+          {icon}
+          <div>
+            <h3 className="text-xl font-semibold">{title}</h3>
+            <p className="text-sm opacity-90">{description}</p>
+          </div>
+        </div>
+      </div>
+      <CardContent className="p-4">
+        <div className="space-y-4">
+          {modules.map((module) => (
+            <div 
+              key={module.id} 
+              className="border rounded-md p-4 hover-elevate cursor-pointer"
+              data-testid={`module-${module.id}`}
+            >
+              <div className="flex items-start gap-3 mb-3">
+                <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${iconBgColors[color]}`}>
+                  {module.icon}
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-semibold">{module.title}</h4>
+                  <p className="text-sm text-muted-foreground">{module.description}</p>
+                </div>
+              </div>
+              {module.subgroups.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {module.subgroups.map((subgroup, idx) => (
+                    <Badge key={idx} variant="secondary" className="text-xs">
+                      {subgroup}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );
