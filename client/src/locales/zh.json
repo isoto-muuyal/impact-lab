@@ -94,7 +94,7 @@
       "courses": {
         "title": "课程",
         "description": "结构化培训以发展技能",
-        "subgroups": []
+        "subgroups": ["课程注册", "班级注册", "参与者注册", "进度跟踪", "评估", "认证"]
       },
       "mentorship": {
         "title": "导师指导",

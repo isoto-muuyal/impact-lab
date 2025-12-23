@@ -108,7 +108,7 @@
       "courses": {
         "title": "Cursos",
         "description": "Formación estructurada para el desarrollo de habilidades",
-        "subgroups": []
+        "subgroups": ["Registro de Curso", "Registro de Clase", "Registro de Participante", "Progreso y Seguimiento", "Evaluación", "Acreditación"]
       },
       "mentorship": {
         "title": "Mentorías",

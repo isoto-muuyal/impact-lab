@@ -94,7 +94,7 @@
       "courses": {
         "title": "Courses",
         "description": "Structured training for skill development",
-        "subgroups": []
+        "subgroups": ["Course Registration", "Class Registration", "Participant Registration", "Progress Tracking", "Evaluation", "Accreditation"]
       },
       "mentorship": {
         "title": "Mentorships",

@@ -94,7 +94,7 @@
       "courses": {
         "title": "Cours",
         "description": "Formation structurée pour le développement des compétences",
-        "subgroups": []
+        "subgroups": ["Inscription au Cours", "Inscription à la Classe", "Inscription du Participant", "Suivi de Progression", "Évaluation", "Accréditation"]
       },
       "mentorship": {
         "title": "Mentorats",
