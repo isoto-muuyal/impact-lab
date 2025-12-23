@@ -226,6 +226,9 @@ export const courseLevelEnum = pgEnum('course_level', ['introductorio', 'interme
 // Enrollment status enum
 export const enrollmentStatusEnum = pgEnum('enrollment_status', ['enrolled', 'in_progress', 'completed', 'dropped']);
 
+// Module content type enum - video, reading, workbook, assignment, liveSession
+export const moduleContentTypeEnum = pgEnum('module_content_type', ['video', 'reading', 'workbook', 'assignment', 'liveSession']);
+
 // Courses table - Updated per class diagram for "Registro de Curso"
 export const courses = pgTable("courses", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -239,6 +242,19 @@ export const courses = pgTable("courses", {
   status: courseStatusEnum("status").default('draft'),
   imageUrl: varchar("image_url"),
   createdByUserId: varchar("created_by_user_id").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Course Modules table - "Registro de Clase" (Lección o módulo de curso)
+export const courseModules = pgTable("course_modules", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  courseId: varchar("course_id").notNull().references(() => courses.id),
+  title: varchar("title").notNull(),
+  order: integer("order").notNull().default(1),
+  contentType: moduleContentTypeEnum("content_type").default('video'),
+  resourceUrl: varchar("resource_url"),
+  isMandatory: boolean("is_mandatory").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -260,7 +276,16 @@ export const coursesRelations = relations(courses, ({ one, many }) => ({
     fields: [courses.createdByUserId],
     references: [users.id],
   }),
+  modules: many(courseModules),
   enrollments: many(courseEnrollments),
+}));
+
+// Course modules relations
+export const courseModulesRelations = relations(courseModules, ({ one }) => ({
+  course: one(courses, {
+    fields: [courseModules.courseId],
+    references: [courses.id],
+  }),
 }));
 
 export const courseEnrollmentsRelations = relations(courseEnrollments, ({ one }) => ({
@@ -286,9 +311,18 @@ export const insertCourseEnrollmentSchema = createInsertSchema(courseEnrollments
   enrolledAt: true,
 });
 
+export const insertCourseModuleSchema = createInsertSchema(courseModules).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Course types
 export type Course = typeof courses.$inferSelect;
 export type InsertCourse = z.infer<typeof insertCourseSchema>;
+
+export type CourseModule = typeof courseModules.$inferSelect;
+export type InsertCourseModule = z.infer<typeof insertCourseModuleSchema>;
 
 export type CourseEnrollment = typeof courseEnrollments.$inferSelect;
 export type InsertCourseEnrollment = z.infer<typeof insertCourseEnrollmentSchema>;
