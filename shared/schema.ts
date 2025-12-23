@@ -451,6 +451,9 @@ export const mentorships = pgTable("mentorships", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Mentorship progress level enum
+export const mentorshipProgressLevelEnum = pgEnum('mentorship_progress_level', ['idea_inicial', 'diagnostico', 'diseno_proyecto', 'prototipo', 'pitch_listo', 'implementacion']);
+
 // Mentorship sessions table - "Registro de sesiones de mentoría"
 export const mentorshipSessions = pgTable("mentorship_sessions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -462,6 +465,17 @@ export const mentorshipSessions = pgTable("mentorship_sessions", {
   meetingLink: varchar("meeting_link"),
   attendanceRecorded: boolean("attendance_recorded").default(false),
   notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Mentorship Reports table - "Informes de mentoría"
+export const mentorshipReports = pgTable("mentorship_reports", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: varchar("session_id").notNull().references(() => mentorshipSessions.id),
+  summary: text("summary"),
+  progressLevel: mentorshipProgressLevelEnum("progress_level"),
+  actionItems: text("action_items"),
+  createdByUserId: varchar("created_by_user_id").notNull().references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -513,10 +527,23 @@ export const mentorshipsRelations = relations(mentorships, ({ one, many }) => ({
   sessions: many(mentorshipSessions),
 }));
 
-export const mentorshipSessionsRelations = relations(mentorshipSessions, ({ one }) => ({
+export const mentorshipSessionsRelations = relations(mentorshipSessions, ({ one, many }) => ({
   enrollment: one(mentorshipEnrollments, {
     fields: [mentorshipSessions.enrollmentId],
     references: [mentorshipEnrollments.id],
+  }),
+  reports: many(mentorshipReports),
+}));
+
+// Mentorship reports relations
+export const mentorshipReportsRelations = relations(mentorshipReports, ({ one }) => ({
+  session: one(mentorshipSessions, {
+    fields: [mentorshipReports.sessionId],
+    references: [mentorshipSessions.id],
+  }),
+  createdBy: one(users, {
+    fields: [mentorshipReports.createdByUserId],
+    references: [users.id],
   }),
 }));
 
@@ -544,6 +571,11 @@ export const insertMentorshipSessionSchema = createInsertSchema(mentorshipSessio
   createdAt: true,
 });
 
+export const insertMentorshipReportSchema = createInsertSchema(mentorshipReports).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Mentorship types
 export type MentorshipProgram = typeof mentorshipPrograms.$inferSelect;
 export type InsertMentorshipProgram = z.infer<typeof insertMentorshipProgramSchema>;
@@ -556,6 +588,9 @@ export type InsertMentorship = z.infer<typeof insertMentorshipSchema>;
 
 export type MentorshipSession = typeof mentorshipSessions.$inferSelect;
 export type InsertMentorshipSession = z.infer<typeof insertMentorshipSessionSchema>;
+
+export type MentorshipReport = typeof mentorshipReports.$inferSelect;
+export type InsertMentorshipReport = z.infer<typeof insertMentorshipReportSchema>;
 
 // Extended types
 export type MentorshipWithDetails = Mentorship & {
