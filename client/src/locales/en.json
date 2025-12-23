@@ -99,7 +99,7 @@
       "mentorship": {
         "title": "Mentorships",
         "description": "Personalized guidance from experts",
-        "subgroups": []
+        "subgroups": ["Mentorship Program", "Mentors & Mentees", "Sessions", "Reports"]
       }
     },
     "coLab": {

@@ -99,7 +99,7 @@
       "mentorship": {
         "title": "导师指导",
         "description": "专家个性化指导",
-        "subgroups": []
+        "subgroups": ["指导计划", "导师与学员", "会议", "报告"]
       }
     },
     "coLab": {
