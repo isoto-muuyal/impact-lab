@@ -1,0 +1,207 @@
+ESPECIALIDADES O VARIANTES CO-LAB
+CoLabProgram_OneBigIdea	Contenido:
+Identificador del programa Co-Lab
+Referencia al programa base (CoLabProgram)
+Identificador de la idea central del laboratorio
+Reglas de colaboración entre participantes
+Nivel de confidencialidad (si aplica)
+Resultados esperados del laboratorio
+Criterios de éxito del proceso
+Política de contribuciones (cómo se registran y validan)
+Estado del subprograma
+Fecha de inicio
+Fecha de cierre
+Usuario creador
+Fecha de creación
+Fecha de última actualización
+• Method: create, update, setStatus, read  • User: Admin GA4SI, Facilitador, Sistema
+UNA GRAN IDEA. (Subclase / Variante de CoLabProgram)
+
+
+CoLabFocusIdea	Contenido:
+Identificador de la idea central
+Programa Co-Lab al que pertenece
+Título de la idea
+Descripción resumida de la idea
+Problema u oportunidad que aborda
+Beneficiarios o público objetivo
+Propuesta de solución a alto nivel
+Etiquetas de impacto / SDGs asociados
+Reto (challenge) vinculado, si aplica
+Proyecto vinculado, si ya existe
+Nivel de madurez actual de la idea
+Supuestos clave
+Riesgos identificados
+Preguntas estratégicas abiertas
+Fecha de creación
+Fecha de última actualización
+• Method: create, update, read  • User: Facilitador, Admin GA4SI, Sistema
+CoLabIdeaTeamRole	• Contenido:
+Identificador del rol
+Programa Co-Lab asociado
+Nombre del rol dentro del equipo
+Descripción del rol
+Responsabilidades principales
+Nivel de dedicación esperado
+Criterios de selección del rol (si aplica)
+Estado del rol (activo / inactivo)
+Fecha de creación
+Fecha de última actualización
+• Method: create, update, setStatus, read  • User: Facilitador, Admin GA4SI, Sistema
+CoLabIdeaContribution	Contenido:
+Identificador de la contribución
+Programa Co-Lab asociado
+Usuario que realiza la contribución
+Rol desde el cual contribuye (si aplica)
+Tipo de contribución (investigación, diseño, feedback, artefacto, etc.)
+Descripción breve de la contribución
+Detalle del aporte realizado
+Artefacto asociado (si aplica)
+Sesión asociada (si aplica)
+Hito asociado (si aplica)
+Tiempo dedicado (si se registra)
+Estado de validación de la contribución
+Usuario revisor (si aplica)
+Observaciones del revisor
+Fecha de creación
+Fecha de última actualizació. 
+Method: submit, update, review, approve, reject, read  • User: Participante, Facilitador, Admin GA4SI, Sistema
+CoLabIdeaDecisionLog	Contenido:
+Identificador de la decisión
+Programa Co-Lab asociado
+Idea central asociada
+Tipo de decisión tomada (alcance, pivot, prioridad, alianza, etc.)
+Descripción de la decisión
+Justificación de la decisión
+Usuario que tomó la decisión
+Fecha de la decisión
+Artefacto asociado (si aplica)
+Notas adicionales
+• Method: create, update, read  • User: Facilitador, Admin GA4SI, Sistema
+UN GRAN METODO.  Une metodologia transversaliza varias diferentes ideas de innovacion social
+CoLabIdeaTrack	Contenido:
+Identificador del marco metodológico
+Programa Co-Lab al que pertenece
+Nombre del marco o metodología
+Descripción del enfoque metodológico
+Lista de etapas del método
+Descripción de cada etapa
+Herramientas o plantillas por etapa
+Artefactos esperados por etapa
+Criterios de evaluación por etapa
+Versión del método (si evoluciona)
+Fecha de creación
+Fecha de última actualización
+• Method: create, update, read  • User: Admin GA4SI, Facilitador, Sistema
+CoLabTrackStageProgress	Contenido:
+Identificador del track de idea
+Programa Co-Lab asociado
+Cohorte a la que pertenece
+Idea postulada (título y resumen)
+Usuario o equipo propietario de la idea
+Organización asociada (si aplica)
+Estado general de la idea dentro del método
+Fecha de inicio en el método
+Fecha de cierre o salida
+Proyecto vinculado (si se crea)
+Fecha de creación
+Fecha de última actualización
+• Method: create, update, setStatus, read  • User: Admin GA4SI, Facilitador, Sistema
+CoLabIdeaReview	• Contenido:
+Identificador de la revisión
+Programa Co-Lab asociado
+Idea central asociada
+Momento de la revisión (intermedia, final, otra)
+Referencia a criterios o rúbrica utilizada
+Evaluación general de la idea
+Fortalezas identificadas
+Brechas o aspectos a mejorar
+Recomendaciones
+Usuario revisor
+Fecha de la revisión
+Artefactos considerados en la revisión
+• Method: create, update, read  • User: Facilitador, Admin GA4SI, Sistema (Mentor/Jurado si aplica)
+CoLabProgram_OneBigMethod	• Contenido:
+Identificador del programa Co-Lab
+Referencia al programa base (CoLabProgram)
+Nombre del método central del laboratorio
+Descripción general del método
+Objetivo metodológico del programa
+Tipo de ideas que pueden participar
+Número máximo de ideas que se incuban en paralelo
+Número máximo de participantes por cohorte
+Resultados esperados del proceso metodológico
+Criterios de éxito del método
+Modelo de evaluación del avance
+Política de uso y adaptación del método
+Estado del subprograma
+Fecha de inicio
+Fecha de cierre
+Usuario creador
+Fecha de creación
+Fecha de última actualización
+• Method: create, update, setStatus, read  • User: Admin GA4SI, Facilitador, Sistema
+CoLabMethodFramework	Contenido:
+Identificador del marco metodológico
+Programa Co-Lab al que pertenece
+Nombre del marco o metodología
+Descripción del enfoque metodológico
+Lista de etapas del método
+Descripción de cada etapa
+Herramientas o plantillas por etapa
+Artefactos esperados por etapa
+Criterios de evaluación por etapa
+Versión del método (si evoluciona)
+Fecha de creación
+Fecha de última actualización
+• Method: create, update, read  • User: Admin GA4SI, Facilitador, Sistema
+CoLabIdeaTrack	Contenido:
+Identificador del track de idea
+Programa Co-Lab asociado
+Cohorte a la que pertenece
+Idea postulada (título y resumen)
+Usuario o equipo propietario de la idea
+Organización asociada (si aplica)
+Estado general de la idea dentro del método
+Fecha de inicio en el método
+Fecha de cierre o salida
+Proyecto vinculado (si se crea)
+Fecha de creación
+Fecha de última actualización
+• Method: create, update, setStatus, read  • User: Admin GA4SI, Facilitador, Sistema
+CoLabTrackStageProgress	Contenido:
+Identificador del progreso por etapa
+Track de idea asociado
+Etapa metodológica correspondiente
+Estado de la etapa (no iniciada, en progreso, completada)
+Resultado de la evaluación de la etapa
+Observaciones del facilitador
+Bloqueos o dificultades identificadas
+Evidencias o artefactos entregados
+Fecha de última actualización  
+• Method: startStage, update, completeStage, assess, read  • User: Participante, Facilitador, Admin GA4SI, Sistema
+CoLabMethodDecisionLog	Contenido:
+Identificador de la decisión metodológica
+Programa Co-Lab asociado
+Etapa metodológica afectada
+Tipo de decisión (ajuste de método, excepción, pivot, etc.)
+Descripción de la decisión
+Justificación del ajuste
+Usuario que toma la decisión
+Fecha de la decisión
+Notas adicionales
+• Method: create, update, read  • User: Facilitador, Admin GA4SI, Sistema
+
+CoLabMethodReview	• Contenido:
+Identificador de la revisión
+Programa Co-Lab asociado
+Cohorte o ciclo evaluado
+Marco metodológico evaluado
+Evaluación general del método
+Patrones observados entre ideas
+Fortalezas del método
+Limitaciones del método
+Recomendaciones de mejora
+Usuario revisor
+Fecha de la revisión
+• Method: create, update, read  • User: Facilitador, Admin GA4SI, Sistema

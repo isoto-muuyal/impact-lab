@@ -762,6 +762,47 @@ export const insertColabCohortSchema = createInsertSchema(colabCohorts).omit({
 export type ColabCohort = typeof colabCohorts.$inferSelect;
 export type InsertColabCohort = z.infer<typeof insertColabCohortSchema>;
 
+// CoLab session type enum
+export const colabSessionTypeEnum = pgEnum('colab_session_type', ['kickoff', 'workshop', 'clinic', 'demo_day']);
+
+// CoLab session status enum
+export const colabSessionStatusEnum = pgEnum('colab_session_status', ['scheduled', 'done', 'cancelled']);
+
+// CoLabSession table - "Sesión del Co-Lab (kickoff, taller, clínica, demo day)"
+export const colabSessions = pgTable("colab_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  cohortId: varchar("cohort_id").notNull().references(() => colabCohorts.id),
+  title: varchar("title").notNull(),
+  sessionType: colabSessionTypeEnum("session_type").notNull(),
+  scheduledAt: timestamp("scheduled_at"),
+  durationMinutes: integer("duration_minutes").default(60),
+  facilitatorUserId: varchar("facilitator_user_id").references(() => users.id),
+  status: colabSessionStatusEnum("status").default('scheduled'),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// CoLabSession relations
+export const colabSessionsRelations = relations(colabSessions, ({ one }) => ({
+  cohort: one(colabCohorts, {
+    fields: [colabSessions.cohortId],
+    references: [colabCohorts.id],
+  }),
+  facilitator: one(users, {
+    fields: [colabSessions.facilitatorUserId],
+    references: [users.id],
+  }),
+}));
+
+// Insert schema for CoLabSession
+export const insertColabSessionSchema = createInsertSchema(colabSessions).omit({
+  id: true,
+  createdAt: true,
+});
+
+// CoLabSession types
+export type ColabSession = typeof colabSessions.$inferSelect;
+export type InsertColabSession = z.infer<typeof insertColabSessionSchema>;
+
 // ============================================
 // ORGANIZATIONS - Allied institutions registry
 // ============================================
