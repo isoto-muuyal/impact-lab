@@ -94,12 +94,12 @@
       "courses": {
         "title": "Cours",
         "description": "Formation structurée pour le développement des compétences",
-        "subgroups": ["Inscription au Cours", "Inscription à la Classe", "Inscription du Participant", "Suivi de Progression", "Évaluation", "Accréditation"]
+        "subgroups": ["Catalogue de Cours", "Inscription au Cours", "Inscription à la Classe", "Inscription du Participant", "Suivi de Progression", "Évaluation", "Accréditation"]
       },
       "mentorship": {
         "title": "Mentorats",
         "description": "Accompagnement personnalisé par des experts",
-        "subgroups": ["Programme de Mentorat", "Mentors et Mentorés", "Séances", "Rapports"]
+        "subgroups": ["Catalogue de Mentorat", "Programme de Mentorat", "Mentors et Mentorés", "Séances", "Rapports"]
       }
     },
     "coLab": {

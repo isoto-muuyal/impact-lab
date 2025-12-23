@@ -94,12 +94,12 @@
       "courses": {
         "title": "Courses",
         "description": "Structured training for skill development",
-        "subgroups": ["Course Registration", "Class Registration", "Participant Registration", "Progress Tracking", "Evaluation", "Accreditation"]
+        "subgroups": ["Course Catalog", "Course Registration", "Class Registration", "Participant Registration", "Progress Tracking", "Evaluation", "Accreditation"]
       },
       "mentorship": {
         "title": "Mentorships",
         "description": "Personalized guidance from experts",
-        "subgroups": ["Mentorship Program", "Mentors & Mentees", "Sessions", "Reports"]
+        "subgroups": ["Mentorship Catalog", "Mentorship Program", "Mentors & Mentees", "Sessions", "Reports"]
       }
     },
     "coLab": {

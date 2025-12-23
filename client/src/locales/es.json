@@ -108,12 +108,12 @@
       "courses": {
         "title": "Cursos",
         "description": "Formación estructurada para el desarrollo de habilidades",
-        "subgroups": ["Registro de Curso", "Registro de Clase", "Registro de Participante", "Progreso y Seguimiento", "Evaluación", "Acreditación"]
+        "subgroups": ["Oferta de Cursos", "Registro de Curso", "Registro de Clase", "Registro de Participante", "Progreso y Seguimiento", "Evaluación", "Acreditación"]
       },
       "mentorship": {
         "title": "Mentorías",
         "description": "Acompañamiento personalizado de expertos",
-        "subgroups": ["Programa de Mentoría", "Mentores y Mentees", "Sesiones", "Informes"]
+        "subgroups": ["Oferta de Mentorías", "Programa de Mentoría", "Mentores y Mentees", "Sesiones", "Informes"]
       }
     },
     "coLab": {
