@@ -402,15 +402,32 @@ export type EnrollmentWithCourse = CourseEnrollment & {
   course?: Course;
 };
 
+// Mentorship program status enum - draft, open, active, closed
+export const mentorshipProgramStatusEnum = pgEnum('mentorship_program_status', ['draft', 'open', 'active', 'closed']);
+
+// Mentorship Programs table - "Registro de programa de mentoría"
+export const mentorshipPrograms = pgTable("mentorship_programs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title").notNull(),
+  description: text("description"),
+  sessionsPlanned: integer("sessions_planned").default(4),
+  focusArea: varchar("focus_area"),
+  status: mentorshipProgramStatusEnum("status").default('draft'),
+  createdByUserId: varchar("created_by_user_id").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Mentorship status enum
 export const mentorshipStatusEnum = pgEnum('mentorship_status', ['pending', 'active', 'completed', 'cancelled']);
 
 // Mentorship session status enum
 export const mentorshipSessionStatusEnum = pgEnum('mentorship_session_status', ['scheduled', 'completed', 'cancelled']);
 
-// Mentorships table
+// Mentorships table - Updated to link to programs
 export const mentorships = pgTable("mentorships", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  programId: varchar("program_id").references(() => mentorshipPrograms.id),
   menteeId: varchar("mentee_id").notNull().references(() => users.id),
   mentorId: varchar("mentor_id").references(() => users.id),
   projectId: varchar("project_id").references(() => projects.id),
@@ -431,8 +448,21 @@ export const mentorshipSessions = pgTable("mentorship_sessions", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Mentorship program relations
+export const mentorshipProgramsRelations = relations(mentorshipPrograms, ({ one, many }) => ({
+  createdBy: one(users, {
+    fields: [mentorshipPrograms.createdByUserId],
+    references: [users.id],
+  }),
+  mentorships: many(mentorships),
+}));
+
 // Mentorship relations
 export const mentorshipsRelations = relations(mentorships, ({ one, many }) => ({
+  program: one(mentorshipPrograms, {
+    fields: [mentorships.programId],
+    references: [mentorshipPrograms.id],
+  }),
   mentee: one(users, {
     fields: [mentorships.menteeId],
     references: [users.id],
@@ -456,6 +486,12 @@ export const mentorshipSessionsRelations = relations(mentorshipSessions, ({ one 
 }));
 
 // Insert schemas for mentorships
+export const insertMentorshipProgramSchema = createInsertSchema(mentorshipPrograms).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertMentorshipSchema = createInsertSchema(mentorships).omit({
   id: true,
   createdAt: true,
@@ -468,6 +504,9 @@ export const insertMentorshipSessionSchema = createInsertSchema(mentorshipSessio
 });
 
 // Mentorship types
+export type MentorshipProgram = typeof mentorshipPrograms.$inferSelect;
+export type InsertMentorshipProgram = z.infer<typeof insertMentorshipProgramSchema>;
+
 export type Mentorship = typeof mentorships.$inferSelect;
 export type InsertMentorship = z.infer<typeof insertMentorshipSchema>;
 
