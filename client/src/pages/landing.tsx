@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageSelector } from "@/components/language-selector";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -116,22 +117,25 @@ export default function Landing() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <RoleCard
-              title={t("roleCards.user.title")}
-              description={t("roleCards.user.description")}
-              features={tArray("roleCards.user.features")}
+              title={t("roleCards.organization.title")}
+              description={t("roleCards.organization.description")}
+              features={tArray("roleCards.organization.features")}
+              roles={tArray("roleCards.organization.roles")}
+              color="chart-4"
+            />
+            <RoleCard
+              title={t("roleCards.proponent.title")}
+              description={t("roleCards.proponent.description")}
+              features={tArray("roleCards.proponent.features")}
+              roles={tArray("roleCards.proponent.roles")}
               color="primary"
             />
             <RoleCard
-              title={t("roleCards.mentor.title")}
-              description={t("roleCards.mentor.description")}
-              features={tArray("roleCards.mentor.features")}
+              title={t("roleCards.supporter.title")}
+              description={t("roleCards.supporter.description")}
+              features={tArray("roleCards.supporter.features")}
+              roles={tArray("roleCards.supporter.roles")}
               color="chart-2"
-            />
-            <RoleCard
-              title={t("roleCards.facilitator.title")}
-              description={t("roleCards.facilitator.description")}
-              features={tArray("roleCards.facilitator.features")}
-              color="chart-4"
             />
           </div>
         </div>
@@ -192,10 +196,11 @@ function FeatureCard({ icon, title, description }: {
   );
 }
 
-function RoleCard({ title, description, features, color }: { 
+function RoleCard({ title, description, features, roles, color }: { 
   title: string; 
   description: string;
   features: string[];
+  roles: string[];
   color: string;
 }) {
   const colorClasses: Record<string, string> = {
@@ -204,17 +209,30 @@ function RoleCard({ title, description, features, color }: {
     "chart-4": "bg-chart-4/10 text-chart-4",
   };
 
+  const dotClasses: Record<string, string> = {
+    "primary": "bg-primary",
+    "chart-2": "bg-chart-2",
+    "chart-4": "bg-chart-4",
+  };
+
   return (
     <Card className="overflow-hidden">
       <CardContent className="p-6">
         <div className={`inline-flex px-3 py-1 rounded-full text-sm font-medium mb-4 ${colorClasses[color]}`}>
           {title}
         </div>
-        <p className="text-muted-foreground mb-6">{description}</p>
+        <p className="text-muted-foreground mb-4">{description}</p>
+        <div className="flex flex-wrap gap-2 mb-4">
+          {roles.map((role, index) => (
+            <Badge key={index} variant="outline" className="text-xs">
+              {role}
+            </Badge>
+          ))}
+        </div>
         <ul className="space-y-2">
           {features.map((feature, index) => (
             <li key={index} className="flex items-center gap-2 text-sm">
-              <div className={`h-1.5 w-1.5 rounded-full ${color === 'primary' ? 'bg-primary' : color === 'chart-2' ? 'bg-chart-2' : 'bg-chart-4'}`} />
+              <div className={`h-1.5 w-1.5 rounded-full ${dotClasses[color]}`} />
               {feature}
             </li>
           ))}

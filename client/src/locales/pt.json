@@ -68,20 +68,23 @@
     }
   },
   "roleCards": {
-    "user": {
-      "title": "Usuário",
-      "description": "Crie projetos sociais, acesse cursos e conecte-se com mentores para aumentar seu impacto.",
-      "features": ["Criar projetos", "Inscrever-se em cursos", "Solicitar mentoria", "Participar de eventos"]
+    "organization": {
+      "title": "Organizações",
+      "description": "Instituições que têm ideias de impacto ou acreditam programas e certificações.",
+      "features": ["Propor desafios", "Acreditar cursos", "Certificar mentorias", "Validar projetos"],
+      "roles": ["Acreditador"]
     },
-    "mentor": {
-      "title": "Mentor",
-      "description": "Compartilhe sua experiência e conhecimento orientando empreendedores sociais em sua jornada.",
-      "features": ["Oferecer mentoria", "Revisar projetos", "Dar feedback", "Conectar comunidades"]
+    "proponent": {
+      "title": "Proponentes",
+      "description": "Empreendedores e comunidades que propõem ideias e participam como mentorados no desenvolvimento de projetos.",
+      "features": ["Propor projetos", "Inscrever-se em cursos", "Receber mentoria", "Participar de aceleração"],
+      "roles": ["Proponente", "Usuário"]
     },
-    "facilitator": {
-      "title": "Facilitador",
-      "description": "Coordene programas, gerencie eventos e facilite o crescimento da comunidade.",
-      "features": ["Gerenciar programas", "Coordenar eventos", "Supervisionar projetos", "Gerar relatórios"]
+    "supporter": {
+      "title": "Apoiadores",
+      "description": "Especialistas que apoiam o desenvolvimento de ideias através de funções de mentoria ou facilitação.",
+      "features": ["Oferecer mentoria", "Facilitar programas", "Guiar projetos", "Coordenar eventos"],
+      "roles": ["Mentor", "Facilitador"]
     }
   },
   "home": {

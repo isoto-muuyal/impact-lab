@@ -68,20 +68,23 @@
     }
   },
   "roleCards": {
-    "user": {
-      "title": "User",
-      "description": "Create social projects, access courses, and connect with mentors to grow your impact.",
-      "features": ["Create projects", "Enroll in courses", "Request mentorship", "Participate in events"]
+    "organization": {
+      "title": "Organizations",
+      "description": "Institutions that have impact ideas or accredit programs and certifications.",
+      "features": ["Propose challenges", "Accredit courses", "Certify mentorships", "Validate projects"],
+      "roles": ["Accreditor"]
     },
-    "mentor": {
-      "title": "Mentor",
-      "description": "Share your experience and knowledge by guiding social entrepreneurs on their journey.",
-      "features": ["Offer mentorship", "Review projects", "Provide feedback", "Connect communities"]
+    "proponent": {
+      "title": "Proponents",
+      "description": "Entrepreneurs and communities who propose ideas and participate as mentees in project development.",
+      "features": ["Propose projects", "Enroll in courses", "Receive mentorship", "Participate in acceleration"],
+      "roles": ["Proponent", "User"]
     },
-    "facilitator": {
-      "title": "Facilitator",
-      "description": "Coordinate programs, manage events, and facilitate community growth.",
-      "features": ["Manage programs", "Coordinate events", "Supervise projects", "Generate reports"]
+    "supporter": {
+      "title": "Supporters",
+      "description": "Experts who support the development of ideas through mentoring or facilitation roles.",
+      "features": ["Offer mentorship", "Facilitate programs", "Guide projects", "Coordinate events"],
+      "roles": ["Mentor", "Facilitator"]
     }
   },
   "home": {

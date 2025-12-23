@@ -68,20 +68,23 @@
     }
   },
   "roleCards": {
-    "user": {
-      "title": "Utilisateur",
-      "description": "Créez des projets sociaux, accédez aux cours et connectez-vous avec des mentors pour développer votre impact.",
-      "features": ["Créer des projets", "S'inscrire aux cours", "Demander un mentorat", "Participer aux événements"]
+    "organization": {
+      "title": "Organisations",
+      "description": "Institutions qui ont des idées d'impact ou accréditent des programmes et certifications.",
+      "features": ["Proposer des défis", "Accréditer des cours", "Certifier des mentorats", "Valider des projets"],
+      "roles": ["Accréditeur"]
     },
-    "mentor": {
-      "title": "Mentor",
-      "description": "Partagez votre expérience et vos connaissances en guidant les entrepreneurs sociaux dans leur parcours.",
-      "features": ["Offrir du mentorat", "Réviser des projets", "Donner des retours", "Connecter des communautés"]
+    "proponent": {
+      "title": "Proposants",
+      "description": "Entrepreneurs et communautés qui proposent des idées et participent en tant que mentorés au développement de projets.",
+      "features": ["Proposer des projets", "S'inscrire aux cours", "Recevoir un mentorat", "Participer à l'accélération"],
+      "roles": ["Proposant", "Utilisateur"]
     },
-    "facilitator": {
-      "title": "Facilitateur",
-      "description": "Coordonnez des programmes, gérez des événements et facilitez la croissance de la communauté.",
-      "features": ["Gérer des programmes", "Coordonner des événements", "Superviser des projets", "Générer des rapports"]
+    "supporter": {
+      "title": "Accompagnateurs",
+      "description": "Experts qui soutiennent le développement d'idées par le mentorat ou la facilitation.",
+      "features": ["Offrir du mentorat", "Faciliter des programmes", "Guider des projets", "Coordonner des événements"],
+      "roles": ["Mentor", "Facilitateur"]
     }
   },
   "home": {
