@@ -259,6 +259,17 @@ export const courseModules = pgTable("course_modules", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Course Certificates table - "Acreditación" (Emisión de constancias y certificados)
+export const courseCertificates = pgTable("course_certificates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  courseId: varchar("course_id").notNull().references(() => courses.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  issueDate: timestamp("issue_date").defaultNow(),
+  certificateNumber: varchar("certificate_number").notNull().unique(),
+  issuerOrganizationId: varchar("issuer_organization_id"),
+  digitalUrl: varchar("digital_url"),
+});
+
 // Course Evaluations table - "Evaluación" (Resultado de evaluaciones/cuestionarios)
 export const courseEvaluations = pgTable("course_evaluations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -300,6 +311,18 @@ export const courseModulesRelations = relations(courseModules, ({ one }) => ({
   course: one(courses, {
     fields: [courseModules.courseId],
     references: [courses.id],
+  }),
+}));
+
+// Course certificates relations
+export const courseCertificatesRelations = relations(courseCertificates, ({ one }) => ({
+  course: one(courses, {
+    fields: [courseCertificates.courseId],
+    references: [courses.id],
+  }),
+  user: one(users, {
+    fields: [courseCertificates.userId],
+    references: [users.id],
   }),
 }));
 
@@ -349,6 +372,11 @@ export const insertCourseEvaluationSchema = createInsertSchema(courseEvaluations
   submittedAt: true,
 });
 
+export const insertCourseCertificateSchema = createInsertSchema(courseCertificates).omit({
+  id: true,
+  issueDate: true,
+});
+
 // Course types
 export type Course = typeof courses.$inferSelect;
 export type InsertCourse = z.infer<typeof insertCourseSchema>;
@@ -358,6 +386,9 @@ export type InsertCourseModule = z.infer<typeof insertCourseModuleSchema>;
 
 export type CourseEvaluation = typeof courseEvaluations.$inferSelect;
 export type InsertCourseEvaluation = z.infer<typeof insertCourseEvaluationSchema>;
+
+export type CourseCertificate = typeof courseCertificates.$inferSelect;
+export type InsertCourseCertificate = z.infer<typeof insertCourseCertificateSchema>;
 
 export type CourseEnrollment = typeof courseEnrollments.$inferSelect;
 export type InsertCourseEnrollment = z.infer<typeof insertCourseEnrollmentSchema>;
