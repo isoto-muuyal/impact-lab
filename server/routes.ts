@@ -1943,6 +1943,164 @@ export async function registerRoutes(
     }
   });
 
+  // Get events by date range (calendar view)
+  app.get('/api/events/calendar/:year/:month', isAuthenticated, async (req: any, res) => {
+    try {
+      const year = parseInt(req.params.year);
+      const month = parseInt(req.params.month) - 1;
+      const startDate = new Date(year, month, 1);
+      const endDate = new Date(year, month + 1, 0, 23, 59, 59);
+      
+      const events = await storage.getEventsByDateRange(startDate, endDate);
+      res.json(events);
+    } catch (error) {
+      console.error("Error fetching calendar events:", error);
+      res.status(500).json({ message: "Failed to fetch calendar events" });
+    }
+  });
+
+  // Mark attendance for event (facilitador or event creator only)
+  app.post('/api/events/:id/attendance/:userId', isAuthenticated, async (req: any, res) => {
+    try {
+      const currentUserId = req.user.claims.sub;
+      const userWithProfile = await storage.getUserWithProfile(currentUserId);
+      const isFacilitador = userWithProfile?.userRoles?.some((ur: any) => ur.role?.name === 'facilitador');
+      
+      const event = await storage.getEvent(req.params.id);
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+      
+      if (event.createdByUserId !== currentUserId && !isFacilitador) {
+        return res.status(403).json({ message: "Not authorized to mark attendance" });
+      }
+      
+      const { attended } = req.body;
+      const registration = await storage.markAttendance(req.params.id, req.params.userId, attended);
+      res.json(registration);
+    } catch (error) {
+      console.error("Error marking attendance:", error);
+      res.status(500).json({ message: "Failed to mark attendance" });
+    }
+  });
+
+  // ===== ACCELERATION PROGRAM ROUTES =====
+
+  // Get all acceleration programs
+  app.get('/api/acceleration-programs', isAuthenticated, async (req: any, res) => {
+    try {
+      const status = req.query.status as string | undefined;
+      const programs = await storage.getAccelerationPrograms(status ? { status } : undefined);
+      res.json(programs);
+    } catch (error) {
+      console.error("Error fetching acceleration programs:", error);
+      res.status(500).json({ message: "Failed to fetch acceleration programs" });
+    }
+  });
+
+  // Get single acceleration program
+  app.get('/api/acceleration-programs/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const program = await storage.getAccelerationProgram(req.params.id);
+      if (!program) {
+        return res.status(404).json({ message: "Program not found" });
+      }
+      res.json(program);
+    } catch (error) {
+      console.error("Error fetching acceleration program:", error);
+      res.status(500).json({ message: "Failed to fetch acceleration program" });
+    }
+  });
+
+  // Create acceleration program (facilitador only)
+  app.post('/api/acceleration-programs', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const isFacilitador = userWithProfile?.userRoles?.some((ur: any) => ur.role?.name === 'facilitador');
+      
+      if (!isFacilitador) {
+        return res.status(403).json({ message: "Only facilitadores can create acceleration programs" });
+      }
+      
+      const programData = {
+        ...req.body,
+        createdByUserId: userId,
+        startDate: req.body.startDate ? new Date(req.body.startDate) : null,
+        endDate: req.body.endDate ? new Date(req.body.endDate) : null,
+      };
+      
+      const program = await storage.createAccelerationProgram(programData);
+      res.status(201).json(program);
+    } catch (error) {
+      console.error("Error creating acceleration program:", error);
+      res.status(500).json({ message: "Failed to create acceleration program" });
+    }
+  });
+
+  // Update acceleration program (facilitador only)
+  app.patch('/api/acceleration-programs/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const isFacilitador = userWithProfile?.userRoles?.some((ur: any) => ur.role?.name === 'facilitador');
+      
+      if (!isFacilitador) {
+        return res.status(403).json({ message: "Only facilitadores can update acceleration programs" });
+      }
+      
+      const program = await storage.getAccelerationProgram(req.params.id);
+      if (!program) {
+        return res.status(404).json({ message: "Program not found" });
+      }
+      
+      const updateData = { ...req.body };
+      if (req.body.startDate) updateData.startDate = new Date(req.body.startDate);
+      if (req.body.endDate) updateData.endDate = new Date(req.body.endDate);
+      
+      const updated = await storage.updateAccelerationProgram(req.params.id, updateData);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating acceleration program:", error);
+      res.status(500).json({ message: "Failed to update acceleration program" });
+    }
+  });
+
+  // Delete acceleration program (facilitador only)
+  app.delete('/api/acceleration-programs/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const isFacilitador = userWithProfile?.userRoles?.some((ur: any) => ur.role?.name === 'facilitador');
+      
+      if (!isFacilitador) {
+        return res.status(403).json({ message: "Only facilitadores can delete acceleration programs" });
+      }
+      
+      const program = await storage.getAccelerationProgram(req.params.id);
+      if (!program) {
+        return res.status(404).json({ message: "Program not found" });
+      }
+      
+      await storage.deleteAccelerationProgram(req.params.id);
+      res.json({ message: "Acceleration program deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting acceleration program:", error);
+      res.status(500).json({ message: "Failed to delete acceleration program" });
+    }
+  });
+
+  // Get events for a specific program
+  app.get('/api/acceleration-programs/:id/events', isAuthenticated, async (req: any, res) => {
+    try {
+      const events = await storage.getEventsByProgram(req.params.id);
+      res.json(events);
+    } catch (error) {
+      console.error("Error fetching program events:", error);
+      res.status(500).json({ message: "Failed to fetch program events" });
+    }
+  });
+
   return httpServer;
 }
 

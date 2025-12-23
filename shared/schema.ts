@@ -770,6 +770,31 @@ export const eventStatusEnum = pgEnum('event_status', [
   'completed'
 ]);
 
+// Event type enum for acceleration events
+export const eventTypeEnum = pgEnum('event_type', [
+  'general',
+  'acceleration',
+  'workshop',
+  'mentorship_session',
+  'demo_day',
+  'pitch_practice',
+  'networking'
+]);
+
+// Acceleration programs table
+export const accelerationPrograms = pgTable("acceleration_programs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  maxParticipants: integer("max_participants"),
+  status: varchar("status").default('draft'),
+  createdByUserId: varchar("created_by_user_id").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Events table
 export const events = pgTable("events", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -782,6 +807,10 @@ export const events = pgTable("events", {
   meetingUrl: varchar("meeting_url"),
   maxAttendees: integer("max_attendees"),
   category: varchar("category"),
+  eventType: eventTypeEnum("event_type").default('general'),
+  accelerationProgramId: varchar("acceleration_program_id").references(() => accelerationPrograms.id),
+  phase: varchar("phase"),
+  isMandatory: varchar("is_mandatory").default('false'),
   status: eventStatusEnum("status").default('draft'),
   createdByUserId: varchar("created_by_user_id").notNull().references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
@@ -807,6 +836,15 @@ export const eventRegistrations = pgTable("event_registrations", {
   cancelledAt: timestamp("cancelled_at"),
 });
 
+// Acceleration programs relations
+export const accelerationProgramsRelations = relations(accelerationPrograms, ({ one, many }) => ({
+  createdBy: one(users, {
+    fields: [accelerationPrograms.createdByUserId],
+    references: [users.id],
+  }),
+  events: many(events),
+}));
+
 // Events relations
 export const eventsRelations = relations(events, ({ one, many }) => ({
   createdBy: one(users, {
@@ -814,6 +852,10 @@ export const eventsRelations = relations(events, ({ one, many }) => ({
     references: [users.id],
   }),
   registrations: many(eventRegistrations),
+  accelerationProgram: one(accelerationPrograms, {
+    fields: [events.accelerationProgramId],
+    references: [accelerationPrograms.id],
+  }),
 }));
 
 // Event registrations relations
@@ -828,6 +870,13 @@ export const eventRegistrationsRelations = relations(eventRegistrations, ({ one 
   }),
 }));
 
+// Insert schemas for acceleration programs
+export const insertAccelerationProgramSchema = createInsertSchema(accelerationPrograms).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Insert schemas for events
 export const insertEventSchema = createInsertSchema(events).omit({
   id: true,
@@ -840,6 +889,16 @@ export const insertEventRegistrationSchema = createInsertSchema(eventRegistratio
   registeredAt: true,
 });
 
+// Acceleration program types
+export type AccelerationProgram = typeof accelerationPrograms.$inferSelect;
+export type InsertAccelerationProgram = z.infer<typeof insertAccelerationProgramSchema>;
+
+export type AccelerationProgramWithDetails = AccelerationProgram & {
+  createdBy?: User | null;
+  events?: Event[];
+  eventCount?: number;
+};
+
 // Event types
 export type Event = typeof events.$inferSelect;
 export type InsertEvent = z.infer<typeof insertEventSchema>;
@@ -851,4 +910,5 @@ export type EventWithDetails = Event & {
   createdBy?: User | null;
   registrations?: EventRegistration[];
   registrationCount?: number;
+  accelerationProgram?: AccelerationProgram | null;
 };

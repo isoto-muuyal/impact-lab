@@ -16,6 +16,7 @@ import {
   matchRecords,
   events,
   eventRegistrations,
+  accelerationPrograms,
   type User,
   type UpsertUser,
   type UserProfile,
@@ -61,6 +62,9 @@ import {
   type InsertEvent,
   type EventWithDetails,
   type EventRegistration,
+  type AccelerationProgram,
+  type InsertAccelerationProgram,
+  type AccelerationProgramWithDetails,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, or, and, isNull, gte, lte } from "drizzle-orm";
@@ -167,8 +171,17 @@ export interface IStorage {
   deleteChallengeProject(id: string): Promise<boolean>;
   setChallengeProjectStatus(id: string, status: 'idea' | 'design' | 'pilot' | 'active' | 'completed' | 'on_hold' | 'cancelled'): Promise<ChallengeProject | undefined>;
   
+  // Acceleration Program operations
+  getAccelerationPrograms(filters?: { status?: string }): Promise<AccelerationProgramWithDetails[]>;
+  getAccelerationProgram(id: string): Promise<AccelerationProgramWithDetails | undefined>;
+  createAccelerationProgram(data: InsertAccelerationProgram): Promise<AccelerationProgram>;
+  updateAccelerationProgram(id: string, data: Partial<InsertAccelerationProgram>): Promise<AccelerationProgram | undefined>;
+  deleteAccelerationProgram(id: string): Promise<boolean>;
+  
   // Event operations
   getEvents(includeUnpublished?: boolean): Promise<EventWithDetails[]>;
+  getEventsByDateRange(startDate: Date, endDate: Date): Promise<EventWithDetails[]>;
+  getEventsByProgram(programId: string): Promise<EventWithDetails[]>;
   getEvent(id: string): Promise<EventWithDetails | undefined>;
   createEvent(event: InsertEvent): Promise<Event>;
   updateEvent(id: string, event: Partial<InsertEvent>): Promise<Event | undefined>;
@@ -180,6 +193,7 @@ export interface IStorage {
   getUserEventRegistrations(userId: string): Promise<(EventRegistration & { event?: Event })[]>;
   registerForEvent(eventId: string, userId: string): Promise<EventRegistration>;
   cancelEventRegistration(eventId: string, userId: string): Promise<boolean>;
+  markAttendance(eventId: string, userId: string, attended: boolean): Promise<EventRegistration | undefined>;
   isUserRegisteredForEvent(eventId: string, userId: string): Promise<boolean>;
   countProjectsByChallenge(challengeId: string): Promise<number>;
   
@@ -1501,6 +1515,106 @@ export class DatabaseStorage implements IStorage {
         eq(eventRegistrations.status, 'registered')
       ));
     return !!registration;
+  }
+
+  async markAttendance(eventId: string, userId: string, attended: boolean): Promise<EventRegistration | undefined> {
+    const [registration] = await db
+      .update(eventRegistrations)
+      .set({ 
+        status: attended ? 'attended' : 'no_show',
+        attendedAt: attended ? new Date() : null
+      })
+      .where(and(
+        eq(eventRegistrations.eventId, eventId),
+        eq(eventRegistrations.userId, userId)
+      ))
+      .returning();
+    return registration;
+  }
+
+  async getEventsByDateRange(startDate: Date, endDate: Date): Promise<EventWithDetails[]> {
+    const eventList = await db
+      .select()
+      .from(events)
+      .where(and(
+        gte(events.eventDate, startDate),
+        lte(events.eventDate, endDate),
+        eq(events.status, 'published')
+      ))
+      .orderBy(events.eventDate);
+    
+    return Promise.all(eventList.map(async (event) => {
+      const [createdBy] = await db.select().from(users).where(eq(users.id, event.createdByUserId));
+      const registrations = await db.select().from(eventRegistrations).where(eq(eventRegistrations.eventId, event.id));
+      let accelerationProgram = null;
+      if (event.accelerationProgramId) {
+        const [program] = await db.select().from(accelerationPrograms).where(eq(accelerationPrograms.id, event.accelerationProgramId));
+        accelerationProgram = program;
+      }
+      return { ...event, createdBy, registrations, registrationCount: registrations.length, accelerationProgram };
+    }));
+  }
+
+  async getEventsByProgram(programId: string): Promise<EventWithDetails[]> {
+    const eventList = await db
+      .select()
+      .from(events)
+      .where(eq(events.accelerationProgramId, programId))
+      .orderBy(events.eventDate);
+    
+    return Promise.all(eventList.map(async (event) => {
+      const [createdBy] = await db.select().from(users).where(eq(users.id, event.createdByUserId));
+      const registrations = await db.select().from(eventRegistrations).where(eq(eventRegistrations.eventId, event.id));
+      return { ...event, createdBy, registrations, registrationCount: registrations.length };
+    }));
+  }
+
+  // ============================================
+  // ACCELERATION PROGRAM OPERATIONS
+  // ============================================
+
+  async getAccelerationPrograms(filters?: { status?: string }): Promise<AccelerationProgramWithDetails[]> {
+    let programList;
+    if (filters?.status) {
+      programList = await db.select().from(accelerationPrograms).where(eq(accelerationPrograms.status, filters.status)).orderBy(desc(accelerationPrograms.createdAt));
+    } else {
+      programList = await db.select().from(accelerationPrograms).orderBy(desc(accelerationPrograms.createdAt));
+    }
+    
+    return Promise.all(programList.map(async (program) => {
+      const [createdBy] = await db.select().from(users).where(eq(users.id, program.createdByUserId));
+      const programEvents = await db.select().from(events).where(eq(events.accelerationProgramId, program.id));
+      return { ...program, createdBy, events: programEvents, eventCount: programEvents.length };
+    }));
+  }
+
+  async getAccelerationProgram(id: string): Promise<AccelerationProgramWithDetails | undefined> {
+    const [program] = await db.select().from(accelerationPrograms).where(eq(accelerationPrograms.id, id));
+    if (!program) return undefined;
+    
+    const [createdBy] = await db.select().from(users).where(eq(users.id, program.createdByUserId));
+    const programEvents = await db.select().from(events).where(eq(events.accelerationProgramId, program.id));
+    return { ...program, createdBy, events: programEvents, eventCount: programEvents.length };
+  }
+
+  async createAccelerationProgram(data: InsertAccelerationProgram): Promise<AccelerationProgram> {
+    const [program] = await db.insert(accelerationPrograms).values(data).returning();
+    return program;
+  }
+
+  async updateAccelerationProgram(id: string, data: Partial<InsertAccelerationProgram>): Promise<AccelerationProgram | undefined> {
+    const [program] = await db
+      .update(accelerationPrograms)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(accelerationPrograms.id, id))
+      .returning();
+    return program;
+  }
+
+  async deleteAccelerationProgram(id: string): Promise<boolean> {
+    await db.update(events).set({ accelerationProgramId: null }).where(eq(events.accelerationProgramId, id));
+    await db.delete(accelerationPrograms).where(eq(accelerationPrograms.id, id));
+    return true;
   }
 }
 
