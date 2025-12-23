@@ -421,8 +421,8 @@ export const mentorshipPrograms = pgTable("mentorship_programs", {
 // Mentorship enrollment status enum - requested, confirmed, in_progress, completed, cancelled
 export const mentorshipEnrollmentStatusEnum = pgEnum('mentorship_enrollment_status', ['requested', 'confirmed', 'in_progress', 'completed', 'cancelled']);
 
-// Mentorship session status enum
-export const mentorshipSessionStatusEnum = pgEnum('mentorship_session_status', ['scheduled', 'completed', 'cancelled']);
+// Mentorship session status enum - scheduled, done, cancelled, rescheduled
+export const mentorshipSessionStatusEnum = pgEnum('mentorship_session_status', ['scheduled', 'done', 'cancelled', 'rescheduled']);
 
 // Mentorship Enrollments table - "Registro de Mentores y Mentees"
 export const mentorshipEnrollments = pgTable("mentorship_enrollments", {
@@ -451,14 +451,17 @@ export const mentorships = pgTable("mentorships", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Mentorship sessions table
+// Mentorship sessions table - "Registro de sesiones de mentoría"
 export const mentorshipSessions = pgTable("mentorship_sessions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  mentorshipId: varchar("mentorship_id").notNull().references(() => mentorships.id),
+  enrollmentId: varchar("enrollment_id").notNull().references(() => mentorshipEnrollments.id),
+  sessionNumber: integer("session_number").notNull().default(1),
   scheduledAt: timestamp("scheduled_at").notNull(),
-  duration: varchar("duration"),
-  notes: text("notes"),
+  durationMinutes: integer("duration_minutes").default(60),
   status: mentorshipSessionStatusEnum("status").default('scheduled'),
+  meetingLink: varchar("meeting_link"),
+  attendanceRecorded: boolean("attendance_recorded").default(false),
+  notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -473,7 +476,7 @@ export const mentorshipProgramsRelations = relations(mentorshipPrograms, ({ one,
 }));
 
 // Mentorship enrollment relations
-export const mentorshipEnrollmentsRelations = relations(mentorshipEnrollments, ({ one }) => ({
+export const mentorshipEnrollmentsRelations = relations(mentorshipEnrollments, ({ one, many }) => ({
   program: one(mentorshipPrograms, {
     fields: [mentorshipEnrollments.programId],
     references: [mentorshipPrograms.id],
@@ -486,6 +489,7 @@ export const mentorshipEnrollmentsRelations = relations(mentorshipEnrollments, (
     fields: [mentorshipEnrollments.mentorUserId],
     references: [users.id],
   }),
+  sessions: many(mentorshipSessions),
 }));
 
 // Mentorship relations
@@ -510,9 +514,9 @@ export const mentorshipsRelations = relations(mentorships, ({ one, many }) => ({
 }));
 
 export const mentorshipSessionsRelations = relations(mentorshipSessions, ({ one }) => ({
-  mentorship: one(mentorships, {
-    fields: [mentorshipSessions.mentorshipId],
-    references: [mentorships.id],
+  enrollment: one(mentorshipEnrollments, {
+    fields: [mentorshipSessions.enrollmentId],
+    references: [mentorshipEnrollments.id],
   }),
 }));
 
