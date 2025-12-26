@@ -54,6 +54,9 @@ export default function Landing() {
               <Globe className="h-4 w-4 text-primary" />
               <span className="text-muted-foreground">{t("landing.platform")}</span>
             </div>
+            <p className="text-2xl md:text-3xl font-bold tracking-wide mb-4 text-orange-500" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+              IMPACTLab <span className="font-normal">By GA4SI</span>
+            </p>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight mb-6">
               {t("landing.heroTitle")}
               <span className="text-primary"> {t("landing.heroHighlight")}</span>
