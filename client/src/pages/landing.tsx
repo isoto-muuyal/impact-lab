@@ -9,15 +9,16 @@ import {
   BookOpen, 
   Rocket,
   ArrowRight,
-  Sparkles,
   Globe,
   Heart,
   GraduationCap,
   Lightbulb,
   Handshake,
   FlaskConical,
-  Beaker
+  Beaker,
+  Sparkles
 } from "lucide-react";
+import impactLabBanner from "@assets/BANNER_IMPACTLAB_1766790182200.jpg";
 
 export default function Landing() {
   const { t, tArray } = useTranslation();
@@ -27,11 +28,22 @@ export default function Landing() {
       {/* Header */}
       <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="max-w-7xl mx-auto px-4 flex h-16 items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-              <Sparkles className="h-5 w-5 text-primary-foreground" />
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-500">
+                <div className="h-3 w-3 rounded-full bg-white" />
+              </div>
+              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary -ml-2">
+                <div className="h-2 w-2 rounded-full bg-white" />
+              </div>
             </div>
-            <span className="text-xl font-semibold">{t("app.name")}</span>
+            <div className="flex flex-col leading-tight">
+              <span className="text-lg font-bold">
+                <span className="text-primary">Impact</span>
+                <span className="text-orange-500">LAB</span>
+              </span>
+              <span className="text-[10px] text-muted-foreground -mt-1">By GA4SI</span>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <LanguageSelector />
@@ -54,9 +66,24 @@ export default function Landing() {
               <Globe className="h-4 w-4 text-primary" />
               <span className="text-muted-foreground">{t("landing.platform")}</span>
             </div>
-            <p className="text-2xl md:text-3xl font-bold tracking-wide mb-4 text-orange-500" style={{ fontFamily: "'Montserrat', sans-serif" }}>
-              IMPACTLab <span className="font-normal">By GA4SI</span>
-            </p>
+            <div className="flex items-center justify-center gap-2 mb-6">
+              <div className="flex items-center gap-0.5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-500">
+                  <div className="h-4 w-4 rounded-full bg-white" />
+                </div>
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary -ml-3 mt-2">
+                  <div className="h-3 w-3 rounded-full bg-white" />
+                </div>
+              </div>
+              <div className="flex flex-col items-start leading-none">
+                <span className="text-3xl md:text-4xl font-bold tracking-tight" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+                  <span className="text-primary">Impact</span>
+                  <span className="text-orange-500">LAB</span>
+                </span>
+                <span className="text-sm font-semibold text-orange-500 -mt-1">By GA4SI</span>
+              </div>
+            </div>
+            <p className="text-base text-muted-foreground italic mb-4">Building Connections, Growing Opportunities!</p>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight mb-6">
               {t("landing.heroTitle")}
               <span className="text-primary"> {t("landing.heroHighlight")}</span>
