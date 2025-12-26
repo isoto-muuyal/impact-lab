@@ -146,7 +146,7 @@ export default function Landing() {
               icon={<FlaskConical className="h-8 w-8" />}
               title={t("labs.coLab.title")}
               description={t("labs.coLab.description")}
-              color="chart-2"
+              color="primary"
               modules={[
                 {
                   id: "granIdea",
