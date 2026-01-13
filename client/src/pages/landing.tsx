@@ -16,7 +16,19 @@ import {
   Handshake,
   FlaskConical,
   Beaker,
-  Sparkles
+  Sparkles,
+  ShoppingCart,
+  ClipboardList,
+  FileText,
+  UserPlus,
+  TrendingUp,
+  CheckCircle,
+  Award,
+  Calendar,
+  MessageSquare,
+  BarChart3,
+  Target,
+  FileCheck
 } from "lucide-react";
 import impactLabBanner from "@assets/BANNER_IMPACTLAB_1766790182200.jpg";
 
@@ -129,14 +141,27 @@ export default function Landing() {
                   icon: <BookOpen className="h-5 w-5" />,
                   title: t("labs.learningLab.courses.title"),
                   description: t("labs.learningLab.courses.description"),
-                  subgroups: tArray("labs.learningLab.courses.subgroups"),
+                  subgroups: [
+                    { icon: <ShoppingCart className="h-4 w-4" />, name: "Oferta de Cursos" },
+                    { icon: <ClipboardList className="h-4 w-4" />, name: "Registro de Curso" },
+                    { icon: <FileText className="h-4 w-4" />, name: "Registro de Clase" },
+                    { icon: <UserPlus className="h-4 w-4" />, name: "Registro de Participante" },
+                    { icon: <TrendingUp className="h-4 w-4" />, name: "Progreso y Seguimiento" },
+                    { icon: <CheckCircle className="h-4 w-4" />, name: "Evaluación" },
+                    { icon: <Award className="h-4 w-4" />, name: "Acreditación" },
+                  ],
                 },
                 {
                   id: "mentorship",
                   icon: <Handshake className="h-5 w-5" />,
                   title: t("labs.learningLab.mentorship.title"),
                   description: t("labs.learningLab.mentorship.description"),
-                  subgroups: tArray("labs.learningLab.mentorship.subgroups"),
+                  subgroups: [
+                    { icon: <Users className="h-4 w-4" />, name: "Catálogo de Mentores" },
+                    { icon: <Calendar className="h-4 w-4" />, name: "Programación de Sesiones" },
+                    { icon: <MessageSquare className="h-4 w-4" />, name: "Seguimiento" },
+                    { icon: <BarChart3 className="h-4 w-4" />, name: "Reportes" },
+                  ],
                 },
               ]}
             />
@@ -153,14 +178,26 @@ export default function Landing() {
                   icon: <Lightbulb className="h-5 w-5" />,
                   title: t("labs.coLab.granIdea.title"),
                   description: t("labs.coLab.granIdea.description"),
-                  subgroups: tArray("labs.coLab.granIdea.subgroups"),
+                  subgroups: [
+                    { icon: <Target className="h-4 w-4" />, name: "Idea Central" },
+                    { icon: <Users className="h-4 w-4" />, name: "Equipo Colaborativo" },
+                    { icon: <MessageSquare className="h-4 w-4" />, name: "Contribuciones" },
+                    { icon: <FileCheck className="h-4 w-4" />, name: "Decisiones" },
+                    { icon: <CheckCircle className="h-4 w-4" />, name: "Revisiones" },
+                  ],
                 },
                 {
                   id: "metodologico",
                   icon: <Beaker className="h-5 w-5" />,
                   title: t("labs.coLab.metodologico.title"),
                   description: t("labs.coLab.metodologico.description"),
-                  subgroups: tArray("labs.coLab.metodologico.subgroups"),
+                  subgroups: [
+                    { icon: <BookOpen className="h-4 w-4" />, name: "Marco Metodológico" },
+                    { icon: <Rocket className="h-4 w-4" />, name: "Tracks de Ideas" },
+                    { icon: <TrendingUp className="h-4 w-4" />, name: "Progreso por Etapas" },
+                    { icon: <FileCheck className="h-4 w-4" />, name: "Decisiones" },
+                    { icon: <CheckCircle className="h-4 w-4" />, name: "Revisiones" },
+                  ],
                 },
               ]}
             />
@@ -304,12 +341,17 @@ function RoleCard({ title, description, features, roles, color }: {
   );
 }
 
+interface SubgroupItem {
+  icon: React.ReactNode;
+  name: string;
+}
+
 interface LabModule {
   id: string;
   icon: React.ReactNode;
   title: string;
   description: string;
-  subgroups: string[];
+  subgroups: SubgroupItem[];
 }
 
 function LabSection({ icon, title, description, color, modules }: { 
@@ -360,11 +402,12 @@ function LabSection({ icon, title, description, color, modules }: {
                 </div>
               </div>
               {module.subgroups.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3 pt-3 border-t">
                   {module.subgroups.map((subgroup, idx) => (
-                    <Badge key={idx} variant="secondary" className="text-xs">
-                      {subgroup}
-                    </Badge>
+                    <div key={idx} className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className="text-primary">{subgroup.icon}</span>
+                      <span>{subgroup.name}</span>
+                    </div>
                   ))}
                 </div>
               )}
