@@ -1,0 +1,105 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+      EC2_PORT: ${{ secrets.EC2_PORT || '22' }}
+      DOCKER_NETWORK: ${{ secrets.DOCKER_NETWORK || 'impactlab-network' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Ensure ECR repository exists
+        run: |
+          aws ecr describe-repositories \
+            --repository-names "$ECR_REPOSITORY" \
+            --region "$AWS_REGION" >/dev/null 2>&1 || \
+          aws ecr create-repository \
+            --repository-name "$ECR_REPOSITORY" \
+            --image-scanning-configuration scanOnPush=true \
+            --region "$AWS_REGION"
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push image
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          IMAGE_URI="$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          docker build -t "$IMAGE_URI" .
+          docker push "$IMAGE_URI"
+          echo "image_uri=$IMAGE_URI" >> "$GITHUB_OUTPUT"
+
+      - name: Get ECR password for EC2 pull
+        id: ecr-password
+        run: |
+          PASSWORD="$(aws ecr get-login-password --region "$AWS_REGION")"
+          echo "::add-mask::$PASSWORD"
+          echo "password=$PASSWORD" >> "$GITHUB_OUTPUT"
+
+      - name: Copy compose file to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: ${{ env.EC2_PORT }}
+          target: ~/apps/impact-lab
+          source: docker-compose.yml
+
+      - name: Deploy on EC2
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          IMAGE_URI: ${{ steps.build-image.outputs.image_uri }}
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_PASSWORD: ${{ steps.ecr-password.outputs.password }}
+          DOCKER_NETWORK: ${{ env.DOCKER_NETWORK }}
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: ${{ env.EC2_PORT }}
+          envs: IMAGE_URI,ECR_REGISTRY,ECR_PASSWORD,DOCKER_NETWORK
+          script: |
+            set -e
+            mkdir -p ~/apps/impact-lab
+            cd ~/apps/impact-lab
+
+            touch .env
+
+            if grep -q '^IMAGE_URI=' .env; then
+              sed -i "s|^IMAGE_URI=.*|IMAGE_URI=${IMAGE_URI}|" .env
+            else
+              printf '\nIMAGE_URI=%s\n' "${IMAGE_URI}" >> .env
+            fi
+
+            if grep -q '^DOCKER_NETWORK=' .env; then
+              sed -i "s|^DOCKER_NETWORK=.*|DOCKER_NETWORK=${DOCKER_NETWORK}|" .env
+            else
+              printf 'DOCKER_NETWORK=%s\n' "${DOCKER_NETWORK}" >> .env
+            fi
+
+            docker network inspect "${DOCKER_NETWORK}" >/dev/null 2>&1 || docker network create "${DOCKER_NETWORK}"
+            echo "${ECR_PASSWORD}" | docker login --username AWS --password-stdin "${ECR_REGISTRY}"
+            docker compose pull
+            docker compose up -d --remove-orphans
