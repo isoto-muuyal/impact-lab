@@ -19,6 +19,7 @@ import { relations } from "drizzle-orm";
 export const userStatusEnum = pgEnum('user_status', ['active', 'inactive', 'suspended']);
 export const roleTypeEnum = pgEnum('role_type', ['usuario', 'mentor', 'facilitador', 'proponente', 'acreditador']);
 export const profileStatusEnum = pgEnum('profile_status', ['complete', 'incomplete', 'pending']);
+export const activityTypeEnum = pgEnum('activity_type', ['page_view', 'button_click']);
 
 // Session storage table.
 // (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
@@ -48,6 +49,22 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   lastAccessAt: timestamp("last_access_at"),
+});
+
+export const activityLogs = pgTable("activity_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id),
+  activityType: activityTypeEnum("activity_type").notNull(),
+  path: varchar("path").notNull(),
+  buttonId: varchar("button_id"),
+  buttonLabel: varchar("button_label"),
+  ipAddress: varchar("ip_address"),
+  country: varchar("country"),
+  region: varchar("region"),
+  city: varchar("city"),
+  userAgent: text("user_agent"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // User Profile table - ID 02 UserProfile from diagram
@@ -135,6 +152,11 @@ export const insertUserProfileSchema = createInsertSchema(userProfiles).omit({
   updatedAt: true,
 });
 
+export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertRoleSchema = createInsertSchema(roles).omit({
   id: true,
   createdAt: true,
@@ -153,6 +175,9 @@ export type UpsertUser = typeof users.$inferInsert;
 
 export type UserProfile = typeof userProfiles.$inferSelect;
 export type InsertUserProfile = z.infer<typeof insertUserProfileSchema>;
+
+export type ActivityLog = typeof activityLogs.$inferSelect;
+export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 
 export type Role = typeof roles.$inferSelect;
 export type InsertRole = z.infer<typeof insertRoleSchema>;

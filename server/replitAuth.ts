@@ -8,6 +8,12 @@ import memoize from "memoizee";
 import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
 
+declare module "express-session" {
+  interface SessionData {
+    localUserId?: string;
+  }
+}
+
 const getOidcConfig = memoize(
   async () => {
     return await client.discovery(
@@ -117,6 +123,14 @@ export async function setupAuth(app: Express) {
   });
 
   app.get("/api/logout", (req, res) => {
+    if (req.session?.localUserId) {
+      req.session.localUserId = undefined;
+      req.logout?.(() => {
+        res.redirect("/");
+      });
+      return;
+    }
+
     req.logout(() => {
       res.redirect(
         client.buildEndSessionUrl(config, {
@@ -129,6 +143,20 @@ export async function setupAuth(app: Express) {
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
+  if (req.session?.localUserId) {
+    const user = await storage.getUser(req.session.localUserId);
+    if (!user) {
+      req.session.localUserId = undefined;
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    (req as any).user = {
+      claims: { sub: user.id },
+      local: true,
+    };
+    return next();
+  }
+
   const user = req.user as any;
 
   if (!req.isAuthenticated() || !user.expires_at) {
@@ -155,4 +183,29 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
     res.status(401).json({ message: "Unauthorized" });
     return;
   }
+};
+
+export const isImpactLabAdmin: RequestHandler = async (req, res, next) => {
+  if (req.session?.localUserId) {
+    const user = await storage.getUser(req.session.localUserId);
+    if (user?.username === "impactlab") {
+      (req as any).user = {
+        claims: { sub: user.id },
+        local: true,
+      };
+      return next();
+    }
+  }
+
+  if (req.isAuthenticated?.()) {
+    const userId = (req.user as any)?.claims?.sub;
+    if (userId) {
+      const user = await storage.getUser(userId);
+      if (user?.username === "impactlab") {
+        return next();
+      }
+    }
+  }
+
+  return res.status(403).json({ message: "Forbidden" });
 };

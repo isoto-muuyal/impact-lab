@@ -1,5 +1,6 @@
 import {
   users,
+  activityLogs,
   userProfiles,
   roles,
   userRoles,
@@ -19,6 +20,8 @@ import {
   accelerationPrograms,
   type User,
   type UpsertUser,
+  type ActivityLog,
+  type InsertActivityLog,
   type UserProfile,
   type InsertUserProfile,
   type Role,
@@ -67,13 +70,32 @@ import {
   type AccelerationProgramWithDetails,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, or, and, isNull, gte, lte } from "drizzle-orm";
+import { eq, desc, or, and, isNull, gte, lte, sql } from "drizzle-orm";
+
+export type ActivityRange = 'week' | 'month' | 'all';
+
+export interface ActivityLogWithUser extends ActivityLog {
+  user?: User | null;
+}
+
+export interface ActivityAggregate {
+  key: string;
+  count: number;
+}
+
+export interface ActivityReport {
+  logs: ActivityLogWithUser[];
+  topPages: ActivityAggregate[];
+  topButtons: ActivityAggregate[];
+}
 
 export interface IStorage {
   // User operations (mandatory for Replit Auth)
   getUser(id: string): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   getUserWithProfile(id: string): Promise<UserWithProfile | undefined>;
+  validateLocalUser(username: string, password: string): Promise<User | undefined>;
   
   // Profile operations
   getProfile(userId: string): Promise<UserProfile | undefined>;
@@ -212,12 +234,21 @@ export interface IStorage {
   updateMatchRecord(id: string, data: Partial<InsertMatchRecord>): Promise<MatchRecord | undefined>;
   deleteMatchRecord(id: string): Promise<boolean>;
   setMatchStatus(id: string, status: 'suggested' | 'pending_approval' | 'accepted' | 'rejected' | 'cancelled', decidedByUserId?: string, notes?: string): Promise<MatchRecord | undefined>;
+
+  // Activity tracking
+  createActivityLog(activity: InsertActivityLog): Promise<ActivityLog>;
+  getActivityReport(range: ActivityRange): Promise<ActivityReport>;
 }
 
 export class DatabaseStorage implements IStorage {
   // User operations
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
     return user;
   }
 
@@ -247,6 +278,14 @@ export class DatabaseStorage implements IStorage {
       }
     }
     
+    return user;
+  }
+
+  async validateLocalUser(username: string, password: string): Promise<User | undefined> {
+    const user = await this.getUserByUsername(username);
+    if (!user || !user.password || user.password !== password) {
+      return undefined;
+    }
     return user;
   }
 
@@ -1616,6 +1655,75 @@ export class DatabaseStorage implements IStorage {
     await db.delete(accelerationPrograms).where(eq(accelerationPrograms.id, id));
     return true;
   }
+
+  async createActivityLog(activity: InsertActivityLog): Promise<ActivityLog> {
+    const [created] = await db.insert(activityLogs).values(activity).returning();
+    return created;
+  }
+
+  async getActivityReport(range: ActivityRange): Promise<ActivityReport> {
+    const startDate = getRangeStart(range);
+    const rangeFilters = startDate ? [gte(activityLogs.createdAt, startDate)] : [];
+
+    const recentLogs = await db
+      .select()
+      .from(activityLogs)
+      .where(rangeFilters.length > 0 ? and(...rangeFilters) : undefined)
+      .orderBy(desc(activityLogs.createdAt))
+      .limit(250);
+
+    const logs = await Promise.all(
+      recentLogs.map(async (log) => ({
+        ...log,
+        user: log.userId ? await this.getUser(log.userId) : null,
+      })),
+    );
+
+    const topPages = await db
+      .select({
+        key: activityLogs.path,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(activityLogs)
+      .where(
+        and(
+          eq(activityLogs.activityType, 'page_view'),
+          ...(rangeFilters.length > 0 ? rangeFilters : []),
+        ),
+      )
+      .groupBy(activityLogs.path)
+      .orderBy(desc(sql`count(*)`), activityLogs.path)
+      .limit(10);
+
+    const topButtons = await db
+      .select({
+        key: sql<string>`coalesce(${activityLogs.buttonLabel}, ${activityLogs.buttonId}, ${activityLogs.path})`,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(activityLogs)
+      .where(
+        and(
+          eq(activityLogs.activityType, 'button_click'),
+          ...(rangeFilters.length > 0 ? rangeFilters : []),
+        ),
+      )
+      .groupBy(sql`coalesce(${activityLogs.buttonLabel}, ${activityLogs.buttonId}, ${activityLogs.path})`)
+      .orderBy(desc(sql`count(*)`))
+      .limit(10);
+
+    return { logs, topPages, topButtons };
+  }
 }
 
 export const storage = new DatabaseStorage();
+
+function getRangeStart(range: ActivityRange): Date | undefined {
+  const now = new Date();
+  if (range === 'week') {
+    return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  }
+  if (range === 'month') {
+    return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  }
+  return undefined;
+}

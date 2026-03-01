@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { ActivityTracker } from "@/components/activity-tracker";
 import { LanguageProvider, useTranslation } from "@/contexts/LanguageContext";
 import { LanguageSelector } from "@/components/language-selector";
 import { useAuth } from "@/hooks/useAuth";
@@ -21,6 +22,7 @@ import Challenges from "@/pages/challenges";
 import ChallengeProjects from "@/pages/challenge-projects";
 import Events from "@/pages/events";
 import Settings from "@/pages/settings";
+import AdminPage from "@/pages/admin";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -33,6 +35,7 @@ function Router() {
   if (!isAuthenticated) {
     return (
       <Switch>
+        <Route path="/admin" component={AdminPage} />
         <Route path="/" component={Landing} />
         <Route component={Landing} />
       </Switch>
@@ -51,6 +54,7 @@ function Router() {
       <Route path="/challenge-projects" component={ChallengeProjects} />
       <Route path="/events" component={Events} />
       <Route path="/settings" component={Settings} />
+      <Route path="/admin" component={AdminPage} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -111,6 +115,7 @@ function App() {
       <ThemeProvider defaultTheme="light" storageKey="impact-lab-theme">
         <LanguageProvider>
           <TooltipProvider>
+            <ActivityTracker />
             <AuthenticatedLayout />
             <Toaster />
           </TooltipProvider>

@@ -13,4 +13,4 @@ services:
 networks:
   impactlab-network:
     external: true
-    name: ${DOCKER_NETWORK:-impactlab-network}
+    name: ${DOCKER_NETWORK:-shared_network}

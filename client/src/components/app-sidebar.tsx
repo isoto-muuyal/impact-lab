@@ -30,7 +30,8 @@ import {
   MessageSquare,
   Building2,
   Trophy,
-  FolderKanban
+  FolderKanban,
+  Shield
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -85,6 +86,7 @@ export function AppSidebar() {
 
   const userRole = user?.userRoles?.[0]?.role?.name || "usuario";
   const menuItems = menuItemsByRole[userRole] || menuItemsByRole.usuario;
+  const isImpactLabAdmin = user?.username === "impactlab";
 
   const getRoleLabel = (role: string) => {
     const roleMap: Record<string, string> = {
@@ -137,6 +139,16 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              {isImpactLabAdmin ? (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location === "/admin"}>
+                    <Link href="/admin" data-testid="link-nav-admin">
+                      <Shield className="h-4 w-4" />
+                      <span>Admin</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ) : null}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

@@ -1,8 +1,9 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated, isImpactLabAdmin } from "./replitAuth";
 import { 
+  insertActivityLogSchema,
   insertProjectSchema, 
   insertCourseSchema, 
   insertMentorshipSchema, 
@@ -56,6 +57,74 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  app.post('/api/admin/login', async (req: any, res) => {
+    try {
+      const username = typeof req.body?.username === 'string' ? req.body.username.trim() : '';
+      const password = typeof req.body?.password === 'string' ? req.body.password : '';
+
+      const user = await storage.validateLocalUser(username, password);
+      if (!user || user.username !== 'impactlab') {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+
+      req.session.localUserId = user.id;
+      const userWithProfile = await storage.getUserWithProfile(user.id);
+      res.json(userWithProfile);
+    } catch (error) {
+      console.error("Error during admin login:", error);
+      res.status(500).json({ message: "Failed to login" });
+    }
+  });
+
+  app.post('/api/activity', async (req: any, res) => {
+    try {
+      const userId = await resolveTrackedUserId(req);
+      const path = sanitizeTrackedPath(req.body?.path);
+      if (!path) {
+        return res.status(400).json({ message: "Path is required" });
+      }
+
+      const location = getLocationFromHeaders(req);
+      const validationResult = insertActivityLogSchema.safeParse({
+        userId,
+        activityType: req.body?.activityType,
+        path,
+        buttonId: sanitizeOptionalText(req.body?.buttonId),
+        buttonLabel: sanitizeOptionalText(req.body?.buttonLabel),
+        ipAddress: getClientIp(req),
+        country: location.country,
+        region: location.region,
+        city: location.city,
+        userAgent: sanitizeOptionalText(req.get("user-agent")),
+        metadata: sanitizeMetadata(req.body?.metadata),
+      });
+
+      if (!validationResult.success) {
+        return res.status(400).json({
+          message: "Invalid activity payload",
+          errors: validationResult.error.flatten().fieldErrors,
+        });
+      }
+
+      await storage.createActivityLog(validationResult.data);
+      res.status(201).json({ ok: true });
+    } catch (error) {
+      console.error("Error creating activity log:", error);
+      res.status(500).json({ message: "Failed to record activity" });
+    }
+  });
+
+  app.get('/api/admin/activity', isImpactLabAdmin, async (req, res) => {
+    try {
+      const range = normalizeActivityRange(req.query.range);
+      const report = await storage.getActivityReport(range);
+      res.json(report);
+    } catch (error) {
+      console.error("Error fetching activity report:", error);
+      res.status(500).json({ message: "Failed to fetch activity report" });
     }
   });
 
@@ -2111,4 +2180,88 @@ function isProfileComplete(profile: any): boolean {
     profile.country &&
     profile.city
   );
+}
+
+async function resolveTrackedUserId(req: any): Promise<string | undefined> {
+  if (req.session?.localUserId) {
+    return req.session.localUserId;
+  }
+
+  const oidcUserId = req.user?.claims?.sub;
+  if (oidcUserId) {
+    return oidcUserId;
+  }
+
+  if (req.isAuthenticated?.()) {
+    return req.user?.claims?.sub;
+  }
+
+  return undefined;
+}
+
+function normalizeActivityRange(range: unknown): 'week' | 'month' | 'all' {
+  if (range === 'week' || range === 'month') {
+    return range;
+  }
+  return 'all';
+}
+
+function sanitizeTrackedPath(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim();
+  if (!trimmed || trimmed.length > 255) return undefined;
+  return trimmed;
+}
+
+function sanitizeOptionalText(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim();
+  return trimmed ? trimmed.slice(0, 255) : undefined;
+}
+
+function sanitizeMetadata(value: unknown): Record<string, unknown> | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return undefined;
+  }
+  return value as Record<string, unknown>;
+}
+
+function getClientIp(req: any): string | undefined {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (typeof forwarded === 'string' && forwarded.length > 0) {
+    return forwarded.split(',')[0].trim();
+  }
+  if (Array.isArray(forwarded) && forwarded.length > 0) {
+    return forwarded[0]?.trim();
+  }
+  return req.ip || req.socket?.remoteAddress || undefined;
+}
+
+function getLocationFromHeaders(req: any): { country?: string; region?: string; city?: string } {
+  return {
+    country: firstHeader(req, [
+      'cloudfront-viewer-country',
+      'x-vercel-ip-country',
+      'cf-ipcountry',
+    ]),
+    region: firstHeader(req, [
+      'x-vercel-ip-country-region',
+      'x-appengine-region',
+      'cloudfront-viewer-country-region',
+    ]),
+    city: firstHeader(req, [
+      'x-vercel-ip-city',
+      'cloudfront-viewer-city',
+    ]),
+  };
+}
+
+function firstHeader(req: any, names: string[]): string | undefined {
+  for (const name of names) {
+    const value = req.get?.(name);
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim().slice(0, 255);
+    }
+  }
+  return undefined;
 }
