@@ -65,7 +65,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           port: ${{ env.EC2_PORT }}
           target: ~/apps/impactlab
-          source: docker-compose.yml
+          source: docker-compose.yml,db
 
       - name: Deploy on EC2
         uses: appleboy/ssh-action@v1.2.0
@@ -74,12 +74,20 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_PASSWORD: ${{ steps.ecr-password.outputs.password }}
           DOCKER_NETWORK: ${{ env.DOCKER_NETWORK }}
+          PGHOST: ${{ secrets.DB_HOST }}
+          PGPORT: ${{ secrets.DB_PORT || '5432' }}
+          PGUSER: ${{ secrets.DB_ADMIN_USER }}
+          PGPASSWORD: ${{ secrets.DB_ADMIN_PASSWORD }}
+          APP_DB_NAME: ${{ secrets.APP_DB_NAME || 'impactlab' }}
+          APP_DB_USER: ${{ secrets.APP_DB_USER || 'impactlab' }}
+          APP_DB_PASSWORD: ${{ secrets.APP_DB_PASSWORD || 'impactlab' }}
+          ADMIN_DB_NAME: ${{ secrets.ADMIN_DB_NAME || 'postgres' }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           port: ${{ env.EC2_PORT }}
-          envs: IMAGE_URI,ECR_REGISTRY,ECR_PASSWORD,DOCKER_NETWORK
+          envs: IMAGE_URI,ECR_REGISTRY,ECR_PASSWORD,DOCKER_NETWORK,PGHOST,PGPORT,PGUSER,PGPASSWORD,APP_DB_NAME,APP_DB_USER,APP_DB_PASSWORD,ADMIN_DB_NAME
           script: |
             set -e
             mkdir -p ~/apps/impactlab
@@ -101,5 +109,7 @@ jobs:
 
             docker network inspect "${DOCKER_NETWORK}" >/dev/null 2>&1 || docker network create "${DOCKER_NETWORK}"
             echo "${ECR_PASSWORD}" | docker login --username AWS --password-stdin "${ECR_REGISTRY}"
+            chmod +x db/scripts/apply-db-init.sh db/scripts/apply-db-init-docker.sh
+            ./db/scripts/apply-db-init-docker.sh
             docker compose pull
             docker compose up -d --remove-orphans
