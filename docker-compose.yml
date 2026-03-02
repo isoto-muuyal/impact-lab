@@ -1,7 +1,7 @@
 services:
-  impact-lab:
-    image: ${IMAGE_URI:-impact-lab:local}
-    container_name: impact-lab
+  impactlab:
+    image: ${IMAGE_URI:-impactlab:local}
+    container_name: impactlab
     restart: unless-stopped
     env_file:
       - .env

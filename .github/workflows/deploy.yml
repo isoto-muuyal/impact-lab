@@ -64,7 +64,7 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           port: ${{ env.EC2_PORT }}
-          target: ~/apps/impact-lab
+          target: ~/apps/impactlab
           source: docker-compose.yml
 
       - name: Deploy on EC2
@@ -82,8 +82,8 @@ jobs:
           envs: IMAGE_URI,ECR_REGISTRY,ECR_PASSWORD,DOCKER_NETWORK
           script: |
             set -e
-            mkdir -p ~/apps/impact-lab
-            cd ~/apps/impact-lab
+            mkdir -p ~/apps/impactlab
+            cd ~/apps/impactlab
 
             touch .env
 
