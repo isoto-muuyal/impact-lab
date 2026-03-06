@@ -25,6 +25,22 @@ psql \
   -d "$ADMIN_DB_NAME" \
   -f "$ROOT_DIR/db/init/00-bootstrap.sql"
 
+DB_INITIALIZED="$(
+  psql \
+    -v ON_ERROR_STOP=1 \
+    -tA \
+    -h "$PGHOST" \
+    -p "$PGPORT" \
+    -U "$PGUSER" \
+    -d "$APP_DB_NAME" \
+    -c "SELECT to_regclass('public.users') IS NOT NULL"
+)"
+
+if [[ "$DB_INITIALIZED" == "t" ]]; then
+  echo "Database $APP_DB_NAME is already initialized (public.users exists); skipping schema and seed."
+  exit 0
+fi
+
 psql \
   -v ON_ERROR_STOP=1 \
   -h "$PGHOST" \
