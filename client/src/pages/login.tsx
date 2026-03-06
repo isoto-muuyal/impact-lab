@@ -57,6 +57,16 @@ export default function Login() {
           >
             Entrar
           </Button>
+          <a href="/api/auth/google" className="block">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              data-testid="button-google-login"
+            >
+              Continuar con Google
+            </Button>
+          </a>
           {loginMutation.error ? (
             <p className="text-sm text-destructive">Credenciales inválidas.</p>
           ) : null}

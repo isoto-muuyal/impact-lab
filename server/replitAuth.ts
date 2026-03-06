@@ -1,12 +1,51 @@
 import session from "express-session";
 import type { Express, RequestHandler } from "express";
 import connectPg from "connect-pg-simple";
+import {
+  authorizationCodeGrant,
+  buildAuthorizationUrl,
+  calculatePKCECodeChallenge,
+  discovery,
+  fetchUserInfo,
+  randomPKCECodeVerifier,
+  randomState,
+  type Configuration,
+} from "openid-client";
 import { storage } from "./storage";
 
 declare module "express-session" {
   interface SessionData {
     localUserId?: string;
+    googleOauthState?: string;
+    googlePkceCodeVerifier?: string;
   }
+}
+
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI;
+const GOOGLE_ISSUER = new URL("https://accounts.google.com");
+
+let googleConfigPromise: Promise<Configuration> | null = null;
+
+function isGoogleConfigured(): boolean {
+  return !!GOOGLE_CLIENT_ID && !!GOOGLE_CLIENT_SECRET && !!GOOGLE_REDIRECT_URI;
+}
+
+async function getGoogleConfig(): Promise<Configuration> {
+  if (!isGoogleConfigured()) {
+    throw new Error("Google OAuth is not configured");
+  }
+
+  if (!googleConfigPromise) {
+    googleConfigPromise = discovery(
+      GOOGLE_ISSUER,
+      GOOGLE_CLIENT_ID!,
+      { client_secret: GOOGLE_CLIENT_SECRET! },
+    );
+  }
+
+  return googleConfigPromise;
 }
 
 export function getSession() {
@@ -39,6 +78,102 @@ export async function setupAuth(app: Express) {
 
   app.get("/api/login", (_req, res) => {
     res.redirect("/login");
+  });
+
+  app.get("/api/auth/google", async (req, res) => {
+    try {
+      if (!isGoogleConfigured()) {
+        return res.status(503).json({ message: "Google OAuth is not configured" });
+      }
+
+      const config = await getGoogleConfig();
+      const state = randomState();
+      const codeVerifier = randomPKCECodeVerifier();
+      const codeChallenge = await calculatePKCECodeChallenge(codeVerifier);
+
+      req.session.googleOauthState = state;
+      req.session.googlePkceCodeVerifier = codeVerifier;
+
+      const authorizationUrl = buildAuthorizationUrl(config, {
+        scope: "openid email profile",
+        redirect_uri: GOOGLE_REDIRECT_URI!,
+        state,
+        code_challenge: codeChallenge,
+        code_challenge_method: "S256",
+      });
+
+      req.session.save(() => {
+        res.redirect(authorizationUrl.href);
+      });
+    } catch (error) {
+      console.error("Error starting Google OAuth:", error);
+      return res.status(500).json({ message: "Failed to start Google login" });
+    }
+  });
+
+  app.get("/api/auth/google/callback", async (req, res) => {
+    try {
+      if (!isGoogleConfigured()) {
+        return res.status(503).json({ message: "Google OAuth is not configured" });
+      }
+
+      const expectedState = req.session.googleOauthState;
+      const pkceCodeVerifier = req.session.googlePkceCodeVerifier;
+      if (!expectedState || !pkceCodeVerifier) {
+        return res.status(400).json({ message: "Google OAuth session is missing" });
+      }
+
+      const state = typeof req.query?.state === "string" ? req.query.state : "";
+      if (state !== expectedState) {
+        return res.status(400).json({ message: "Invalid OAuth state" });
+      }
+
+      const config = await getGoogleConfig();
+      const currentUrl = new URL(`${req.protocol}://${req.get("host")}${req.originalUrl}`);
+
+      const tokenResponse = await authorizationCodeGrant(
+        config,
+        currentUrl,
+        {
+          expectedState,
+          pkceCodeVerifier,
+        },
+      );
+
+      const accessToken = tokenResponse.access_token;
+      if (!accessToken) {
+        return res.status(400).json({ message: "Missing access token from Google" });
+      }
+
+      const userInfo = await fetchUserInfo(config, accessToken);
+      const email = typeof userInfo.email === "string" ? userInfo.email.trim().toLowerCase() : "";
+      if (!email) {
+        return res.status(400).json({ message: "Google account has no email" });
+      }
+
+      let user = await storage.getUserByEmail(email);
+      if (!user) {
+        user = await storage.upsertUser({
+          username: email,
+          email,
+          firstName: typeof userInfo.given_name === "string" ? userInfo.given_name : undefined,
+          lastName: typeof userInfo.family_name === "string" ? userInfo.family_name : undefined,
+          profileImageUrl: typeof userInfo.picture === "string" ? userInfo.picture : undefined,
+          status: "active",
+          lastAccessAt: new Date(),
+        });
+      }
+
+      req.session.localUserId = user.id;
+      req.session.googleOauthState = undefined;
+      req.session.googlePkceCodeVerifier = undefined;
+      req.session.save(() => {
+        res.redirect("/");
+      });
+    } catch (error) {
+      console.error("Error completing Google OAuth:", error);
+      return res.status(500).json({ message: "Failed to complete Google login" });
+    }
   });
 
   app.post("/api/login", async (req, res) => {

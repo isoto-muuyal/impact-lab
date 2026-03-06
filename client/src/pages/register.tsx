@@ -106,6 +106,16 @@ export default function Register() {
           >
             Registrarme
           </Button>
+          <a href="/api/auth/google" className="block">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              data-testid="button-google-register"
+            >
+              Continuar con Google
+            </Button>
+          </a>
           {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
           {registerMutation.error ? (
             <p className="text-sm text-destructive">
