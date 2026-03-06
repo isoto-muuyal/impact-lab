@@ -61,14 +61,14 @@ export async function setupAuth(app: Express) {
 
   app.post("/api/register", async (req, res) => {
     try {
-      const username = typeof req.body?.username === "string" ? req.body.username.trim() : "";
       const password = typeof req.body?.password === "string" ? req.body.password : "";
-      const email = typeof req.body?.email === "string" ? req.body.email.trim() : "";
+      const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
       const firstName = typeof req.body?.firstName === "string" ? req.body.firstName.trim() : null;
       const lastName = typeof req.body?.lastName === "string" ? req.body.lastName.trim() : null;
+      const username = email;
 
-      if (!username || !password || !email) {
-        return res.status(400).json({ message: "Username, email and password are required" });
+      if (!password || !email) {
+        return res.status(400).json({ message: "Email and password are required" });
       }
 
       if (password.length < 6) {
@@ -77,7 +77,7 @@ export async function setupAuth(app: Express) {
 
       const existingUser = await storage.getUserByUsername(username);
       if (existingUser) {
-        return res.status(409).json({ message: "Username already exists" });
+        return res.status(409).json({ message: "Email already exists" });
       }
 
       const user = await storage.upsertUser({

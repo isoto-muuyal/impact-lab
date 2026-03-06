@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 export default function Register() {
   const { isAuthenticated, isLoading } = useAuth();
   const [, setLocation] = useLocation();
-  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -25,7 +24,6 @@ export default function Register() {
       }
 
       await apiRequest("POST", "/api/register", {
-        username,
         email,
         password,
         firstName: firstName || undefined,
@@ -51,15 +49,6 @@ export default function Register() {
           <CardTitle>Crear cuenta</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Input
-            value={username}
-            onChange={(event) => {
-              setFormError(null);
-              setUsername(event.target.value);
-            }}
-            placeholder="Usuario"
-            data-testid="input-register-username"
-          />
           <Input
             type="email"
             value={email}
@@ -120,7 +109,7 @@ export default function Register() {
           {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
           {registerMutation.error ? (
             <p className="text-sm text-destructive">
-              No se pudo crear la cuenta. Verifica que el usuario y correo no existan.
+              No se pudo crear la cuenta. Verifica que el correo no exista.
             </p>
           ) : null}
           <Button
