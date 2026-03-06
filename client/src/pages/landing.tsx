@@ -104,7 +104,7 @@ export default function Landing() {
               {t("landing.heroDescription")}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a href="/login">
+              <a href="/register">
                 <Button size="lg" className="gap-2" data-testid="button-hero-login">
                   {t("landing.startNow")}
                   <ArrowRight className="h-4 w-4" />
@@ -248,7 +248,7 @@ export default function Landing() {
           <p className="text-lg opacity-90 max-w-2xl mx-auto mb-8">
             {t("landing.ctaDescription")}
           </p>
-          <a href="/login">
+          <a href="/register">
             <Button size="lg" variant="secondary" className="gap-2" data-testid="button-cta-join">
               {t("landing.joinNow")}
               <ArrowRight className="h-4 w-4" />

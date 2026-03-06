@@ -59,6 +59,48 @@ export async function setupAuth(app: Express) {
     }
   });
 
+  app.post("/api/register", async (req, res) => {
+    try {
+      const username = typeof req.body?.username === "string" ? req.body.username.trim() : "";
+      const password = typeof req.body?.password === "string" ? req.body.password : "";
+      const email = typeof req.body?.email === "string" ? req.body.email.trim() : "";
+      const firstName = typeof req.body?.firstName === "string" ? req.body.firstName.trim() : null;
+      const lastName = typeof req.body?.lastName === "string" ? req.body.lastName.trim() : null;
+
+      if (!username || !password || !email) {
+        return res.status(400).json({ message: "Username, email and password are required" });
+      }
+
+      if (password.length < 6) {
+        return res.status(400).json({ message: "Password must be at least 6 characters" });
+      }
+
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(409).json({ message: "Username already exists" });
+      }
+
+      const user = await storage.upsertUser({
+        username,
+        password,
+        email,
+        firstName: firstName || undefined,
+        lastName: lastName || undefined,
+        status: "active",
+      });
+
+      req.session.localUserId = user.id;
+      return res.status(201).json({ ok: true });
+    } catch (error: any) {
+      if (error?.code === "23505") {
+        return res.status(409).json({ message: "Username or email already exists" });
+      }
+
+      console.error("Error during register:", error);
+      return res.status(500).json({ message: "Register failed" });
+    }
+  });
+
   const logoutHandler: RequestHandler = (req, res) => {
     req.session.localUserId = undefined;
     req.session.save(() => {

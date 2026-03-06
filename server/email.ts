@@ -1,6 +1,9 @@
 import { MailerSend, EmailParams, Sender, Recipient } from "mailersend";
 
 const MAILERSEND_API_KEY = process.env.MAILERSEND_API_KEY;
+const FROM_EMAIL = process.env.FROM_EMAIL;
+const FROM_NAME = process.env.FROM_NAME;
+const TO_EMAIL = process.env.TO_EMAIL;
 
 let mailerSend: MailerSend | null = null;
 
@@ -28,8 +31,8 @@ export interface EmailOptions {
 }
 
 const DEFAULT_FROM = {
-  email: "noreply@impactlab.org",
-  name: "Impact Lab",
+  email: FROM_EMAIL || "noreply@impactlab.org",
+  name: FROM_NAME || "Impact Lab",
 };
 
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
@@ -67,5 +70,9 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
 }
 
 export function isEmailConfigured(): boolean {
-  return !!MAILERSEND_API_KEY;
+  return !!MAILERSEND_API_KEY && !!TO_EMAIL;
+}
+
+export function getContactRecipient(): string | null {
+  return TO_EMAIL || null;
 }

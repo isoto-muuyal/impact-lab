@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isImpactLabAdmin } from "./replitAuth";
+import { sendEmail, isEmailConfigured, getContactRecipient } from "./email";
 import { 
   insertActivityLogSchema,
   insertProjectSchema, 
@@ -76,6 +77,44 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error during admin login:", error);
       res.status(500).json({ message: "Failed to login" });
+    }
+  });
+
+  app.post('/api/contact', async (req, res) => {
+    try {
+      if (!isEmailConfigured()) {
+        return res.status(503).json({ message: "Email service is not configured" });
+      }
+
+      const to = getContactRecipient();
+      if (!to) {
+        return res.status(503).json({ message: "Contact recipient is not configured" });
+      }
+
+      const name = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
+      const email = typeof req.body?.email === 'string' ? req.body.email.trim() : '';
+      const subject = typeof req.body?.subject === 'string' ? req.body.subject.trim() : '';
+      const message = typeof req.body?.message === 'string' ? req.body.message.trim() : '';
+
+      if (!name || !email || !subject || !message) {
+        return res.status(400).json({ message: "name, email, subject and message are required" });
+      }
+
+      const sent = await sendEmail({
+        to,
+        subject: `[ImpactLab Contact] ${subject}`,
+        text: `Name: ${name}\nEmail: ${email}\n\n${message}`,
+        html: `<p><strong>Name:</strong> ${escapeHtml(name)}</p><p><strong>Email:</strong> ${escapeHtml(email)}</p><p><strong>Subject:</strong> ${escapeHtml(subject)}</p><hr /><p>${escapeHtml(message).replace(/\n/g, '<br />')}</p>`,
+      });
+
+      if (!sent) {
+        return res.status(502).json({ message: "Failed to send email" });
+      }
+
+      res.status(202).json({ ok: true });
+    } catch (error) {
+      console.error("Error sending contact email:", error);
+      res.status(500).json({ message: "Failed to send contact message" });
     }
   });
 
@@ -2264,4 +2303,13 @@ function firstHeader(req: any, names: string[]): string | undefined {
     }
   }
   return undefined;
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 }

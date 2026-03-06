@@ -24,6 +24,7 @@ import Events from "@/pages/events";
 import Settings from "@/pages/settings";
 import AdminPage from "@/pages/admin";
 import Login from "@/pages/login";
+import Register from "@/pages/register";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -37,6 +38,7 @@ function Router() {
     return (
       <Switch>
         <Route path="/login" component={Login} />
+        <Route path="/register" component={Register} />
         <Route path="/admin" component={AdminPage} />
         <Route path="/" component={Landing} />
         <Route component={Landing} />
@@ -58,6 +60,7 @@ function Router() {
       <Route path="/settings" component={Settings} />
       <Route path="/admin" component={AdminPage} />
       <Route path="/login" component={Login} />
+      <Route path="/register" component={Register} />
       <Route component={NotFound} />
     </Switch>
   );

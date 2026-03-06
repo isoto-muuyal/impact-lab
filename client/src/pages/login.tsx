@@ -60,6 +60,15 @@ export default function Login() {
           {loginMutation.error ? (
             <p className="text-sm text-destructive">Credenciales inválidas.</p>
           ) : null}
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-full"
+            onClick={() => setLocation("/register")}
+            data-testid="button-go-register"
+          >
+            Crear cuenta
+          </Button>
         </CardContent>
       </Card>
     </div>
