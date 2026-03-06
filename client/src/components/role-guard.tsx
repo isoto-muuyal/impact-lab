@@ -38,7 +38,7 @@ export function RoleGuard({ children, allowedRoles, fallbackMessage }: RoleGuard
               Debes iniciar sesion para acceder a esta pagina.
             </p>
             <Button asChild>
-              <a href="/api/login" data-testid="button-login">
+              <a href="/login" data-testid="button-login">
                 Iniciar Sesion
               </a>
             </Button>

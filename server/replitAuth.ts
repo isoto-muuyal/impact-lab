@@ -1,10 +1,5 @@
-import * as client from "openid-client";
-import { Strategy, type VerifyFunction } from "openid-client/passport";
-
-import passport from "passport";
 import session from "express-session";
 import type { Express, RequestHandler } from "express";
-import memoize from "memoizee";
 import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
 
@@ -14,25 +9,16 @@ declare module "express-session" {
   }
 }
 
-const getOidcConfig = memoize(
-  async () => {
-    return await client.discovery(
-      new URL(process.env.ISSUER_URL ?? "https://replit.com/oidc"),
-      process.env.REPL_ID!
-    );
-  },
-  { maxAge: 3600 * 1000 }
-);
-
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
   const pgStore = connectPg(session);
   const sessionStore = new pgStore({
     conString: process.env.DATABASE_URL,
     createTableIfMissing: false,
-    ttl: sessionTtl,
+    ttl: sessionTtl / 1000,
     tableName: "sessions",
   });
+
   return session({
     secret: process.env.SESSION_SECRET!,
     store: sessionStore,
@@ -40,172 +26,85 @@ export function getSession() {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
       maxAge: sessionTtl,
     },
-  });
-}
-
-function updateUserSession(
-  user: any,
-  tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers
-) {
-  user.claims = tokens.claims();
-  user.access_token = tokens.access_token;
-  user.refresh_token = tokens.refresh_token;
-  user.expires_at = user.claims?.exp;
-}
-
-async function upsertUser(claims: any) {
-  await storage.upsertUser({
-    id: claims["sub"],
-    email: claims["email"],
-    firstName: claims["first_name"],
-    lastName: claims["last_name"],
-    profileImageUrl: claims["profile_image_url"],
   });
 }
 
 export async function setupAuth(app: Express) {
   app.set("trust proxy", 1);
   app.use(getSession());
-  app.use(passport.initialize());
-  app.use(passport.session());
 
-  const config = await getOidcConfig();
-
-  const verify: VerifyFunction = async (
-    tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers,
-    verified: passport.AuthenticateCallback
-  ) => {
-    const user = {};
-    updateUserSession(user, tokens);
-    await upsertUser(tokens.claims());
-    verified(null, user);
-  };
-
-  const registeredStrategies = new Set<string>();
-
-  const ensureStrategy = (domain: string) => {
-    const strategyName = `replitauth:${domain}`;
-    if (!registeredStrategies.has(strategyName)) {
-      const strategy = new Strategy(
-        {
-          name: strategyName,
-          config,
-          scope: "openid email profile offline_access",
-          callbackURL: `https://${domain}/api/callback`,
-        },
-        verify,
-      );
-      passport.use(strategy);
-      registeredStrategies.add(strategyName);
-    }
-  };
-
-  passport.serializeUser((user: Express.User, cb) => cb(null, user));
-  passport.deserializeUser((user: Express.User, cb) => cb(null, user));
-
-  app.get("/api/login", (req, res, next) => {
-    ensureStrategy(req.hostname);
-    passport.authenticate(`replitauth:${req.hostname}`, {
-      prompt: "login consent",
-      scope: ["openid", "email", "profile", "offline_access"],
-    })(req, res, next);
+  app.get("/api/login", (_req, res) => {
+    res.redirect("/login");
   });
 
-  app.get("/api/callback", (req, res, next) => {
-    ensureStrategy(req.hostname);
-    passport.authenticate(`replitauth:${req.hostname}`, {
-      successReturnToOrRedirect: "/",
-      failureRedirect: "/api/login",
-    })(req, res, next);
+  app.post("/api/login", async (req, res) => {
+    try {
+      const username = typeof req.body?.username === "string" ? req.body.username.trim() : "";
+      const password = typeof req.body?.password === "string" ? req.body.password : "";
+
+      const user = await storage.validateLocalUser(username, password);
+      if (!user) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+
+      req.session.localUserId = user.id;
+      return res.json({ ok: true });
+    } catch (error) {
+      console.error("Error during login:", error);
+      return res.status(500).json({ message: "Login failed" });
+    }
   });
 
-  app.get("/api/logout", (req, res) => {
-    if (req.session?.localUserId) {
-      req.session.localUserId = undefined;
-      req.logout?.(() => {
-        res.redirect("/");
-      });
-      return;
-    }
-
-    req.logout(() => {
-      res.redirect(
-        client.buildEndSessionUrl(config, {
-          client_id: process.env.REPL_ID!,
-          post_logout_redirect_uri: `${req.protocol}://${req.hostname}`,
-        }).href
-      );
+  const logoutHandler: RequestHandler = (req, res) => {
+    req.session.localUserId = undefined;
+    req.session.save(() => {
+      res.redirect("/");
     });
-  });
+  };
+
+  app.get("/api/logout", logoutHandler);
+  app.post("/api/logout", logoutHandler);
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
-  if (req.session?.localUserId) {
-    const user = await storage.getUser(req.session.localUserId);
-    if (!user) {
-      req.session.localUserId = undefined;
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    (req as any).user = {
-      claims: { sub: user.id },
-      local: true,
-    };
-    return next();
-  }
-
-  const user = req.user as any;
-
-  if (!req.isAuthenticated() || !user.expires_at) {
+  const userId = req.session?.localUserId;
+  if (!userId) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
-  const now = Math.floor(Date.now() / 1000);
-  if (now <= user.expires_at) {
-    return next();
+  const user = await storage.getUser(userId);
+  if (!user) {
+    req.session.localUserId = undefined;
+    return res.status(401).json({ message: "Unauthorized" });
   }
 
-  const refreshToken = user.refresh_token;
-  if (!refreshToken) {
-    res.status(401).json({ message: "Unauthorized" });
-    return;
-  }
+  (req as any).user = {
+    claims: { sub: user.id },
+    local: true,
+  };
 
-  try {
-    const config = await getOidcConfig();
-    const tokenResponse = await client.refreshTokenGrant(config, refreshToken);
-    updateUserSession(user, tokenResponse);
-    return next();
-  } catch (error) {
-    res.status(401).json({ message: "Unauthorized" });
-    return;
-  }
+  return next();
 };
 
 export const isImpactLabAdmin: RequestHandler = async (req, res, next) => {
-  if (req.session?.localUserId) {
-    const user = await storage.getUser(req.session.localUserId);
-    if (user?.username === "impactlab") {
-      (req as any).user = {
-        claims: { sub: user.id },
-        local: true,
-      };
-      return next();
-    }
+  const userId = req.session?.localUserId;
+  if (!userId) {
+    return res.status(403).json({ message: "Forbidden" });
   }
 
-  if (req.isAuthenticated?.()) {
-    const userId = (req.user as any)?.claims?.sub;
-    if (userId) {
-      const user = await storage.getUser(userId);
-      if (user?.username === "impactlab") {
-        return next();
-      }
-    }
+  const user = await storage.getUser(userId);
+  if (!user || user.username !== "impactlab") {
+    return res.status(403).json({ message: "Forbidden" });
   }
 
-  return res.status(403).json({ message: "Forbidden" });
+  (req as any).user = {
+    claims: { sub: user.id },
+    local: true,
+  };
+
+  return next();
 };

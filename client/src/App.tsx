@@ -23,6 +23,7 @@ import ChallengeProjects from "@/pages/challenge-projects";
 import Events from "@/pages/events";
 import Settings from "@/pages/settings";
 import AdminPage from "@/pages/admin";
+import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -35,6 +36,7 @@ function Router() {
   if (!isAuthenticated) {
     return (
       <Switch>
+        <Route path="/login" component={Login} />
         <Route path="/admin" component={AdminPage} />
         <Route path="/" component={Landing} />
         <Route component={Landing} />
@@ -55,6 +57,7 @@ function Router() {
       <Route path="/events" component={Events} />
       <Route path="/settings" component={Settings} />
       <Route path="/admin" component={AdminPage} />
+      <Route path="/login" component={Login} />
       <Route component={NotFound} />
     </Switch>
   );
