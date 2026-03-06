@@ -22,7 +22,7 @@ export const profileStatusEnum = pgEnum('profile_status', ['complete', 'incomple
 export const activityTypeEnum = pgEnum('activity_type', ['page_view', 'button_click']);
 
 // Session storage table.
-// (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
+// (IMPORTANT) This table is required for session auth, don't drop it.
 export const sessions = pgTable(
   "sessions",
   {
@@ -34,7 +34,7 @@ export const sessions = pgTable(
 );
 
 // User storage table - ID 01 User from diagram
-// (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
+// (IMPORTANT) This table is required for auth, don't drop it.
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: varchar("username").unique(),

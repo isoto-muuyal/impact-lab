@@ -9,6 +9,7 @@ import {
   fetchUserInfo,
   randomPKCECodeVerifier,
   randomState,
+  skipSubjectCheck,
   type Configuration,
 } from "openid-client";
 import { storage } from "./storage";
@@ -145,7 +146,13 @@ export async function setupAuth(app: Express) {
         return res.status(400).json({ message: "Missing access token from Google" });
       }
 
-      const userInfo = await fetchUserInfo(config, accessToken);
+      const idTokenClaims = tokenResponse.claims();
+      const expectedSubject =
+        typeof idTokenClaims?.sub === "string" && idTokenClaims.sub.length > 0
+          ? idTokenClaims.sub
+          : skipSubjectCheck;
+
+      const userInfo = await fetchUserInfo(config, accessToken, expectedSubject);
       const email = typeof userInfo.email === "string" ? userInfo.email.trim().toLowerCase() : "";
       if (!email) {
         return res.status(400).json({ message: "Google account has no email" });

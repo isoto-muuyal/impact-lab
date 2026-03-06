@@ -90,7 +90,7 @@ export interface ActivityReport {
 }
 
 export interface IStorage {
-  // User operations (mandatory for Replit Auth)
+  // User operations (required for auth)
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;

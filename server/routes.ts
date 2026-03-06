@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated, isImpactLabAdmin } from "./replitAuth";
+import { setupAuth, isAuthenticated, isImpactLabAdmin } from "./auth";
 import { sendEmail, isEmailConfigured, getContactRecipient } from "./email";
 import { 
   insertActivityLogSchema,
