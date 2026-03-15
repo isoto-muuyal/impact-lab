@@ -187,6 +187,9 @@ export type InsertUserRole = z.infer<typeof insertUserRoleSchema>;
 
 // Project status enum
 export const projectStatusEnum = pgEnum('project_status', ['draft', 'active', 'completed', 'paused', 'cancelled']);
+export const socialProjectParticipantRoleEnum = pgEnum('social_project_participant_role', ['creator', 'proponente', 'mentor', 'participant']);
+export const projectJoinRequestRoleEnum = pgEnum('project_join_request_role', ['mentor', 'participant']);
+export const projectJoinRequestStatusEnum = pgEnum('project_join_request_status', ['pending', 'accepted', 'rejected']);
 
 // Projects table - social impact projects
 export const projects = pgTable("projects", {
@@ -208,7 +211,7 @@ export const projects = pgTable("projects", {
 });
 
 // Project relations
-export const projectsRelations = relations(projects, ({ one }) => ({
+export const projectsRelations = relations(projects, ({ one, many }) => ({
   owner: one(users, {
     fields: [projects.ownerId],
     references: [users.id],
@@ -217,6 +220,8 @@ export const projectsRelations = relations(projects, ({ one }) => ({
     fields: [projects.mentorId],
     references: [users.id],
   }),
+  participants: many(socialProjectParticipants),
+  joinRequests: many(projectJoinRequests),
 }));
 
 // Insert schema for projects
@@ -230,6 +235,75 @@ export const insertProjectSchema = createInsertSchema(projects).omit({
 export type Project = typeof projects.$inferSelect;
 export type InsertProject = z.infer<typeof insertProjectSchema>;
 
+export const socialProjectParticipants = pgTable("social_project_participants", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  projectId: varchar("project_id").notNull().references(() => projects.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  role: socialProjectParticipantRoleEnum("role").notNull().default('participant'),
+  helpDescription: text("help_description"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const socialProjectParticipantsRelations = relations(socialProjectParticipants, ({ one }) => ({
+  project: one(projects, {
+    fields: [socialProjectParticipants.projectId],
+    references: [projects.id],
+  }),
+  user: one(users, {
+    fields: [socialProjectParticipants.userId],
+    references: [users.id],
+  }),
+}));
+
+export const insertSocialProjectParticipantSchema = createInsertSchema(socialProjectParticipants).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type SocialProjectParticipant = typeof socialProjectParticipants.$inferSelect;
+export type InsertSocialProjectParticipant = z.infer<typeof insertSocialProjectParticipantSchema>;
+
+export const projectJoinRequests = pgTable("project_join_requests", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  projectId: varchar("project_id").notNull().references(() => projects.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  requestedRole: projectJoinRequestRoleEnum("requested_role").notNull(),
+  helpDescription: text("help_description").notNull(),
+  status: projectJoinRequestStatusEnum("status").notNull().default('pending'),
+  decidedByUserId: varchar("decided_by_user_id").references(() => users.id),
+  decidedAt: timestamp("decided_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const projectJoinRequestsRelations = relations(projectJoinRequests, ({ one }) => ({
+  project: one(projects, {
+    fields: [projectJoinRequests.projectId],
+    references: [projects.id],
+  }),
+  user: one(users, {
+    fields: [projectJoinRequests.userId],
+    references: [users.id],
+  }),
+  decidedBy: one(users, {
+    fields: [projectJoinRequests.decidedByUserId],
+    references: [users.id],
+  }),
+}));
+
+export const insertProjectJoinRequestSchema = createInsertSchema(projectJoinRequests).omit({
+  id: true,
+  decidedAt: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type ProjectJoinRequest = typeof projectJoinRequests.$inferSelect;
+export type InsertProjectJoinRequest = z.infer<typeof insertProjectJoinRequestSchema>;
+
 // Extended types for frontend use
 export type UserWithProfile = User & {
   profile?: UserProfile | null;
@@ -239,6 +313,17 @@ export type UserWithProfile = User & {
 export type ProjectWithOwner = Project & {
   owner?: User;
   mentor?: User | null;
+  participants?: SocialProjectParticipantWithUser[];
+  joinRequests?: ProjectJoinRequestWithDetails[];
+};
+
+export type SocialProjectParticipantWithUser = SocialProjectParticipant & {
+  user?: User;
+};
+
+export type ProjectJoinRequestWithDetails = ProjectJoinRequest & {
+  user?: User;
+  decidedBy?: User | null;
 };
 
 // Course status enum - Updated per class diagram: draft, open, ongoing, completed, archived

@@ -5,6 +5,8 @@ import {
   roles,
   userRoles,
   projects,
+  socialProjectParticipants,
+  projectJoinRequests,
   courses,
   courseEnrollments,
   mentorships,
@@ -30,6 +32,12 @@ import {
   type Project,
   type InsertProject,
   type ProjectWithOwner,
+  type SocialProjectParticipant,
+  type InsertSocialProjectParticipant,
+  type SocialProjectParticipantWithUser,
+  type ProjectJoinRequest,
+  type InsertProjectJoinRequest,
+  type ProjectJoinRequestWithDetails,
   type Course,
   type InsertCourse,
   type CourseWithInstructor,
@@ -119,12 +127,21 @@ export interface IStorage {
   
   // Project operations
   getProjects(): Promise<ProjectWithOwner[]>;
+  searchProjects(search?: string): Promise<ProjectWithOwner[]>;
   getProjectsByOwner(ownerId: string): Promise<ProjectWithOwner[]>;
   getProjectsByMentor(mentorId: string): Promise<ProjectWithOwner[]>;
   getProject(id: string): Promise<ProjectWithOwner | undefined>;
   createProject(project: InsertProject): Promise<ProjectWithOwner>;
   updateProject(id: string, project: Partial<InsertProject>): Promise<ProjectWithOwner | undefined>;
   deleteProject(id: string): Promise<boolean>;
+  getSocialProjectParticipants(projectId: string): Promise<SocialProjectParticipantWithUser[]>;
+  getSocialProjectParticipant(projectId: string, userId: string): Promise<SocialProjectParticipant | undefined>;
+  createSocialProjectParticipant(data: InsertSocialProjectParticipant): Promise<SocialProjectParticipant>;
+  getProjectJoinRequests(projectId: string): Promise<ProjectJoinRequestWithDetails[]>;
+  getProjectJoinRequest(id: string): Promise<ProjectJoinRequestWithDetails | undefined>;
+  getPendingProjectJoinRequest(projectId: string, userId: string): Promise<ProjectJoinRequest | undefined>;
+  createProjectJoinRequest(data: InsertProjectJoinRequest): Promise<ProjectJoinRequest>;
+  updateProjectJoinRequest(id: string, data: Partial<InsertProjectJoinRequest>): Promise<ProjectJoinRequest | undefined>;
   
   // Course operations
   getCourses(includeUnpublished?: boolean): Promise<CourseWithInstructor[]>;
@@ -524,21 +541,42 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Project operations
+  private async enrichProject(project: Project): Promise<ProjectWithOwner> {
+    const owner = await this.getUser(project.ownerId);
+    const mentor = project.mentorId ? await this.getUser(project.mentorId) : null;
+    const participants = await this.getSocialProjectParticipants(project.id);
+    return { ...project, owner, mentor, participants };
+  }
+
   async getProjects(): Promise<ProjectWithOwner[]> {
     const projectList = await db
       .select()
       .from(projects)
       .orderBy(desc(projects.createdAt));
-    
-    const projectsWithOwners = await Promise.all(
-      projectList.map(async (project) => {
-        const owner = await this.getUser(project.ownerId);
-        const mentor = project.mentorId ? await this.getUser(project.mentorId) : null;
-        return { ...project, owner, mentor };
-      })
+
+    return Promise.all(projectList.map((project) => this.enrichProject(project)));
+  }
+
+  async searchProjects(search?: string): Promise<ProjectWithOwner[]> {
+    const allProjects = await this.getProjects();
+    const normalized = search?.trim().toLowerCase();
+
+    if (!normalized) {
+      return allProjects;
+    }
+
+    return allProjects.filter((project) =>
+      [
+        project.title,
+        project.description,
+        project.category,
+        project.location,
+        project.targetBeneficiaries,
+        project.expectedImpact,
+      ]
+        .filter(Boolean)
+        .some((value) => value!.toLowerCase().includes(normalized))
     );
-    
-    return projectsWithOwners;
   }
 
   async getProjectsByOwner(ownerId: string): Promise<ProjectWithOwner[]> {
@@ -547,16 +585,8 @@ export class DatabaseStorage implements IStorage {
       .from(projects)
       .where(eq(projects.ownerId, ownerId))
       .orderBy(desc(projects.createdAt));
-    
-    const projectsWithOwners = await Promise.all(
-      projectList.map(async (project) => {
-        const owner = await this.getUser(project.ownerId);
-        const mentor = project.mentorId ? await this.getUser(project.mentorId) : null;
-        return { ...project, owner, mentor };
-      })
-    );
-    
-    return projectsWithOwners;
+
+    return Promise.all(projectList.map((project) => this.enrichProject(project)));
   }
 
   async getProjectsByMentor(mentorId: string): Promise<ProjectWithOwner[]> {
@@ -565,16 +595,8 @@ export class DatabaseStorage implements IStorage {
       .from(projects)
       .where(eq(projects.mentorId, mentorId))
       .orderBy(desc(projects.createdAt));
-    
-    const projectsWithOwners = await Promise.all(
-      projectList.map(async (project) => {
-        const owner = await this.getUser(project.ownerId);
-        const mentor = project.mentorId ? await this.getUser(project.mentorId) : null;
-        return { ...project, owner, mentor };
-      })
-    );
-    
-    return projectsWithOwners;
+
+    return Promise.all(projectList.map((project) => this.enrichProject(project)));
   }
 
   async getProject(id: string): Promise<ProjectWithOwner | undefined> {
@@ -584,11 +606,8 @@ export class DatabaseStorage implements IStorage {
       .where(eq(projects.id, id));
     
     if (!project) return undefined;
-    
-    const owner = await this.getUser(project.ownerId);
-    const mentor = project.mentorId ? await this.getUser(project.mentorId) : null;
-    
-    return { ...project, owner, mentor };
+
+    return this.enrichProject(project);
   }
 
   async createProject(projectData: InsertProject): Promise<ProjectWithOwner> {
@@ -596,11 +615,16 @@ export class DatabaseStorage implements IStorage {
       .insert(projects)
       .values(projectData)
       .returning();
-    
-    const owner = await this.getUser(project.ownerId);
-    const mentor = project.mentorId ? await this.getUser(project.mentorId) : null;
-    
-    return { ...project, owner, mentor };
+
+    await this.createSocialProjectParticipant({
+      projectId: project.id,
+      userId: project.ownerId,
+      role: 'proponente',
+      helpDescription: null,
+      isActive: true,
+    });
+
+    return this.enrichProject(project);
   }
 
   async updateProject(id: string, projectData: Partial<InsertProject>): Promise<ProjectWithOwner | undefined> {
@@ -614,18 +638,146 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     if (!project) return undefined;
-    
-    const owner = await this.getUser(project.ownerId);
-    const mentor = project.mentorId ? await this.getUser(project.mentorId) : null;
-    
-    return { ...project, owner, mentor };
+
+    return this.enrichProject(project);
   }
 
   async deleteProject(id: string): Promise<boolean> {
-    const result = await db
-      .delete(projects)
-      .where(eq(projects.id, id));
+    await db.delete(projectJoinRequests).where(eq(projectJoinRequests.projectId, id));
+    await db.delete(socialProjectParticipants).where(eq(socialProjectParticipants.projectId, id));
+    await db.delete(projects).where(eq(projects.id, id));
     return true;
+  }
+
+  async getSocialProjectParticipants(projectId: string): Promise<SocialProjectParticipantWithUser[]> {
+    const [project, participants] = await Promise.all([
+      db.select().from(projects).where(eq(projects.id, projectId)).then((rows) => rows[0]),
+      db
+        .select()
+        .from(socialProjectParticipants)
+        .where(eq(socialProjectParticipants.projectId, projectId))
+        .orderBy(desc(socialProjectParticipants.createdAt)),
+    ]);
+
+    if (!project) return [];
+
+    const participantsWithUsers = await Promise.all(
+      participants.map(async (participant) => {
+        const user = await this.getUser(participant.userId);
+        return { ...participant, user };
+      })
+    );
+
+    const hasOwner = participantsWithUsers.some((participant) => participant.userId === project.ownerId);
+    if (!hasOwner) {
+      participantsWithUsers.unshift({
+        id: `virtual-owner-${project.id}`,
+        projectId: project.id,
+        userId: project.ownerId,
+        role: 'proponente',
+        helpDescription: null,
+        isActive: true,
+        createdAt: project.createdAt,
+        updatedAt: project.updatedAt,
+        user: await this.getUser(project.ownerId),
+      });
+    }
+
+    if (project.mentorId && !participantsWithUsers.some((participant) => participant.userId === project.mentorId)) {
+      participantsWithUsers.push({
+        id: `virtual-mentor-${project.id}`,
+        projectId: project.id,
+        userId: project.mentorId,
+        role: 'mentor',
+        helpDescription: null,
+        isActive: true,
+        createdAt: project.createdAt,
+        updatedAt: project.updatedAt,
+        user: await this.getUser(project.mentorId),
+      });
+    }
+
+    return participantsWithUsers;
+  }
+
+  async getSocialProjectParticipant(projectId: string, userId: string): Promise<SocialProjectParticipant | undefined> {
+    const [participant] = await db
+      .select()
+      .from(socialProjectParticipants)
+      .where(and(
+        eq(socialProjectParticipants.projectId, projectId),
+        eq(socialProjectParticipants.userId, userId),
+        eq(socialProjectParticipants.isActive, true),
+      ));
+
+    return participant;
+  }
+
+  async createSocialProjectParticipant(data: InsertSocialProjectParticipant): Promise<SocialProjectParticipant> {
+    const [participant] = await db.insert(socialProjectParticipants).values(data).returning();
+    return participant;
+  }
+
+  async getProjectJoinRequests(projectId: string): Promise<ProjectJoinRequestWithDetails[]> {
+    const requests = await db
+      .select()
+      .from(projectJoinRequests)
+      .where(eq(projectJoinRequests.projectId, projectId))
+      .orderBy(desc(projectJoinRequests.createdAt));
+
+    return Promise.all(
+      requests.map(async (request) => ({
+        ...request,
+        user: await this.getUser(request.userId),
+        decidedBy: request.decidedByUserId ? await this.getUser(request.decidedByUserId) : null,
+      }))
+    );
+  }
+
+  async getProjectJoinRequest(id: string): Promise<ProjectJoinRequestWithDetails | undefined> {
+    const [request] = await db
+      .select()
+      .from(projectJoinRequests)
+      .where(eq(projectJoinRequests.id, id));
+
+    if (!request) return undefined;
+
+    return {
+      ...request,
+      user: await this.getUser(request.userId),
+      decidedBy: request.decidedByUserId ? await this.getUser(request.decidedByUserId) : null,
+    };
+  }
+
+  async getPendingProjectJoinRequest(projectId: string, userId: string): Promise<ProjectJoinRequest | undefined> {
+    const [request] = await db
+      .select()
+      .from(projectJoinRequests)
+      .where(and(
+        eq(projectJoinRequests.projectId, projectId),
+        eq(projectJoinRequests.userId, userId),
+        eq(projectJoinRequests.status, 'pending'),
+      ));
+
+    return request;
+  }
+
+  async createProjectJoinRequest(data: InsertProjectJoinRequest): Promise<ProjectJoinRequest> {
+    const [request] = await db.insert(projectJoinRequests).values(data).returning();
+    return request;
+  }
+
+  async updateProjectJoinRequest(id: string, data: Partial<InsertProjectJoinRequest>): Promise<ProjectJoinRequest | undefined> {
+    const [request] = await db
+      .update(projectJoinRequests)
+      .set({
+        ...data,
+        updatedAt: new Date(),
+      })
+      .where(eq(projectJoinRequests.id, id))
+      .returning();
+
+    return request;
   }
 
   // Course operations

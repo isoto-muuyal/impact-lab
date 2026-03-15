@@ -52,7 +52,7 @@ export default function Home() {
       case "facilitador":
         return <FacilitadorDashboard user={user} />;
       default:
-        return <UsuarioDashboard user={user} />;
+        return <UsuarioDashboard user={user} onCreateProject={handleCreateProjectClick} />;
     }
   };
 
@@ -84,7 +84,7 @@ function getWelcomeMessage(role: string): string {
   }
 }
 
-function UsuarioDashboard({ user }: { user: any }) {
+function UsuarioDashboard({ user, onCreateProject }: { user: any; onCreateProject: () => void }) {
   return (
     <>
       {/* Quick Stats */}
@@ -125,7 +125,7 @@ function UsuarioDashboard({ user }: { user: any }) {
           icon={<Target className="h-6 w-6" />}
           buttonText="Nuevo proyecto"
           href="/projects"
-          onClick={handleCreateProjectClick}
+          onClick={onCreateProject}
         />
         <ActionCard
           title="Explorar Cursos"

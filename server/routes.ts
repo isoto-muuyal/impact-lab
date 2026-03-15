@@ -6,6 +6,7 @@ import { sendEmail, isEmailConfigured, getContactRecipient } from "./email";
 import { 
   insertActivityLogSchema,
   insertProjectSchema, 
+  insertProjectJoinRequestSchema,
   insertCourseSchema, 
   insertMentorshipSchema, 
   insertMentorshipSessionSchema, 
@@ -14,7 +15,7 @@ import {
   insertChallengeSchema,
   insertChallengeProjectSchema,
   insertProjectParticipantSchema,
-  insertMatchRecordSchema
+  insertMatchRecordSchema,
 } from "@shared/schema";
 
 export async function registerRoutes(
@@ -260,17 +261,9 @@ export async function registerRoutes(
   // Get all projects (for facilitators/mentors) or user's own projects
   app.get('/api/projects', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const userWithProfile = await storage.getUserWithProfile(userId);
-      const userRole = userWithProfile?.userRoles?.[0]?.role?.name;
-      
-      if (userRole === 'facilitador' || userRole === 'mentor') {
-        const allProjects = await storage.getProjects();
-        res.json(allProjects);
-      } else {
-        const userProjects = await storage.getProjectsByOwner(userId);
-        res.json(userProjects);
-      }
+      const search = typeof req.query.search === 'string' ? req.query.search : undefined;
+      const allProjects = await storage.searchProjects(search);
+      res.json(allProjects);
     } catch (error) {
       console.error("Error fetching projects:", error);
       res.status(500).json({ message: "Failed to fetch projects" });
@@ -289,24 +282,14 @@ export async function registerRoutes(
     }
   });
 
-  // Get single project (with authorization check)
+  // Get single project
   app.get('/api/projects/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
       const project = await storage.getProject(req.params.id);
       if (!project) {
         return res.status(404).json({ message: "Project not found" });
       }
-      
-      // Check if user can access this project
-      const userWithProfile = await storage.getUserWithProfile(userId);
-      const userRole = userWithProfile?.userRoles?.[0]?.role?.name;
-      
-      // Only owner, mentor, or facilitator can view project details
-      if (project.ownerId !== userId && project.mentorId !== userId && userRole !== 'facilitador' && userRole !== 'mentor') {
-        return res.status(403).json({ message: "Not authorized to view this project" });
-      }
-      
+
       res.json(project);
     } catch (error) {
       console.error("Error fetching project:", error);
@@ -424,6 +407,147 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error deleting project:", error);
       res.status(500).json({ message: "Failed to delete project" });
+    }
+  });
+
+  app.get('/api/projects/:id/participants', isAuthenticated, async (req: any, res) => {
+    try {
+      const project = await storage.getProject(req.params.id);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+
+      const participants = await storage.getSocialProjectParticipants(req.params.id);
+      res.json(participants);
+    } catch (error) {
+      console.error("Error fetching social project participants:", error);
+      res.status(500).json({ message: "Failed to fetch project participants" });
+    }
+  });
+
+  app.get('/api/projects/:id/join-requests', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const project = await storage.getProject(req.params.id);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+
+      if (project.ownerId !== userId) {
+        return res.status(403).json({ message: "Only the project creator can view join requests" });
+      }
+
+      const requests = await storage.getProjectJoinRequests(req.params.id);
+      res.json(requests);
+    } catch (error) {
+      console.error("Error fetching join requests:", error);
+      res.status(500).json({ message: "Failed to fetch join requests" });
+    }
+  });
+
+  app.post('/api/projects/:id/join-requests', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const project = await storage.getProject(req.params.id);
+
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+
+      if (project.ownerId === userId) {
+        return res.status(400).json({ message: "Project creators cannot request to join their own project" });
+      }
+
+      const existingParticipant = await storage.getSocialProjectParticipant(req.params.id, userId);
+      if (existingParticipant) {
+        return res.status(400).json({ message: "You are already part of this project" });
+      }
+
+      const existingPendingRequest = await storage.getPendingProjectJoinRequest(req.params.id, userId);
+      if (existingPendingRequest) {
+        return res.status(400).json({ message: "You already have a pending request for this project" });
+      }
+
+      const joinRequestData = {
+        projectId: req.params.id,
+        userId,
+        requestedRole: req.body.requestedRole,
+        helpDescription: req.body.helpDescription,
+        status: 'pending' as const,
+        decidedByUserId: null,
+      };
+
+      const validationResult = insertProjectJoinRequestSchema.safeParse(joinRequestData);
+      if (!validationResult.success) {
+        return res.status(400).json({
+          message: "Invalid join request data",
+          errors: validationResult.error.flatten().fieldErrors,
+        });
+      }
+
+      const joinRequest = await storage.createProjectJoinRequest(validationResult.data);
+      res.status(201).json(joinRequest);
+    } catch (error) {
+      console.error("Error creating join request:", error);
+      res.status(500).json({ message: "Failed to create join request" });
+    }
+  });
+
+  app.patch('/api/projects/:projectId/join-requests/:requestId', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { status } = req.body;
+      const project = await storage.getProject(req.params.projectId);
+
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+
+      if (project.ownerId !== userId) {
+        return res.status(403).json({ message: "Only the project creator can decide join requests" });
+      }
+
+      if (status !== 'accepted' && status !== 'rejected') {
+        return res.status(400).json({ message: "Status must be accepted or rejected" });
+      }
+
+      const request = await storage.getProjectJoinRequest(req.params.requestId);
+      if (!request || request.projectId !== req.params.projectId) {
+        return res.status(404).json({ message: "Join request not found" });
+      }
+
+      if (request.status !== 'pending') {
+        return res.status(400).json({ message: "This join request has already been processed" });
+      }
+
+      const updatedRequest = await storage.updateProjectJoinRequest(req.params.requestId, {
+        status,
+        decidedByUserId: userId,
+      });
+
+      if (status === 'accepted') {
+        const participantRole = request.requestedRole === 'mentor' ? 'mentor' : 'participant';
+        const existingParticipant = await storage.getSocialProjectParticipant(req.params.projectId, request.userId);
+
+        if (!existingParticipant) {
+          await storage.createSocialProjectParticipant({
+            projectId: req.params.projectId,
+            userId: request.userId,
+            role: participantRole,
+            helpDescription: request.helpDescription,
+            isActive: true,
+          });
+        }
+
+        if (participantRole === 'mentor') {
+          await storage.updateProject(req.params.projectId, { mentorId: request.userId });
+        }
+      }
+
+      res.json(updatedRequest);
+    } catch (error) {
+      console.error("Error updating join request:", error);
+      res.status(500).json({ message: "Failed to update join request" });
     }
   });
 
