@@ -1,8 +1,11 @@
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/contexts/LanguageContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useLocation } from "wouter";
 import { 
   Target, 
   BookOpen, 
@@ -18,9 +21,25 @@ import {
 } from "lucide-react";
 
 export default function Home() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, hasRole } = useAuth();
+  const { toast } = useToast();
+  const { t } = useTranslation();
+  const [, setLocation] = useLocation();
   
   const userRole = user?.userRoles?.[0]?.role?.name || "usuario";
+
+  const handleCreateProjectClick = () => {
+    if (!hasRole("proponente")) {
+      toast({
+        title: t("common.accessDenied"),
+        description: t("projects.proponentRoleRequired"),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLocation("/projects");
+  };
 
   if (isLoading) {
     return <HomeLoadingSkeleton />;
@@ -105,7 +124,8 @@ function UsuarioDashboard({ user }: { user: any }) {
           description="Inicia un nuevo proyecto social y compártelo con la comunidad."
           icon={<Target className="h-6 w-6" />}
           buttonText="Nuevo proyecto"
-          href="/projects/new"
+          href="/projects"
+          onClick={handleCreateProjectClick}
         />
         <ActionCard
           title="Explorar Cursos"
@@ -370,6 +390,7 @@ function ActionCard({
   icon, 
   buttonText, 
   href,
+  onClick,
   color = "primary" 
 }: { 
   title: string; 
@@ -377,8 +398,10 @@ function ActionCard({
   icon: React.ReactNode;
   buttonText: string;
   href: string;
+  onClick?: () => void;
   color?: string;
 }) {
+  const [, setLocation] = useLocation();
   const colorClasses: Record<string, string> = {
     primary: "bg-primary/10 text-primary",
     "chart-2": "bg-chart-2/10 text-chart-2",
@@ -393,7 +416,12 @@ function ActionCard({
         </div>
         <h3 className="font-semibold mb-2">{title}</h3>
         <p className="text-sm text-muted-foreground mb-4">{description}</p>
-        <Button variant="outline" className="gap-2" data-testid={`button-action-${title.toLowerCase().replace(/\s/g, '-')}`}>
+        <Button
+          variant="outline"
+          className="gap-2"
+          data-testid={`button-action-${title.toLowerCase().replace(/\s/g, '-')}`}
+          onClick={() => onClick ? onClick() : setLocation(href)}
+        >
           {buttonText}
           <ArrowRight className="h-4 w-4" />
         </Button>

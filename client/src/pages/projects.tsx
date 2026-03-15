@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/contexts/LanguageContext";
 import { Plus, Target, MapPin, Users, Calendar, Loader2, Trash2, Edit, Eye, User } from "lucide-react";
 import type { ProjectWithOwner } from "@shared/schema";
 
@@ -43,14 +44,24 @@ const categoryOptions = [
 ];
 
 export default function Projects() {
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<ProjectWithOwner | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
 
   const userRole = user?.userRoles?.[0]?.role?.name || "usuario";
+  const hasProponenteRole = hasRole("proponente");
+
+  const showProponenteRoleWarning = () => {
+    toast({
+      title: t("common.accessDenied"),
+      description: t("projects.proponentRoleRequired"),
+      variant: "destructive",
+    });
+  };
 
   const { data: projects, isLoading } = useQuery<ProjectWithOwner[]>({
     queryKey: ["/api/projects"],
@@ -101,6 +112,10 @@ export default function Projects() {
 
   const handleCreateSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!hasProponenteRole) {
+      showProponenteRoleWarning();
+      return;
+    }
     const formData = new FormData(e.currentTarget);
     const data = {
       title: formData.get("title") as string,
@@ -167,7 +182,14 @@ export default function Projects() {
         {userRole === "usuario" && (
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
-              <Button data-testid="button-create-project">
+              <Button
+                data-testid="button-create-project"
+                onClick={(event) => {
+                  if (hasProponenteRole) return;
+                  event.preventDefault();
+                  showProponenteRoleWarning();
+                }}
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Nuevo Proyecto
               </Button>

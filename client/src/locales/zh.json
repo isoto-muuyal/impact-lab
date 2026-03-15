@@ -141,6 +141,7 @@
     "title": "项目",
     "myProjects": "我的项目",
     "newProject": "新项目",
+    "proponentRoleRequired": "您需要启用提案者角色",
     "projectName": "项目名称",
     "description": "描述",
     "status": "状态",

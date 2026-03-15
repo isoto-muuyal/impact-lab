@@ -157,6 +157,7 @@
     "title": "Proyectos",
     "myProjects": "Mis Proyectos",
     "newProject": "Nuevo Proyecto",
+    "proponentRoleRequired": "Necesitas rol de proponente activado",
     "projectName": "Nombre del Proyecto",
     "description": "Descripción",
     "status": "Estado",

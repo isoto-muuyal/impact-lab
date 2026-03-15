@@ -141,6 +141,7 @@
     "title": "المشاريع",
     "myProjects": "مشاريعي",
     "newProject": "مشروع جديد",
+    "proponentRoleRequired": "تحتاج إلى تفعيل دور مقدم المقترح",
     "projectName": "اسم المشروع",
     "description": "الوصف",
     "status": "الحالة",

@@ -141,6 +141,7 @@
     "title": "Projects",
     "myProjects": "My Projects",
     "newProject": "New Project",
+    "proponentRoleRequired": "You need the proponent role enabled",
     "projectName": "Project Name",
     "description": "Description",
     "status": "Status",
