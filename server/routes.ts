@@ -285,9 +285,23 @@ export async function registerRoutes(
   // Get single project
   app.get('/api/projects/:id', isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
       const project = await storage.getProject(req.params.id);
       if (!project) {
         return res.status(404).json({ message: "Project not found" });
+      }
+
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const userRole = userWithProfile?.userRoles?.[0]?.role?.name;
+      const participant = await storage.getSocialProjectParticipant(project.id, userId);
+      const canAccess =
+        project.ownerId === userId ||
+        project.mentorId === userId ||
+        !!participant ||
+        userRole === 'facilitador';
+
+      if (!canAccess) {
+        return res.status(403).json({ message: "Not authorized to view this project" });
       }
 
       res.json(project);
@@ -445,6 +459,17 @@ export async function registerRoutes(
     }
   });
 
+  app.get('/api/project-join-requests/my', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const requests = await storage.getProjectJoinRequestsByUser(userId);
+      res.json(requests);
+    } catch (error) {
+      console.error("Error fetching user join requests:", error);
+      res.status(500).json({ message: "Failed to fetch join requests" });
+    }
+  });
+
   app.post('/api/projects/:id/join-requests', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
@@ -496,7 +521,8 @@ export async function registerRoutes(
   app.patch('/api/projects/:projectId/join-requests/:requestId', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { status } = req.body;
+      const status = typeof req.body?.status === 'string' ? req.body.status : undefined;
+      const decisionReason = typeof req.body?.decisionReason === 'string' ? req.body.decisionReason.trim() : '';
       const project = await storage.getProject(req.params.projectId);
 
       if (!project) {
@@ -511,6 +537,10 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Status must be accepted or rejected" });
       }
 
+      if (!decisionReason) {
+        return res.status(400).json({ message: "Decision reason is required" });
+      }
+
       const request = await storage.getProjectJoinRequest(req.params.requestId);
       if (!request || request.projectId !== req.params.projectId) {
         return res.status(404).json({ message: "Join request not found" });
@@ -522,6 +552,7 @@ export async function registerRoutes(
 
       const updatedRequest = await storage.updateProjectJoinRequest(req.params.requestId, {
         status,
+        decisionReason,
         decidedByUserId: userId,
       });
 
@@ -544,10 +575,44 @@ export async function registerRoutes(
         }
       }
 
+      await storage.createNotification({
+        userId: request.userId,
+        type: status === 'accepted' ? 'project_request_accepted' : 'project_request_rejected',
+        title: status === 'accepted' ? 'Solicitud aceptada' : 'Solicitud rechazada',
+        message: decisionReason,
+        link: status === 'accepted' ? `/projects` : null,
+      });
+
       res.json(updatedRequest);
     } catch (error) {
       console.error("Error updating join request:", error);
       res.status(500).json({ message: "Failed to update join request" });
+    }
+  });
+
+  app.get('/api/notifications', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const notifications = await storage.getNotificationsByUser(userId);
+      res.json(notifications);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      res.status(500).json({ message: "Failed to fetch notifications" });
+    }
+  });
+
+  app.post('/api/notifications/:id/read', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const notification = await storage.markNotificationRead(req.params.id, userId);
+      if (!notification) {
+        return res.status(404).json({ message: "Notification not found" });
+      }
+
+      res.json(notification);
+    } catch (error) {
+      console.error("Error updating notification:", error);
+      res.status(500).json({ message: "Failed to update notification" });
     }
   });
 

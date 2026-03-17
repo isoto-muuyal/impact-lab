@@ -1,10 +1,18 @@
+import { useDeferredValue, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useLocation } from "wouter";
 import { 
   Target, 
@@ -17,8 +25,13 @@ import {
   CheckCircle,
   Rocket,
   MessageSquare,
-  BarChart3
+  BarChart3,
+  Search,
+  Bell,
+  UserPlus,
+  Eye,
 } from "lucide-react";
+import type { Notification, ProjectJoinRequestWithDetails, ProjectWithOwner } from "@shared/schema";
 
 export default function Home() {
   const { user, isLoading, hasRole } = useAuth();
@@ -69,6 +82,7 @@ export default function Home() {
       </div>
 
       {renderDashboard()}
+      <ProjectDiscoverySection onCreateProject={handleCreateProjectClick} />
     </div>
   );
 }
@@ -166,6 +180,265 @@ function UsuarioDashboard({ user, onCreateProject }: { user: any; onCreateProjec
         </Card>
       ) : null}
     </>
+  );
+}
+
+async function fetchProjects(search: string): Promise<ProjectWithOwner[]> {
+  const url = search ? `/api/projects?search=${encodeURIComponent(search)}` : "/api/projects";
+  const res = await fetch(url, { credentials: "include" });
+  if (!res.ok) {
+    throw new Error(`${res.status}: ${await res.text()}`);
+  }
+  return res.json();
+}
+
+async function fetchMyJoinRequests(): Promise<ProjectJoinRequestWithDetails[]> {
+  const res = await fetch("/api/project-join-requests/my", { credentials: "include" });
+  if (!res.ok) {
+    throw new Error(`${res.status}: ${await res.text()}`);
+  }
+  return res.json();
+}
+
+async function fetchNotifications(): Promise<Notification[]> {
+  const res = await fetch("/api/notifications", { credentials: "include" });
+  if (!res.ok) {
+    throw new Error(`${res.status}: ${await res.text()}`);
+  }
+  return res.json();
+}
+
+function ProjectDiscoverySection({ onCreateProject }: { onCreateProject: () => void }) {
+  const { user, hasRole } = useAuth();
+  const { toast } = useToast();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedProject, setSelectedProject] = useState<ProjectWithOwner | null>(null);
+  const [joinRole, setJoinRole] = useState<"participant" | "mentor">("participant");
+  const [joinReason, setJoinReason] = useState("");
+  const deferredSearch = useDeferredValue(searchQuery.trim());
+  const [, setLocation] = useLocation();
+
+  const projectsQuery = useQuery<ProjectWithOwner[]>({
+    queryKey: ["/api/projects", "home", deferredSearch],
+    queryFn: () => fetchProjects(deferredSearch),
+  });
+
+  const myJoinRequestsQuery = useQuery<ProjectJoinRequestWithDetails[]>({
+    queryKey: ["/api/project-join-requests/my"],
+    queryFn: fetchMyJoinRequests,
+  });
+
+  const notificationsQuery = useQuery<Notification[]>({
+    queryKey: ["/api/notifications"],
+    queryFn: fetchNotifications,
+  });
+
+  const joinRequestMutation = useMutation({
+    mutationFn: async ({ projectId, requestedRole, helpDescription }: { projectId: string; requestedRole: "participant" | "mentor"; helpDescription: string }) =>
+      apiRequest("POST", `/api/projects/${projectId}/join-requests`, { requestedRole, helpDescription }),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["/api/projects"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/project-join-requests/my"] }),
+      ]);
+      setSelectedProject(null);
+      setJoinRole("participant");
+      setJoinReason("");
+      toast({ title: "Solicitud enviada", description: "Tu solicitud fue enviada al creador del proyecto." });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo enviar la solicitud.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const readNotificationMutation = useMutation({
+    mutationFn: async (notificationId: string) => apiRequest("POST", `/api/notifications/${notificationId}/read`, {}),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+    },
+  });
+
+  const requestOptions = [
+    { value: "participant" as const, label: "Participante", enabled: true },
+    { value: "mentor" as const, label: "Mentor", enabled: hasRole("mentor") },
+  ].filter((option) => option.enabled);
+
+  const myRequestsByProjectId = new Map((myJoinRequestsQuery.data ?? []).map((request) => [request.projectId, request]));
+  const projects = projectsQuery.data ?? [];
+
+  return (
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between gap-4">
+            <span>Buscar Proyectos</span>
+            <Button variant="outline" size="sm" onClick={onCreateProject}>
+              <Plus className="h-4 w-4 mr-2" />
+              Crear
+            </Button>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="relative">
+            <Search className="h-4 w-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+            <Input
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Busca proyectos por nombre, impacto, categoría o ubicación"
+              className="pl-9"
+            />
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2">
+            {projects.map((project) => {
+              const participants = project.participants ?? [];
+              const isMember = project.ownerId === user?.id
+                || project.mentorId === user?.id
+                || participants.some((participant) => participant.userId === user?.id);
+              const myRequest = myRequestsByProjectId.get(project.id);
+
+              return (
+                <div
+                  key={project.id}
+                  className={`rounded-xl border p-4 ${isMember ? "bg-sky-100 border-sky-200" : "bg-slate-100 border-slate-200"}`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h3 className="font-semibold">{project.title}</h3>
+                      <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{project.description || "Sin descripción"}</p>
+                    </div>
+                    {isMember ? <Badge className="bg-sky-600 text-white">Ya participas</Badge> : null}
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {project.category ? <Badge variant="outline">{project.category}</Badge> : null}
+                    {project.location ? <Badge variant="outline">{project.location}</Badge> : null}
+                    {myRequest && !isMember ? (
+                      <Badge variant="secondary">
+                        {myRequest.status === "pending" ? "Pendiente" : myRequest.status === "accepted" ? "Aceptada" : "Rechazada"}
+                      </Badge>
+                    ) : null}
+                  </div>
+                  <div className="flex gap-2 mt-4">
+                    {isMember ? (
+                      <Button size="sm" onClick={() => setLocation("/projects")}>
+                        <Eye className="h-4 w-4 mr-2" />
+                        Ver proyecto
+                      </Button>
+                    ) : !myRequest ? (
+                      <Button size="sm" variant="outline" onClick={() => setSelectedProject(project)}>
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Reques to join
+                      </Button>
+                    ) : null}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Bell className="h-4 w-4" />
+            Notificaciones
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {notificationsQuery.isLoading ? (
+            <p className="text-sm text-muted-foreground">Cargando notificaciones...</p>
+          ) : (notificationsQuery.data ?? []).length === 0 ? (
+            <p className="text-sm text-muted-foreground">No tienes notificaciones recientes.</p>
+          ) : (
+            (notificationsQuery.data ?? []).slice(0, 5).map((notification) => (
+              <div key={notification.id} className="rounded-lg border p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-medium text-sm">{notification.title}</p>
+                    <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
+                  </div>
+                  {!notification.readAt ? (
+                    <Button size="sm" variant="ghost" onClick={() => readNotificationMutation.mutate(notification.id)}>
+                      Marcar leida
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog
+        open={!!selectedProject}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedProject(null);
+            setJoinReason("");
+            setJoinRole("participant");
+          }
+        }}
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Request to join</DialogTitle>
+            <DialogDescription>
+              Elige el rol con el que quieres participar y explica tu aporte.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Rol que quiero asumir</Label>
+              <Select value={joinRole} onValueChange={(value: "participant" | "mentor") => setJoinRole(value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {requestOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="join-reason-home">Como puedo participar</Label>
+              <Textarea
+                id="join-reason-home"
+                value={joinReason}
+                onChange={(event) => setJoinReason(event.target.value)}
+                rows={4}
+                placeholder="Describe tu experiencia, tiempo disponible y como quieres contribuir."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setSelectedProject(null)}>
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              disabled={!selectedProject || !joinReason.trim() || joinRequestMutation.isPending}
+              onClick={() => {
+                if (!selectedProject) return;
+                joinRequestMutation.mutate({
+                  projectId: selectedProject.id,
+                  requestedRole: joinRole,
+                  helpDescription: joinReason.trim(),
+                });
+              }}
+            >
+              {joinRequestMutation.isPending ? <Clock className="h-4 w-4 mr-2 animate-spin" /> : null}
+              Enviar solicitud
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }
 

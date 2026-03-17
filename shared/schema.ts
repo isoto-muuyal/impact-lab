@@ -273,6 +273,7 @@ export const projectJoinRequests = pgTable("project_join_requests", {
   requestedRole: projectJoinRequestRoleEnum("requested_role").notNull(),
   helpDescription: text("help_description").notNull(),
   status: projectJoinRequestStatusEnum("status").notNull().default('pending'),
+  decisionReason: text("decision_reason"),
   decidedByUserId: varchar("decided_by_user_id").references(() => users.id),
   decidedAt: timestamp("decided_at"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -325,6 +326,35 @@ export type ProjectJoinRequestWithDetails = ProjectJoinRequest & {
   user?: User;
   decidedBy?: User | null;
 };
+
+export const notificationTypeEnum = pgEnum('notification_type', ['project_request_accepted', 'project_request_rejected']);
+
+export const notifications = pgTable("notifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  type: notificationTypeEnum("type").notNull(),
+  title: varchar("title").notNull(),
+  message: text("message").notNull(),
+  link: varchar("link"),
+  readAt: timestamp("read_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, {
+    fields: [notifications.userId],
+    references: [users.id],
+  }),
+}));
+
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  readAt: true,
+  createdAt: true,
+});
+
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 
 // Course status enum - Updated per class diagram: draft, open, ongoing, completed, archived
 export const courseStatusEnum = pgEnum('course_status', ['draft', 'open', 'ongoing', 'completed', 'archived']);

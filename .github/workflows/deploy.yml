@@ -65,7 +65,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           port: ${{ env.EC2_PORT }}
           target: ~/apps/impactlab
-          source: docker-compose.yml,db
+          source: docker-compose.yml,db,package.json,package-lock.json,drizzle.config.ts,shared
 
       - name: Deploy on EC2
         uses: appleboy/ssh-action@v1.2.0
@@ -111,5 +111,21 @@ jobs:
             echo "${ECR_PASSWORD}" | docker login --username AWS --password-stdin "${ECR_REGISTRY}"
             chmod +x db/scripts/apply-db-init.sh db/scripts/apply-db-init-docker.sh
             ./db/scripts/apply-db-init-docker.sh
+            docker run --rm \
+              --network "${DOCKER_NETWORK}" \
+              -e PGHOST="${PGHOST}" \
+              -e PGPORT="${PGPORT}" \
+              -e APP_DB_NAME="${APP_DB_NAME}" \
+              -e APP_DB_USER="${APP_DB_USER}" \
+              -e APP_DB_PASSWORD="${APP_DB_PASSWORD}" \
+              -v "$PWD:/work" \
+              -w /work \
+              node:20-bookworm-slim \
+              bash -lc 'set -e
+                DATABASE_URL="$(node -e '\''const e = encodeURIComponent; process.stdout.write(`postgres://${e(process.env.APP_DB_USER)}:${e(process.env.APP_DB_PASSWORD)}@${process.env.PGHOST}:${process.env.PGPORT}/${e(process.env.APP_DB_NAME)}?sslmode=disable`)'\'' )"
+                export DATABASE_URL
+                npm ci
+                npx drizzle-kit push
+              '
             docker compose pull
             docker compose up -d --remove-orphans

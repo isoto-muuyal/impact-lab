@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { Calendar, Eye, Loader2, MapPin, Plus, Search, Trash2, User, UserPlus, Users } from "lucide-react";
@@ -86,6 +87,16 @@ async function fetchJoinRequests(projectId: string): Promise<ProjectJoinRequestW
   return res.json();
 }
 
+async function fetchMyJoinRequests(): Promise<ProjectJoinRequestWithDetails[]> {
+  const res = await fetch("/api/project-join-requests/my", { credentials: "include" });
+
+  if (!res.ok) {
+    throw new Error(`${res.status}: ${await res.text()}`);
+  }
+
+  return res.json();
+}
+
 export default function Projects() {
   const { user, hasRole } = useAuth();
   const { toast } = useToast();
@@ -130,6 +141,11 @@ export default function Projects() {
     queryKey: ["/api/projects", selectedProjectId, "join-requests"],
     queryFn: () => fetchJoinRequests(selectedProjectId!),
     enabled: !!selectedProjectId && !!selectedProject && selectedProject.ownerId === user?.id && isViewDialogOpen,
+  });
+
+  const myJoinRequestsQuery = useQuery<ProjectJoinRequestWithDetails[]>({
+    queryKey: ["/api/project-join-requests/my"],
+    queryFn: fetchMyJoinRequests,
   });
 
   const createMutation = useMutation({
@@ -180,6 +196,7 @@ export default function Projects() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["/api/projects"] }),
         queryClient.invalidateQueries({ queryKey: ["/api/projects", variables.projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/project-join-requests/my"] }),
       ]);
       setIsJoinDialogOpen(false);
       setJoinRequestedRole("participant");
@@ -196,13 +213,15 @@ export default function Projects() {
   });
 
   const reviewJoinRequestMutation = useMutation({
-    mutationFn: async ({ projectId, requestId, status }: { projectId: string; requestId: string; status: "accepted" | "rejected" }) =>
-      apiRequest("PATCH", `/api/projects/${projectId}/join-requests/${requestId}`, { status }),
+    mutationFn: async ({ projectId, requestId, status, decisionReason }: { projectId: string; requestId: string; status: "accepted" | "rejected"; decisionReason: string }) =>
+      apiRequest("PATCH", `/api/projects/${projectId}/join-requests/${requestId}`, { status, decisionReason }),
     onSuccess: async (_, variables) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["/api/projects"] }),
         queryClient.invalidateQueries({ queryKey: ["/api/projects", variables.projectId] }),
         queryClient.invalidateQueries({ queryKey: ["/api/projects", variables.projectId, "join-requests"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/project-join-requests/my"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/notifications"] }),
       ]);
       toast({
         title: variables.status === "accepted" ? "Solicitud aceptada" : "Solicitud rechazada",
@@ -259,6 +278,14 @@ export default function Projects() {
 
   const handleJoinRequestSubmit = () => {
     if (!selectedProject) return;
+    if (joinRequestedRole === "mentor" && !hasRole("mentor")) {
+      toast({
+        title: "Acceso denegado",
+        description: "Necesitas el rol de mentor activado para solicitar ese rol.",
+        variant: "destructive",
+      });
+      return;
+    }
     joinRequestMutation.mutate({
       projectId: selectedProject.id,
       requestedRole: joinRequestedRole,
@@ -304,6 +331,7 @@ export default function Projects() {
   }
 
   const projects = projectsQuery.data ?? [];
+  const myRequestsByProjectId = new Map((myJoinRequestsQuery.data ?? []).map((request) => [request.projectId, request]));
 
   return (
     <div className="p-6 space-y-6">
@@ -460,6 +488,8 @@ export default function Projects() {
             const participants = project.participants ?? [];
             const myParticipation = participants.find((participant) => participant.userId === user?.id);
             const isOwner = project.ownerId === user?.id;
+            const hasProjectAccess = isOwner || !!myParticipation || project.mentorId === user?.id || userRole === "facilitador";
+            const myRequest = myRequestsByProjectId.get(project.id);
 
             return (
               <Card key={project.id} className="flex flex-col" data-testid={`card-project-${project.id}`}>
@@ -475,6 +505,11 @@ export default function Projects() {
                     {isOwner && <Badge variant="secondary">Tu proyecto</Badge>}
                     {myParticipation && !isOwner && (
                       <Badge variant="secondary">{participantRoleLabels[myParticipation.role]}</Badge>
+                    )}
+                    {myRequest && !hasProjectAccess && (
+                      <Badge variant={myRequest.status === "pending" ? "outline" : "secondary"}>
+                        {myRequest.status === "pending" ? "Solicitud pendiente" : myRequest.status === "accepted" ? "Solicitud aceptada" : "Solicitud rechazada"}
+                      </Badge>
                     )}
                   </div>
                 </CardHeader>
@@ -525,16 +560,18 @@ export default function Projects() {
                   </div>
                 </CardContent>
                 <CardFooter className="pt-0 gap-2 flex-wrap">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openProjectDetails(project)}
-                    data-testid={`button-view-project-${project.id}`}
-                  >
-                    <Eye className="h-4 w-4 mr-1" />
-                    Ver
-                  </Button>
-                  {!isOwner && !myParticipation && (
+                  {hasProjectAccess && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openProjectDetails(project)}
+                      data-testid={`button-view-project-${project.id}`}
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      Ver
+                    </Button>
+                  )}
+                  {!hasProjectAccess && !myRequest && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -587,7 +624,7 @@ export default function Projects() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="participant">Participante</SelectItem>
-                  <SelectItem value="mentor">Mentor</SelectItem>
+                  {hasRole("mentor") ? <SelectItem value="mentor">Mentor</SelectItem> : null}
                 </SelectContent>
               </Select>
             </div>
@@ -741,8 +778,8 @@ export default function Projects() {
                   isLoadingRequests={joinRequestsQuery.isLoading}
                   onEdit={() => setIsEditMode(true)}
                   onClose={() => setIsViewDialogOpen(false)}
-                  onReviewJoinRequest={(requestId, status) =>
-                    reviewJoinRequestMutation.mutate({ projectId: selectedProject.id, requestId, status })
+                  onReviewJoinRequest={(requestId, status, decisionReason) =>
+                    reviewJoinRequestMutation.mutate({ projectId: selectedProject.id, requestId, status, decisionReason })
                   }
                   isReviewingJoinRequest={reviewJoinRequestMutation.isPending}
                 />
@@ -775,11 +812,19 @@ function ProjectDetailsView({
   isLoadingRequests: boolean;
   onEdit: () => void;
   onClose: () => void;
-  onReviewJoinRequest: (requestId: string, status: "accepted" | "rejected") => void;
+  onReviewJoinRequest: (requestId: string, status: "accepted" | "rejected", decisionReason: string) => void;
   isReviewingJoinRequest: boolean;
 }) {
+  const [decisionReasons, setDecisionReasons] = useState<Record<string, string>>({});
   const participants = project.participants ?? [];
   const pendingRequests = joinRequests.filter((request) => request.status === "pending");
+  const handleDecision = (requestId: string, status: "accepted" | "rejected") => {
+    const reason = decisionReasons[requestId]?.trim() || "";
+    if (!reason) {
+      return;
+    }
+    onReviewJoinRequest(requestId, status, reason);
+  };
 
   return (
     <div className="space-y-6">
@@ -790,36 +835,43 @@ function ProjectDetailsView({
         {project.category && <Badge variant="outline">{project.category}</Badge>}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="space-y-4">
-          <DetailBlock label="Descripción" value={project.description || "Sin descripción"} />
-          {project.objectives && <DetailBlock label="Objetivos" value={project.objectives} />}
-          {project.targetBeneficiaries && <DetailBlock label="Beneficiarios" value={project.targetBeneficiaries} />}
-          {project.expectedImpact && <DetailBlock label="Impacto Esperado" value={project.expectedImpact} />}
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList>
+          <TabsTrigger value="overview">Resumen</TabsTrigger>
+          <TabsTrigger value="participants">Participantes</TabsTrigger>
+          {isOwner ? <TabsTrigger value="requests">Solicitudes</TabsTrigger> : null}
+        </TabsList>
 
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium text-muted-foreground">Datos generales</h4>
-            <div className="space-y-2 text-sm">
-              {project.location && (
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <span>{project.location}</span>
-                </div>
-              )}
-              {project.owner && (
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-muted-foreground" />
-                  <span>
-                    {project.owner.firstName || project.owner.email || "Usuario"}
-                    {project.owner.lastName ? ` ${project.owner.lastName}` : ""}
-                  </span>
-                </div>
-              )}
+        <TabsContent value="overview" className="mt-4">
+          <div className="space-y-4">
+            <DetailBlock label="Descripción" value={project.description || "Sin descripción"} />
+            {project.objectives && <DetailBlock label="Objetivos" value={project.objectives} />}
+            {project.targetBeneficiaries && <DetailBlock label="Beneficiarios" value={project.targetBeneficiaries} />}
+            {project.expectedImpact && <DetailBlock label="Impacto Esperado" value={project.expectedImpact} />}
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium text-muted-foreground">Datos generales</h4>
+              <div className="space-y-2 text-sm">
+                {project.location && (
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <span>{project.location}</span>
+                  </div>
+                )}
+                {project.owner && (
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span>
+                      {project.owner.firstName || project.owner.email || "Usuario"}
+                      {project.owner.lastName ? ` ${project.owner.lastName}` : ""}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        </TabsContent>
 
-        <div className="space-y-4">
+        <TabsContent value="participants" className="mt-4">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-medium text-muted-foreground">Participantes</h4>
@@ -851,8 +903,10 @@ function ProjectDetailsView({
               </div>
             )}
           </div>
+        </TabsContent>
 
-          {isOwner && (
+        {isOwner ? (
+          <TabsContent value="requests" className="mt-4">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <h4 className="text-sm font-medium text-muted-foreground">Solicitudes para unirse</h4>
@@ -884,11 +938,21 @@ function ProjectDetailsView({
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">{request.helpDescription}</p>
+                      <div className="space-y-2">
+                        <Label htmlFor={`decision-reason-${request.id}`}>Explica tu decisión</Label>
+                        <Textarea
+                          id={`decision-reason-${request.id}`}
+                          value={decisionReasons[request.id] || ""}
+                          onChange={(event) => setDecisionReasons((current) => ({ ...current, [request.id]: event.target.value }))}
+                          rows={3}
+                          placeholder="Explica por qué aceptas o rechazas esta solicitud."
+                        />
+                      </div>
                       <div className="flex gap-2">
                         <Button
                           size="sm"
-                          onClick={() => onReviewJoinRequest(request.id, "accepted")}
-                          disabled={isReviewingJoinRequest}
+                          onClick={() => handleDecision(request.id, "accepted")}
+                          disabled={isReviewingJoinRequest || !(decisionReasons[request.id] || "").trim()}
                           data-testid={`button-accept-join-request-${request.id}`}
                         >
                           Aceptar
@@ -896,8 +960,8 @@ function ProjectDetailsView({
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => onReviewJoinRequest(request.id, "rejected")}
-                          disabled={isReviewingJoinRequest}
+                          onClick={() => handleDecision(request.id, "rejected")}
+                          disabled={isReviewingJoinRequest || !(decisionReasons[request.id] || "").trim()}
                           data-testid={`button-reject-join-request-${request.id}`}
                         >
                           Rechazar
@@ -908,9 +972,9 @@ function ProjectDetailsView({
                 </div>
               )}
             </div>
-          )}
-        </div>
-      </div>
+          </TabsContent>
+        ) : null}
+      </Tabs>
 
       <DialogFooter>
         <Button variant="outline" onClick={onClose}>

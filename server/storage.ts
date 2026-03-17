@@ -7,6 +7,7 @@ import {
   projects,
   socialProjectParticipants,
   projectJoinRequests,
+  notifications,
   courses,
   courseEnrollments,
   mentorships,
@@ -38,6 +39,8 @@ import {
   type ProjectJoinRequest,
   type InsertProjectJoinRequest,
   type ProjectJoinRequestWithDetails,
+  type Notification,
+  type InsertNotification,
   type Course,
   type InsertCourse,
   type CourseWithInstructor,
@@ -142,6 +145,10 @@ export interface IStorage {
   getPendingProjectJoinRequest(projectId: string, userId: string): Promise<ProjectJoinRequest | undefined>;
   createProjectJoinRequest(data: InsertProjectJoinRequest): Promise<ProjectJoinRequest>;
   updateProjectJoinRequest(id: string, data: Partial<InsertProjectJoinRequest>): Promise<ProjectJoinRequest | undefined>;
+  getProjectJoinRequestsByUser(userId: string): Promise<ProjectJoinRequestWithDetails[]>;
+  createNotification(data: InsertNotification): Promise<Notification>;
+  getNotificationsByUser(userId: string): Promise<Notification[]>;
+  markNotificationRead(id: string, userId: string): Promise<Notification | undefined>;
   
   // Course operations
   getCourses(includeUnpublished?: boolean): Promise<CourseWithInstructor[]>;
@@ -734,6 +741,22 @@ export class DatabaseStorage implements IStorage {
     );
   }
 
+  async getProjectJoinRequestsByUser(userId: string): Promise<ProjectJoinRequestWithDetails[]> {
+    const requests = await db
+      .select()
+      .from(projectJoinRequests)
+      .where(eq(projectJoinRequests.userId, userId))
+      .orderBy(desc(projectJoinRequests.createdAt));
+
+    return Promise.all(
+      requests.map(async (request) => ({
+        ...request,
+        user: await this.getUser(request.userId),
+        decidedBy: request.decidedByUserId ? await this.getUser(request.decidedByUserId) : null,
+      }))
+    );
+  }
+
   async getProjectJoinRequest(id: string): Promise<ProjectJoinRequestWithDetails | undefined> {
     const [request] = await db
       .select()
@@ -778,6 +801,29 @@ export class DatabaseStorage implements IStorage {
       .returning();
 
     return request;
+  }
+
+  async createNotification(data: InsertNotification): Promise<Notification> {
+    const [notification] = await db.insert(notifications).values(data).returning();
+    return notification;
+  }
+
+  async getNotificationsByUser(userId: string): Promise<Notification[]> {
+    return db
+      .select()
+      .from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt));
+  }
+
+  async markNotificationRead(id: string, userId: string): Promise<Notification | undefined> {
+    const [notification] = await db
+      .update(notifications)
+      .set({ readAt: new Date() })
+      .where(and(eq(notifications.id, id), eq(notifications.userId, userId)))
+      .returning();
+
+    return notification;
   }
 
   // Course operations
