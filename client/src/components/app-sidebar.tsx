@@ -25,7 +25,6 @@ import {
   Target,
   Settings,
   LogOut,
-  Sparkles,
   Calendar,
   MessageSquare,
   Building2,
@@ -111,9 +110,11 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="border-b p-4">
         <div className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-            <Sparkles className="h-5 w-5 text-primary-foreground" />
-          </div>
+          <img
+            src="/impactlab-mark.svg"
+            alt="Impact Lab logo"
+            className="h-9 w-9 rounded-lg object-cover"
+          />
           <div className="flex flex-col">
             <span className="font-semibold text-sm">{t("app.name")}</span>
             <span className="text-xs text-muted-foreground">{t("app.tagline")}</span>
