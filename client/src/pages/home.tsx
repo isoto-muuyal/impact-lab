@@ -30,6 +30,7 @@ import {
   Bell,
   UserPlus,
   Eye,
+  Plus,
 } from "lucide-react";
 import type { Notification, ProjectJoinRequestWithDetails, ProjectWithOwner } from "@shared/schema";
 
