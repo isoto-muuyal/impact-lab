@@ -19,7 +19,7 @@ Recommended structure:
 - Prefer extending current patterns over introducing parallel abstractions.
 - For searches, use `rg`.
 - For manual edits, prefer focused patches over broad rewrites.
-- Keep UI copy in Spanish unless the file already uses i18n keys.
+- Project already uses i18n keys, update it accordingly in every language.
 
 ## Database Changes
 

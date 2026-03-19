@@ -401,6 +401,48 @@ export const courseModules = pgTable("course_modules", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const courseChapters = pgTable("course_chapters", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  courseId: varchar("course_id").notNull().references(() => courses.id),
+  title: varchar("title").notNull(),
+  description: text("description"),
+  order: integer("order").notNull().default(1),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const courseVideos = pgTable("course_videos", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  chapterId: varchar("chapter_id").notNull().references(() => courseChapters.id),
+  title: varchar("title").notNull(),
+  description: text("description"),
+  videoUrl: varchar("video_url").notNull(),
+  order: integer("order").notNull().default(1),
+  durationMinutes: integer("duration_minutes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const courseVideoNotes = pgTable("course_video_notes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  videoId: varchar("video_id").notNull().references(() => courseVideos.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  content: text("content").notNull().default(''),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const courseVideoProgress = pgTable("course_video_progress", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  videoId: varchar("video_id").notNull().references(() => courseVideos.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  completed: boolean("completed").notNull().default(false),
+  watchedSeconds: integer("watched_seconds").notNull().default(0),
+  lastViewedAt: timestamp("last_viewed_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Course Certificates table - "Acreditación" (Emisión de constancias y certificados)
 export const courseCertificates = pgTable("course_certificates", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -445,6 +487,7 @@ export const coursesRelations = relations(courses, ({ one, many }) => ({
     references: [users.id],
   }),
   modules: many(courseModules),
+  chapters: many(courseChapters),
   enrollments: many(courseEnrollments),
 }));
 
@@ -453,6 +496,45 @@ export const courseModulesRelations = relations(courseModules, ({ one }) => ({
   course: one(courses, {
     fields: [courseModules.courseId],
     references: [courses.id],
+  }),
+}));
+
+export const courseChaptersRelations = relations(courseChapters, ({ one, many }) => ({
+  course: one(courses, {
+    fields: [courseChapters.courseId],
+    references: [courses.id],
+  }),
+  videos: many(courseVideos),
+}));
+
+export const courseVideosRelations = relations(courseVideos, ({ one, many }) => ({
+  chapter: one(courseChapters, {
+    fields: [courseVideos.chapterId],
+    references: [courseChapters.id],
+  }),
+  notes: many(courseVideoNotes),
+  progress: many(courseVideoProgress),
+}));
+
+export const courseVideoNotesRelations = relations(courseVideoNotes, ({ one }) => ({
+  video: one(courseVideos, {
+    fields: [courseVideoNotes.videoId],
+    references: [courseVideos.id],
+  }),
+  user: one(users, {
+    fields: [courseVideoNotes.userId],
+    references: [users.id],
+  }),
+}));
+
+export const courseVideoProgressRelations = relations(courseVideoProgress, ({ one }) => ({
+  video: one(courseVideos, {
+    fields: [courseVideoProgress.videoId],
+    references: [courseVideos.id],
+  }),
+  user: one(users, {
+    fields: [courseVideoProgress.userId],
+    references: [users.id],
   }),
 }));
 
@@ -509,6 +591,30 @@ export const insertCourseModuleSchema = createInsertSchema(courseModules).omit({
   updatedAt: true,
 });
 
+export const insertCourseChapterSchema = createInsertSchema(courseChapters).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCourseVideoSchema = createInsertSchema(courseVideos).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCourseVideoNoteSchema = createInsertSchema(courseVideoNotes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCourseVideoProgressSchema = createInsertSchema(courseVideoProgress).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertCourseEvaluationSchema = createInsertSchema(courseEvaluations).omit({
   id: true,
   submittedAt: true,
@@ -526,6 +632,18 @@ export type InsertCourse = z.infer<typeof insertCourseSchema>;
 export type CourseModule = typeof courseModules.$inferSelect;
 export type InsertCourseModule = z.infer<typeof insertCourseModuleSchema>;
 
+export type CourseChapter = typeof courseChapters.$inferSelect;
+export type InsertCourseChapter = z.infer<typeof insertCourseChapterSchema>;
+
+export type CourseVideo = typeof courseVideos.$inferSelect;
+export type InsertCourseVideo = z.infer<typeof insertCourseVideoSchema>;
+
+export type CourseVideoNote = typeof courseVideoNotes.$inferSelect;
+export type InsertCourseVideoNote = z.infer<typeof insertCourseVideoNoteSchema>;
+
+export type CourseVideoProgress = typeof courseVideoProgress.$inferSelect;
+export type InsertCourseVideoProgress = z.infer<typeof insertCourseVideoProgressSchema>;
+
 export type CourseEvaluation = typeof courseEvaluations.$inferSelect;
 export type InsertCourseEvaluation = z.infer<typeof insertCourseEvaluationSchema>;
 
@@ -540,8 +658,27 @@ export type CourseWithCreator = Course & {
   createdBy?: User;
 };
 
+export type CourseVideoWithDetails = CourseVideo & {
+  note?: CourseVideoNote | null;
+  progress?: CourseVideoProgress | null;
+};
+
+export type CourseChapterWithVideos = CourseChapter & {
+  videos: CourseVideoWithDetails[];
+};
+
+export type CourseWithDetails = Course & {
+  createdBy?: User;
+  chapters: CourseChapterWithVideos[];
+  enrollment?: CourseEnrollment | null;
+  totalVideos: number;
+  completedVideos: number;
+  progressPercent: number;
+  canEdit?: boolean;
+};
+
 export type EnrollmentWithCourse = CourseEnrollment & {
-  course?: Course;
+  course?: CourseWithCreator;
 };
 
 // Mentorship program status enum - draft, open, active, closed

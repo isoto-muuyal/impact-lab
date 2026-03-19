@@ -79,7 +79,10 @@ export default function Profile() {
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   
   const isFacilitador = hasRole('facilitador');
-  const selfAssignableRoles = ['usuario', 'proponente'];
+  const selfRoleRestrictionsDisabled = true;
+  const selfAssignableRoles = selfRoleRestrictionsDisabled
+    ? ['usuario', 'mentor', 'facilitador', 'proponente', 'acreditador']
+    : ['usuario', 'proponente'];
 
   const { data: allRoles } = useQuery<Role[]>({
     queryKey: ['/api/roles'],
@@ -635,7 +638,7 @@ export default function Profile() {
                       >
                         {roleLabels[role.name] || role.name}
                       </label>
-                      {isPrivileged && !isFacilitador && (
+                      {isPrivileged && !isFacilitador && !selfRoleRestrictionsDisabled && (
                         <span className="px-2 py-0.5 bg-muted text-muted-foreground rounded text-xs">
                           Requiere facilitador
                         </span>

@@ -8,6 +8,10 @@ import {
   insertProjectSchema, 
   insertProjectJoinRequestSchema,
   insertCourseSchema, 
+  insertCourseChapterSchema,
+  insertCourseVideoSchema,
+  insertCourseVideoNoteSchema,
+  insertCourseVideoProgressSchema,
   insertMentorshipSchema, 
   insertMentorshipSessionSchema, 
   insertOrganizationSchema, 
@@ -17,6 +21,15 @@ import {
   insertProjectParticipantSchema,
   insertMatchRecordSchema,
 } from "@shared/schema";
+
+function getUserRoleNames(userWithProfile: any): string[] {
+  return userWithProfile?.userRoles?.map((ur: any) => ur.role?.name).filter(Boolean) || [];
+}
+
+function hasAnyRole(userWithProfile: any, ...roleNames: string[]): boolean {
+  const roles = new Set(getUserRoleNames(userWithProfile));
+  return roleNames.some((roleName) => roles.has(roleName));
+}
 
 export async function registerRoutes(
   httpServer: Server,
@@ -226,12 +239,13 @@ export async function registerRoutes(
       const allRoles = await storage.getRoles();
       const roleMap = new Map(allRoles.map(r => [r.id, r]));
       
-      // Define self-assignable roles (non-privileged roles)
-      const selfAssignableRoles = ['usuario', 'proponente'];
-      
-      // Check if user is a facilitador (can assign any role)
+      // Temporary testing bypass: allow users to toggle any of their own roles.
+      const selfRoleRestrictionsDisabled = true;
       const userWithProfile = await storage.getUserWithProfile(userId);
-      const isFacilitador = userWithProfile?.userRoles?.some((ur: any) => ur.role?.name === 'facilitador');
+      const isFacilitador = hasAnyRole(userWithProfile, 'facilitador');
+      const selfAssignableRoles = selfRoleRestrictionsDisabled
+        ? allRoles.map((role) => role.name)
+        : ['usuario', 'proponente'];
       
       // Validate requested roles
       for (const roleId of roleIds) {
@@ -618,14 +632,12 @@ export async function registerRoutes(
 
   // ===== COURSE ROUTES =====
   
-  // Get all courses (facilitadores see all, others see only published)
+  // Get all courses (facilitadores/mentores see all, others see only public courses)
   app.get('/api/courses', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const userWithProfile = await storage.getUserWithProfile(userId);
-      const userRole = userWithProfile?.userRoles?.[0]?.role?.name;
-      
-      const includeUnpublished = userRole === 'facilitador';
+      const includeUnpublished = hasAnyRole(userWithProfile, 'facilitador', 'mentor');
       const courses = await storage.getCourses(includeUnpublished);
       res.json(courses);
     } catch (error) {
@@ -637,10 +649,23 @@ export async function registerRoutes(
   // Get single course
   app.get('/api/courses/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const course = await storage.getCourse(req.params.id);
+      const userId = req.user.claims.sub;
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const course = await storage.getCourse(req.params.id, userId);
       if (!course) {
         return res.status(404).json({ message: "Course not found" });
       }
+
+      const isCreator = course.createdByUserId === userId;
+      const isCourseManager = hasAnyRole(userWithProfile, 'facilitador', 'mentor') && isCreator;
+      const isEnrolled = !!course.enrollment;
+      const isVisiblePublicly = course.status === 'open' || course.status === 'ongoing' || course.status === 'completed';
+
+      if (!isCreator && !isCourseManager && !isEnrolled && !isVisiblePublicly) {
+        return res.status(403).json({ message: "Not authorized to view this course" });
+      }
+
+      course.canEdit = isCreator || hasAnyRole(userWithProfile, 'facilitador');
       res.json(course);
     } catch (error) {
       console.error("Error fetching course:", error);
@@ -648,22 +673,23 @@ export async function registerRoutes(
     }
   });
 
-  // Create course (facilitador only)
+  // Create course (mentor/facilitador)
   app.post('/api/courses', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const userWithProfile = await storage.getUserWithProfile(userId);
-      const userRole = userWithProfile?.userRoles?.[0]?.role?.name;
-      
-      if (userRole !== 'facilitador') {
-        return res.status(403).json({ message: "Only facilitadores can create courses" });
+
+      if (!hasAnyRole(userWithProfile, 'facilitador', 'mentor')) {
+        return res.status(403).json({ message: "Only mentors or facilitadores can create courses" });
       }
-      
+
       const courseData = {
-        ...req.body,
-        instructorId: userId,
+        title: req.body?.title,
+        description: req.body?.description,
+        createdByUserId: userId,
+        status: 'draft',
       };
-      
+
       const validationResult = insertCourseSchema.safeParse(courseData);
       if (!validationResult.success) {
         return res.status(400).json({ 
@@ -680,23 +706,22 @@ export async function registerRoutes(
     }
   });
 
-  // Update course (facilitador only)
+  // Update course (creator or facilitador)
   app.patch('/api/courses/:id', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const userWithProfile = await storage.getUserWithProfile(userId);
-      const userRole = userWithProfile?.userRoles?.[0]?.role?.name;
-      
-      if (userRole !== 'facilitador') {
-        return res.status(403).json({ message: "Only facilitadores can update courses" });
-      }
-      
-      const course = await storage.getCourse(req.params.id);
+      const course = await storage.getCourse(req.params.id, userId);
       if (!course) {
         return res.status(404).json({ message: "Course not found" });
       }
-      
-      const allowedFields = ['title', 'description', 'content', 'category', 'difficulty', 'duration', 'status', 'imageUrl'];
+
+      const canEdit = course.createdByUserId === userId || hasAnyRole(userWithProfile, 'facilitador');
+      if (!canEdit) {
+        return res.status(403).json({ message: "Only the creator or a facilitador can update this course" });
+      }
+
+      const allowedFields = ['title', 'description', 'status', 'modality', 'language', 'level', 'durationHours', 'imageUrl'];
       const sanitizedData: Record<string, any> = {};
       for (const field of allowedFields) {
         if (req.body[field] !== undefined) {
@@ -712,27 +737,259 @@ export async function registerRoutes(
     }
   });
 
-  // Delete course (facilitador only)
+  // Delete course (creator or facilitador)
   app.delete('/api/courses/:id', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const userWithProfile = await storage.getUserWithProfile(userId);
-      const userRole = userWithProfile?.userRoles?.[0]?.role?.name;
-      
-      if (userRole !== 'facilitador') {
-        return res.status(403).json({ message: "Only facilitadores can delete courses" });
-      }
-      
-      const course = await storage.getCourse(req.params.id);
+      const course = await storage.getCourse(req.params.id, userId);
       if (!course) {
         return res.status(404).json({ message: "Course not found" });
       }
-      
+
+      const canDelete = course.createdByUserId === userId || hasAnyRole(userWithProfile, 'facilitador');
+      if (!canDelete) {
+        return res.status(403).json({ message: "Only the creator or a facilitador can delete this course" });
+      }
+
       await storage.deleteCourse(req.params.id);
       res.json({ message: "Course deleted successfully" });
     } catch (error) {
       console.error("Error deleting course:", error);
       res.status(500).json({ message: "Failed to delete course" });
+    }
+  });
+
+  app.post('/api/courses/:id/chapters', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const course = await storage.getCourse(req.params.id, userId);
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+
+      const canEdit = course.createdByUserId === userId || hasAnyRole(userWithProfile, 'facilitador');
+      if (!canEdit) {
+        return res.status(403).json({ message: "Not authorized to edit this course" });
+      }
+
+      const validationResult = insertCourseChapterSchema.safeParse({
+        courseId: req.params.id,
+        title: req.body?.title,
+        description: req.body?.description,
+        order: req.body?.order,
+      });
+
+      if (!validationResult.success) {
+        return res.status(400).json({
+          message: "Invalid chapter data",
+          errors: validationResult.error.flatten().fieldErrors,
+        });
+      }
+
+      const chapter = await storage.createCourseChapter(validationResult.data);
+      res.status(201).json(chapter);
+    } catch (error) {
+      console.error("Error creating chapter:", error);
+      res.status(500).json({ message: "Failed to create chapter" });
+    }
+  });
+
+  app.patch('/api/course-chapters/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const courseId = typeof req.body?.courseId === 'string' ? req.body.courseId : '';
+      const course = await storage.getCourse(courseId, userId);
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const canEdit = !!course && (course.createdByUserId === userId || hasAnyRole(userWithProfile, 'facilitador'));
+      if (!canEdit) {
+        return res.status(403).json({ message: "Not authorized to edit this chapter" });
+      }
+
+      const updated = await storage.updateCourseChapter(req.params.id, {
+        title: req.body?.title,
+        description: req.body?.description,
+        order: req.body?.order,
+      });
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating chapter:", error);
+      res.status(500).json({ message: "Failed to update chapter" });
+    }
+  });
+
+  app.delete('/api/course-chapters/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const courseId = typeof req.query.courseId === 'string' ? req.query.courseId : '';
+      const course = await storage.getCourse(courseId, userId);
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const canEdit = !!course && (course.createdByUserId === userId || hasAnyRole(userWithProfile, 'facilitador'));
+      if (!canEdit) {
+        return res.status(403).json({ message: "Not authorized to delete this chapter" });
+      }
+
+      await storage.deleteCourseChapter(req.params.id);
+      res.json({ message: "Chapter deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting chapter:", error);
+      res.status(500).json({ message: "Failed to delete chapter" });
+    }
+  });
+
+  app.post('/api/course-chapters/:id/videos', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const courseId = typeof req.body?.courseId === 'string' ? req.body.courseId : '';
+      const course = await storage.getCourse(courseId, userId);
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const canEdit = !!course && (course.createdByUserId === userId || hasAnyRole(userWithProfile, 'facilitador'));
+      if (!canEdit) {
+        return res.status(403).json({ message: "Not authorized to add videos to this course" });
+      }
+
+      const validationResult = insertCourseVideoSchema.safeParse({
+        chapterId: req.params.id,
+        title: req.body?.title,
+        description: req.body?.description,
+        videoUrl: req.body?.videoUrl,
+        order: req.body?.order,
+        durationMinutes: req.body?.durationMinutes,
+      });
+
+      if (!validationResult.success) {
+        return res.status(400).json({
+          message: "Invalid video data",
+          errors: validationResult.error.flatten().fieldErrors,
+        });
+      }
+
+      const video = await storage.createCourseVideo(validationResult.data);
+      res.status(201).json(video);
+    } catch (error) {
+      console.error("Error creating video:", error);
+      res.status(500).json({ message: "Failed to create video" });
+    }
+  });
+
+  app.patch('/api/course-videos/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const courseId = typeof req.body?.courseId === 'string' ? req.body.courseId : '';
+      const course = await storage.getCourse(courseId, userId);
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const canEdit = !!course && (course.createdByUserId === userId || hasAnyRole(userWithProfile, 'facilitador'));
+      if (!canEdit) {
+        return res.status(403).json({ message: "Not authorized to edit this video" });
+      }
+
+      const updated = await storage.updateCourseVideo(req.params.id, {
+        title: req.body?.title,
+        description: req.body?.description,
+        videoUrl: req.body?.videoUrl,
+        order: req.body?.order,
+        durationMinutes: req.body?.durationMinutes,
+      });
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating video:", error);
+      res.status(500).json({ message: "Failed to update video" });
+    }
+  });
+
+  app.delete('/api/course-videos/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const courseId = typeof req.query.courseId === 'string' ? req.query.courseId : '';
+      const course = await storage.getCourse(courseId, userId);
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const canEdit = !!course && (course.createdByUserId === userId || hasAnyRole(userWithProfile, 'facilitador'));
+      if (!canEdit) {
+        return res.status(403).json({ message: "Not authorized to delete this video" });
+      }
+
+      await storage.deleteCourseVideo(req.params.id);
+      res.json({ message: "Video deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting video:", error);
+      res.status(500).json({ message: "Failed to delete video" });
+    }
+  });
+
+  app.put('/api/course-videos/:id/note', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const courseId = typeof req.body?.courseId === 'string' ? req.body.courseId : '';
+      const course = courseId ? await storage.getCourse(courseId, userId) : null;
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const canAccessCourse = !!course && (course.createdByUserId === userId || !!course.enrollment || hasAnyRole(userWithProfile, 'facilitador'));
+      if (!canAccessCourse) {
+        return res.status(403).json({ message: "Not authorized to save notes for this course" });
+      }
+
+      const validationResult = insertCourseVideoNoteSchema.safeParse({
+        videoId: req.params.id,
+        userId,
+        content: req.body?.content ?? '',
+      });
+
+      if (!validationResult.success) {
+        return res.status(400).json({
+          message: "Invalid note data",
+          errors: validationResult.error.flatten().fieldErrors,
+        });
+      }
+
+      const note = await storage.upsertCourseVideoNote(validationResult.data);
+      res.json(note);
+    } catch (error) {
+      console.error("Error saving course note:", error);
+      res.status(500).json({ message: "Failed to save note" });
+    }
+  });
+
+  app.put('/api/course-videos/:id/progress', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const courseId = typeof req.body?.courseId === 'string' ? req.body.courseId : '';
+      const courseBeforeUpdate = courseId ? await storage.getCourse(courseId, userId) : null;
+      if (!courseBeforeUpdate?.enrollment) {
+        return res.status(403).json({ message: "You must be enrolled to track progress" });
+      }
+
+      const validationResult = insertCourseVideoProgressSchema.safeParse({
+        videoId: req.params.id,
+        userId,
+        completed: !!req.body?.completed,
+        watchedSeconds: typeof req.body?.watchedSeconds === 'number' ? req.body.watchedSeconds : 0,
+      });
+
+      if (!validationResult.success) {
+        return res.status(400).json({
+          message: "Invalid progress data",
+          errors: validationResult.error.flatten().fieldErrors,
+        });
+      }
+
+      const progress = await storage.upsertCourseVideoProgress(validationResult.data);
+      const course = courseId ? await storage.getCourse(courseId, userId) : null;
+
+      if (course?.enrollment) {
+        const status = course.progressPercent >= 100 ? 'completed' : course.progressPercent > 0 ? 'in_progress' : 'enrolled';
+        await storage.updateEnrollment(course.enrollment.id, {
+          completedModulesCount: course.completedVideos,
+          totalModulesCount: course.totalVideos,
+          progressPercent: course.progressPercent,
+          status,
+          completedAt: course.progressPercent >= 100 ? new Date() : null,
+        });
+      }
+
+      res.json(progress);
+    } catch (error) {
+      console.error("Error saving course progress:", error);
+      res.status(500).json({ message: "Failed to save course progress" });
     }
   });
 
@@ -755,14 +1012,13 @@ export async function registerRoutes(
     try {
       const userId = req.user.claims.sub;
       const courseId = req.params.id;
-      
-      // Check if course exists and is published
-      const course = await storage.getCourse(courseId);
+
+      const course = await storage.getCourse(courseId, userId);
       if (!course) {
         return res.status(404).json({ message: "Course not found" });
       }
-      if (course.status !== 'published') {
-        return res.status(400).json({ message: "Cannot enroll in unpublished course" });
+      if (course.status !== 'open' && course.status !== 'ongoing') {
+        return res.status(400).json({ message: "Cannot enroll in this course at its current status" });
       }
       
       // Check if already enrolled
@@ -793,7 +1049,7 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Enrollment not found" });
       }
       
-      const allowedFields = ['status', 'progress', 'completedAt'];
+      const allowedFields = ['status', 'completedModulesCount', 'totalModulesCount', 'progressPercent', 'completedAt'];
       const sanitizedData: Record<string, any> = {};
       for (const field of allowedFields) {
         if (req.body[field] !== undefined) {

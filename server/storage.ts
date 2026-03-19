@@ -9,6 +9,11 @@ import {
   projectJoinRequests,
   notifications,
   courses,
+  courseModules,
+  courseChapters,
+  courseVideos,
+  courseVideoNotes,
+  courseVideoProgress,
   courseEnrollments,
   mentorships,
   mentorshipSessions,
@@ -43,7 +48,18 @@ import {
   type InsertNotification,
   type Course,
   type InsertCourse,
-  type CourseWithInstructor,
+  type CourseWithCreator,
+  type CourseWithDetails,
+  type CourseChapter,
+  type InsertCourseChapter,
+  type CourseChapterWithVideos,
+  type CourseVideo,
+  type InsertCourseVideo,
+  type CourseVideoWithDetails,
+  type InsertCourseVideoNote,
+  type CourseVideoNote,
+  type InsertCourseVideoProgress,
+  type CourseVideoProgress,
   type CourseEnrollment,
   type InsertCourseEnrollment,
   type EnrollmentWithCourse,
@@ -151,11 +167,20 @@ export interface IStorage {
   markNotificationRead(id: string, userId: string): Promise<Notification | undefined>;
   
   // Course operations
-  getCourses(includeUnpublished?: boolean): Promise<CourseWithInstructor[]>;
-  getCourse(id: string): Promise<CourseWithInstructor | undefined>;
-  createCourse(course: InsertCourse): Promise<CourseWithInstructor>;
-  updateCourse(id: string, course: Partial<InsertCourse>): Promise<CourseWithInstructor | undefined>;
+  getCourses(includeUnpublished?: boolean): Promise<CourseWithCreator[]>;
+  getCourse(id: string, userId?: string): Promise<CourseWithDetails | undefined>;
+  createCourse(course: InsertCourse): Promise<CourseWithCreator>;
+  updateCourse(id: string, course: Partial<InsertCourse>): Promise<CourseWithCreator | undefined>;
   deleteCourse(id: string): Promise<boolean>;
+  getCourseChapters(courseId: string, userId?: string): Promise<CourseChapterWithVideos[]>;
+  createCourseChapter(chapter: InsertCourseChapter): Promise<CourseChapter>;
+  updateCourseChapter(id: string, chapter: Partial<InsertCourseChapter>): Promise<CourseChapter | undefined>;
+  deleteCourseChapter(id: string): Promise<boolean>;
+  createCourseVideo(video: InsertCourseVideo): Promise<CourseVideo>;
+  updateCourseVideo(id: string, video: Partial<InsertCourseVideo>): Promise<CourseVideo | undefined>;
+  deleteCourseVideo(id: string): Promise<boolean>;
+  upsertCourseVideoNote(note: InsertCourseVideoNote): Promise<CourseVideoNote>;
+  upsertCourseVideoProgress(progress: InsertCourseVideoProgress): Promise<CourseVideoProgress>;
   
   // Enrollment operations
   getEnrollmentsByUser(userId: string): Promise<EnrollmentWithCourse[]>;
@@ -530,9 +555,9 @@ export class DatabaseStorage implements IStorage {
 
     // Sample courses
     const sampleCourses = [
-      { title: 'Fundamentos de Emprendimiento Social', description: 'Curso introductorio sobre como crear y gestionar proyectos de impacto social', instructorId: userId, duration: '8 semanas', level: 'principiante', category: 'emprendimiento', isPublished: 'true' as const },
-      { title: 'Gestion de Proyectos Comunitarios', description: 'Metodologias y herramientas para gestionar proyectos de desarrollo comunitario', instructorId: userId, duration: '6 semanas', level: 'intermedio', category: 'gestion', isPublished: 'true' as const },
-      { title: 'Financiamiento para Impacto', description: 'Estrategias de financiamiento y recaudacion de fondos para proyectos sociales', instructorId: userId, duration: '4 semanas', level: 'avanzado', category: 'finanzas', isPublished: 'true' as const },
+      { title: 'Fundamentos de Emprendimiento Social', description: 'Curso introductorio sobre como crear y gestionar proyectos de impacto social', createdByUserId: userId, durationHours: 12, status: 'open' as const },
+      { title: 'Gestion de Proyectos Comunitarios', description: 'Metodologias y herramientas para gestionar proyectos de desarrollo comunitario', createdByUserId: userId, durationHours: 10, status: 'open' as const },
+      { title: 'Financiamiento para Impacto', description: 'Estrategias de financiamiento y recaudacion de fondos para proyectos sociales', createdByUserId: userId, durationHours: 8, status: 'ongoing' as const },
     ];
 
     let courseCount = 0;
@@ -827,54 +852,105 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Course operations
-  async getCourses(includeUnpublished: boolean = false): Promise<CourseWithInstructor[]> {
-    let courseList;
-    if (includeUnpublished) {
-      courseList = await db
-        .select()
-        .from(courses)
-        .orderBy(desc(courses.createdAt));
-    } else {
-      courseList = await db
-        .select()
-        .from(courses)
-        .where(eq(courses.status, 'published'))
-        .orderBy(desc(courses.createdAt));
-    }
-    
-    const coursesWithInstructors = await Promise.all(
-      courseList.map(async (course) => {
-        const instructor = await this.getUser(course.instructorId);
-        return { ...course, instructor };
-      })
-    );
-    
-    return coursesWithInstructors;
+  private async enrichCourse(course: Course): Promise<CourseWithCreator> {
+    const createdBy = await this.getUser(course.createdByUserId);
+    return { ...course, createdBy };
   }
 
-  async getCourse(id: string): Promise<CourseWithInstructor | undefined> {
+  private async enrichCourseVideo(video: CourseVideo, userId?: string): Promise<CourseVideoWithDetails> {
+    if (!userId) {
+      return { ...video, note: null, progress: null };
+    }
+
+    const [note] = await db
+      .select()
+      .from(courseVideoNotes)
+      .where(and(eq(courseVideoNotes.videoId, video.id), eq(courseVideoNotes.userId, userId)));
+
+    const [progress] = await db
+      .select()
+      .from(courseVideoProgress)
+      .where(and(eq(courseVideoProgress.videoId, video.id), eq(courseVideoProgress.userId, userId)));
+
+    return { ...video, note: note || null, progress: progress || null };
+  }
+
+  async getCourseChapters(courseId: string, userId?: string): Promise<CourseChapterWithVideos[]> {
+    const chapters = await db
+      .select()
+      .from(courseChapters)
+      .where(eq(courseChapters.courseId, courseId))
+      .orderBy(courseChapters.order, courseChapters.createdAt);
+
+    return Promise.all(
+      chapters.map(async (chapter) => {
+        const videos = await db
+          .select()
+          .from(courseVideos)
+          .where(eq(courseVideos.chapterId, chapter.id))
+          .orderBy(courseVideos.order, courseVideos.createdAt);
+
+        const videosWithDetails = await Promise.all(
+          videos.map((video) => this.enrichCourseVideo(video, userId))
+        );
+
+        return { ...chapter, videos: videosWithDetails };
+      })
+    );
+  }
+
+  async getCourses(includeUnpublished: boolean = false): Promise<CourseWithCreator[]> {
+    const visibleStatuses: Array<Course["status"]> = ['open', 'ongoing', 'completed'];
+    const courseList = includeUnpublished
+      ? await db.select().from(courses).orderBy(desc(courses.createdAt))
+      : await db
+          .select()
+          .from(courses)
+          .where(or(...visibleStatuses.map((status) => eq(courses.status, status))))
+          .orderBy(desc(courses.createdAt));
+
+    return Promise.all(courseList.map((course) => this.enrichCourse(course)));
+  }
+
+  async getCourse(id: string, userId?: string): Promise<CourseWithDetails | undefined> {
     const [course] = await db
       .select()
       .from(courses)
       .where(eq(courses.id, id));
-    
+
     if (!course) return undefined;
-    
-    const instructor = await this.getUser(course.instructorId);
-    return { ...course, instructor };
+
+    const createdBy = await this.getUser(course.createdByUserId);
+    const chapters = await this.getCourseChapters(course.id, userId);
+    const enrollment = userId ? await this.getEnrollment(course.id, userId) : undefined;
+    const totalVideos = chapters.reduce((sum, chapter) => sum + chapter.videos.length, 0);
+    const completedVideos = chapters.reduce(
+      (sum, chapter) => sum + chapter.videos.filter((video) => video.progress?.completed).length,
+      0
+    );
+    const progressPercent = totalVideos > 0 ? Math.round((completedVideos / totalVideos) * 100) : 0;
+
+    return {
+      ...course,
+      createdBy,
+      chapters,
+      enrollment: enrollment || null,
+      totalVideos,
+      completedVideos,
+      progressPercent,
+    };
   }
 
-  async createCourse(courseData: InsertCourse): Promise<CourseWithInstructor> {
+  async createCourse(courseData: InsertCourse): Promise<CourseWithCreator> {
     const [course] = await db
       .insert(courses)
       .values(courseData)
       .returning();
-    
-    const instructor = await this.getUser(course.instructorId);
-    return { ...course, instructor };
+
+    return this.enrichCourse(course);
   }
 
-  async updateCourse(id: string, courseData: Partial<InsertCourse>): Promise<CourseWithInstructor | undefined> {
+  async updateCourse(id: string, courseData: Partial<InsertCourse>): Promise<CourseWithCreator | undefined> {
     const [course] = await db
       .update(courses)
       .set({
@@ -883,17 +959,129 @@ export class DatabaseStorage implements IStorage {
       })
       .where(eq(courses.id, id))
       .returning();
-    
+
     if (!course) return undefined;
-    
-    const instructor = await this.getUser(course.instructorId);
-    return { ...course, instructor };
+
+    return this.enrichCourse(course);
   }
 
   async deleteCourse(id: string): Promise<boolean> {
+    const chapters = await db.select().from(courseChapters).where(eq(courseChapters.courseId, id));
+    const chapterIds = chapters.map((chapter) => chapter.id);
+
+    for (const chapterId of chapterIds) {
+      const videos = await db.select().from(courseVideos).where(eq(courseVideos.chapterId, chapterId));
+      for (const video of videos) {
+        await db.delete(courseVideoNotes).where(eq(courseVideoNotes.videoId, video.id));
+        await db.delete(courseVideoProgress).where(eq(courseVideoProgress.videoId, video.id));
+      }
+      await db.delete(courseVideos).where(eq(courseVideos.chapterId, chapterId));
+    }
+
+    await db.delete(courseChapters).where(eq(courseChapters.courseId, id));
+    await db.delete(courseModules).where(eq(courseModules.courseId, id));
     await db.delete(courseEnrollments).where(eq(courseEnrollments.courseId, id));
     await db.delete(courses).where(eq(courses.id, id));
     return true;
+  }
+
+  async createCourseChapter(chapterData: InsertCourseChapter): Promise<CourseChapter> {
+    const [chapter] = await db.insert(courseChapters).values(chapterData).returning();
+    return chapter;
+  }
+
+  async updateCourseChapter(id: string, chapterData: Partial<InsertCourseChapter>): Promise<CourseChapter | undefined> {
+    const [chapter] = await db
+      .update(courseChapters)
+      .set({
+        ...chapterData,
+        updatedAt: new Date(),
+      })
+      .where(eq(courseChapters.id, id))
+      .returning();
+    return chapter;
+  }
+
+  async deleteCourseChapter(id: string): Promise<boolean> {
+    const videos = await db.select().from(courseVideos).where(eq(courseVideos.chapterId, id));
+    for (const video of videos) {
+      await db.delete(courseVideoNotes).where(eq(courseVideoNotes.videoId, video.id));
+      await db.delete(courseVideoProgress).where(eq(courseVideoProgress.videoId, video.id));
+    }
+    await db.delete(courseVideos).where(eq(courseVideos.chapterId, id));
+    await db.delete(courseChapters).where(eq(courseChapters.id, id));
+    return true;
+  }
+
+  async createCourseVideo(videoData: InsertCourseVideo): Promise<CourseVideo> {
+    const [video] = await db.insert(courseVideos).values(videoData).returning();
+    return video;
+  }
+
+  async updateCourseVideo(id: string, videoData: Partial<InsertCourseVideo>): Promise<CourseVideo | undefined> {
+    const [video] = await db
+      .update(courseVideos)
+      .set({
+        ...videoData,
+        updatedAt: new Date(),
+      })
+      .where(eq(courseVideos.id, id))
+      .returning();
+    return video;
+  }
+
+  async deleteCourseVideo(id: string): Promise<boolean> {
+    await db.delete(courseVideoNotes).where(eq(courseVideoNotes.videoId, id));
+    await db.delete(courseVideoProgress).where(eq(courseVideoProgress.videoId, id));
+    await db.delete(courseVideos).where(eq(courseVideos.id, id));
+    return true;
+  }
+
+  async upsertCourseVideoNote(noteData: InsertCourseVideoNote): Promise<CourseVideoNote> {
+    const [existing] = await db
+      .select()
+      .from(courseVideoNotes)
+      .where(and(eq(courseVideoNotes.videoId, noteData.videoId), eq(courseVideoNotes.userId, noteData.userId)));
+
+    if (existing) {
+      const [updated] = await db
+        .update(courseVideoNotes)
+        .set({
+          content: noteData.content,
+          updatedAt: new Date(),
+        })
+        .where(eq(courseVideoNotes.id, existing.id))
+        .returning();
+      return updated;
+    }
+
+    const [created] = await db.insert(courseVideoNotes).values(noteData).returning();
+    return created;
+  }
+
+  async upsertCourseVideoProgress(progressData: InsertCourseVideoProgress): Promise<CourseVideoProgress> {
+    const [existing] = await db
+      .select()
+      .from(courseVideoProgress)
+      .where(and(eq(courseVideoProgress.videoId, progressData.videoId), eq(courseVideoProgress.userId, progressData.userId)));
+
+    const values = {
+      ...progressData,
+      lastViewedAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    if (existing) {
+      const [updated] = await db
+        .update(courseVideoProgress)
+        .set(values)
+        .where(eq(courseVideoProgress.id, existing.id))
+        .returning();
+      return updated;
+    }
+
+    const [created] = await db.insert(courseVideoProgress).values(values).returning();
+    return created;
   }
 
   // Enrollment operations
@@ -906,11 +1094,11 @@ export class DatabaseStorage implements IStorage {
     
     const enrollmentsWithCourses = await Promise.all(
       enrollments.map(async (enrollment) => {
-        const [course] = await db
-          .select()
-          .from(courses)
-          .where(eq(courses.id, enrollment.courseId));
-        return { ...enrollment, course };
+        const [course] = await db.select().from(courses).where(eq(courses.id, enrollment.courseId));
+        return {
+          ...enrollment,
+          course: course ? await this.enrichCourse(course) : undefined,
+        };
       })
     );
     
@@ -936,13 +1124,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async enrollUser(courseId: string, userId: string): Promise<CourseEnrollment> {
+    const chapters = await this.getCourseChapters(courseId);
+    const totalVideos = chapters.reduce((sum, chapter) => sum + chapter.videos.length, 0);
     const [enrollment] = await db
       .insert(courseEnrollments)
       .values({
         courseId,
         userId,
         status: 'enrolled',
-        progress: '0',
+        completedModulesCount: 0,
+        totalModulesCount: totalVideos,
+        progressPercent: 0,
+        lastAccessedAt: new Date(),
       })
       .returning();
     return enrollment;
@@ -951,7 +1144,10 @@ export class DatabaseStorage implements IStorage {
   async updateEnrollment(id: string, data: Partial<InsertCourseEnrollment>): Promise<CourseEnrollment | undefined> {
     const [enrollment] = await db
       .update(courseEnrollments)
-      .set(data)
+      .set({
+        ...data,
+        lastAccessedAt: new Date(),
+      })
       .where(eq(courseEnrollments.id, id))
       .returning();
     return enrollment;
