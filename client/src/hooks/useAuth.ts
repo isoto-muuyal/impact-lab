@@ -29,7 +29,7 @@ export function useAuth() {
 
   const hasRole = (roleName: RoleName): boolean => {
     if (!user?.userRoles) return false;
-    return user.userRoles.some((ur: any) => ur.role?.name === roleName);
+    return user.userRoles.some((ur: any) => ur.role?.name === roleName && ur.status === "active");
   };
 
   const hasAnyRole = (roleNames: RoleName[]): boolean => {
@@ -39,7 +39,10 @@ export function useAuth() {
 
   const getUserRoles = (): RoleName[] => {
     if (!user?.userRoles) return [];
-    return user.userRoles.map((ur: any) => ur.role?.name as RoleName).filter(Boolean);
+    return user.userRoles
+      .filter((ur: any) => ur.status === "active")
+      .map((ur: any) => ur.role?.name as RoleName)
+      .filter(Boolean);
   };
 
   return {

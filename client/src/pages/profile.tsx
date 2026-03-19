@@ -15,7 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
-import type { Role } from "@shared/schema";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import type { Role, RoleRequestWithDetails } from "@shared/schema";
 import {
   Form,
   FormControl,
@@ -43,7 +44,9 @@ import {
   Edit,
   X,
   Shield,
-  Check
+  Check,
+  Plus,
+  Paperclip
 } from "lucide-react";
 
 const profileFormSchema = z.object({
@@ -60,6 +63,12 @@ const profileFormSchema = z.object({
 });
 
 type ProfileFormData = z.infer<typeof profileFormSchema>;
+type RoleRequestAttachment = {
+  name: string;
+  type: string;
+  size: number;
+  dataUrl: string;
+};
 
 const timezones = [
   { value: "America/Mexico_City", label: "Ciudad de México (GMT-6)" },
@@ -72,26 +81,31 @@ const timezones = [
 ];
 
 export default function Profile() {
-  const { user, isLoading, hasRole } = useAuth();
+  const { user, isLoading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+  const [isRoleRequestDialogOpen, setIsRoleRequestDialogOpen] = useState(false);
+  const [requestedRoleId, setRequestedRoleId] = useState<string | null>(null);
+  const [roleRequestJustification, setRoleRequestJustification] = useState("");
+  const [roleRequestAttachments, setRoleRequestAttachments] = useState<RoleRequestAttachment[]>([]);
   
-  const isFacilitador = hasRole('facilitador');
-  const selfRoleRestrictionsDisabled = true;
-  const selfAssignableRoles = selfRoleRestrictionsDisabled
-    ? ['usuario', 'mentor', 'facilitador', 'proponente', 'acreditador']
-    : ['usuario', 'proponente'];
+  const isImpactLabAdmin = user?.username === "impactlab";
 
   const { data: allRoles } = useQuery<Role[]>({
     queryKey: ['/api/roles'],
     enabled: !!user,
   });
 
+  const { data: roleRequests } = useQuery<RoleRequestWithDetails[]>({
+    queryKey: ['/api/role-requests/my'],
+    enabled: !!user && !isImpactLabAdmin,
+  });
+
   useEffect(() => {
     if (user?.userRoles) {
-      setSelectedRoles(user.userRoles.map((ur: any) => ur.roleId));
+      setSelectedRoles(user.userRoles.filter((ur: any) => ur.status === "active").map((ur: any) => ur.roleId));
     }
   }, [user]);
 
@@ -198,6 +212,30 @@ export default function Profile() {
     },
   });
 
+  const roleRequestMutation = useMutation({
+    mutationFn: async (payload: { roleId: string; justification: string; attachments: RoleRequestAttachment[] }) => {
+      await apiRequest("POST", "/api/role-requests", payload);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['/api/role-requests/my'] });
+      setIsRoleRequestDialogOpen(false);
+      setRequestedRoleId(null);
+      setRoleRequestJustification("");
+      setRoleRequestAttachments([]);
+      toast({
+        title: "Solicitud enviada",
+        description: "El admin revisará tu solicitud de rol.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "No se pudo enviar la solicitud de rol.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleRoleToggle = (roleId: string) => {
     setSelectedRoles(prev => {
       if (prev.includes(roleId)) {
@@ -220,9 +258,57 @@ export default function Profile() {
     updateRolesMutation.mutate(selectedRoles);
   };
 
+  const handleOpenRoleRequest = (roleId: string) => {
+    setRequestedRoleId(roleId);
+    setRoleRequestJustification("");
+    setRoleRequestAttachments([]);
+    setIsRoleRequestDialogOpen(true);
+  };
+
+  const handleRoleRequestAttachments = async (files: FileList | null) => {
+    if (!files?.length) return;
+
+    const nextAttachments = await Promise.all(
+      Array.from(files).slice(0, 5).map(
+        (file) =>
+          new Promise<RoleRequestAttachment>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () =>
+              resolve({
+                name: file.name,
+                type: file.type,
+                size: file.size,
+                dataUrl: String(reader.result || ""),
+              });
+            reader.onerror = () => reject(reader.error);
+            reader.readAsDataURL(file);
+          })
+      )
+    );
+
+    setRoleRequestAttachments(nextAttachments);
+  };
+
+  const handleSubmitRoleRequest = () => {
+    if (!requestedRoleId || !roleRequestJustification.trim()) {
+      toast({
+        title: "Error",
+        description: "Debes explicar por qué necesitas el rol.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    roleRequestMutation.mutate({
+      roleId: requestedRoleId,
+      justification: roleRequestJustification.trim(),
+      attachments: roleRequestAttachments,
+    });
+  };
+
   const hasRoleChanges = () => {
     if (!user?.userRoles) return false;
-    const currentRoles = user.userRoles.map((ur: any) => ur.roleId).sort();
+    const currentRoles = user.userRoles.filter((ur: any) => ur.status === "active").map((ur: any) => ur.roleId).sort();
     const newRoles = [...selectedRoles].sort();
     if (currentRoles.length !== newRoles.length) return true;
     return currentRoles.some((id: string, index: number) => id !== newRoles[index]);
@@ -254,6 +340,11 @@ export default function Profile() {
     proponente: "Puede crear proyectos, buscar mentores e inscribirse a cursos",
     acreditador: "Instituto que certifica cursos y mentorias",
   };
+  const grantedRoleIds = new Set(user?.userRoles?.map((ur: any) => ur.roleId) || []);
+  const pendingRoleRequestIds = new Set(
+    roleRequests?.filter((request) => request.status === "pending").map((request) => request.roleId) || []
+  );
+  const requestedRole = allRoles?.find((role) => role.id === requestedRoleId);
 
   const getInitials = () => {
     if (user?.firstName && user?.lastName) {
@@ -612,21 +703,21 @@ export default function Profile() {
         <CardContent>
           <div className="space-y-4">
             {allRoles?.map((role) => {
-              const canSelfAssign = isFacilitador || selfAssignableRoles.includes(role.name);
-              const isPrivileged = !selfAssignableRoles.includes(role.name);
+              const isGranted = grantedRoleIds.has(role.id);
+              const canToggle = isImpactLabAdmin || isGranted;
+              const isPending = pendingRoleRequestIds.has(role.id);
               
               return (
                 <div
                   key={role.id}
-                  className={`flex items-start gap-4 p-4 border rounded-md ${canSelfAssign ? 'hover-elevate cursor-pointer' : 'opacity-60 cursor-not-allowed'}`}
-                  onClick={() => canSelfAssign && handleRoleToggle(role.id)}
+                  className={`flex items-start gap-4 rounded-md border p-4 ${canToggle ? 'hover-elevate' : ''}`}
                   data-testid={`role-option-${role.name}`}
                 >
                   <Checkbox
                     id={`role-${role.id}`}
                     checked={selectedRoles.includes(role.id)}
-                    onCheckedChange={() => canSelfAssign && handleRoleToggle(role.id)}
-                    disabled={!canSelfAssign}
+                    onCheckedChange={() => canToggle && handleRoleToggle(role.id)}
+                    disabled={!canToggle}
                     className="mt-1"
                     data-testid={`checkbox-role-${role.name}`}
                   />
@@ -634,22 +725,30 @@ export default function Profile() {
                     <div className="flex items-center gap-2">
                       <label 
                         htmlFor={`role-${role.id}`}
-                        className={`font-medium ${canSelfAssign ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+                        className={`font-medium ${canToggle ? 'cursor-pointer' : ''}`}
                       >
                         {roleLabels[role.name] || role.name}
                       </label>
-                      {isPrivileged && !isFacilitador && !selfRoleRestrictionsDisabled && (
-                        <span className="px-2 py-0.5 bg-muted text-muted-foreground rounded text-xs">
-                          Requiere facilitador
-                        </span>
-                      )}
+                      {selectedRoles.includes(role.id) ? <Badge variant="secondary">Activo</Badge> : null}
+                      {isGranted && !selectedRoles.includes(role.id) ? <Badge variant="outline">Concedido</Badge> : null}
+                      {isPending ? <Badge variant="outline">Pendiente</Badge> : null}
                     </div>
                     <p className="text-sm text-muted-foreground">
                       {roleDescriptions[role.name] || role.description}
                     </p>
                   </div>
-                  {selectedRoles.includes(role.id) && (
-                    <Check className="h-5 w-5 text-primary" />
+                  {canToggle ? (
+                    selectedRoles.includes(role.id) ? <Check className="h-5 w-5 text-primary" /> : null
+                  ) : isPending ? null : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleOpenRoleRequest(role.id)}
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add role
+                    </Button>
                   )}
                 </div>
               );
@@ -674,6 +773,58 @@ export default function Profile() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={isRoleRequestDialogOpen} onOpenChange={setIsRoleRequestDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Solicitar rol</DialogTitle>
+            <DialogDescription>
+              {requestedRole ? `Explica por qué necesitas el rol de ${roleLabels[requestedRole.name] || requestedRole.name}.` : "Describe tu solicitud."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="role-request-justification">Justificación</Label>
+              <Textarea
+                id="role-request-justification"
+                rows={5}
+                value={roleRequestJustification}
+                onChange={(event) => setRoleRequestJustification(event.target.value)}
+                placeholder="Cuéntanos tu experiencia, por qué necesitas este rol y cómo lo usarás."
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="role-request-attachments">Adjuntos de evidencia</Label>
+              <Input
+                id="role-request-attachments"
+                type="file"
+                multiple
+                onChange={(event) => {
+                  void handleRoleRequestAttachments(event.target.files);
+                }}
+              />
+              {roleRequestAttachments.length > 0 ? (
+                <div className="space-y-2 rounded-md border p-3 text-sm">
+                  {roleRequestAttachments.map((attachment) => (
+                    <div key={attachment.name} className="flex items-center gap-2 text-muted-foreground">
+                      <Paperclip className="h-4 w-4" />
+                      <span>{attachment.name}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setIsRoleRequestDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button type="button" onClick={handleSubmitRoleRequest} disabled={roleRequestMutation.isPending}>
+              {roleRequestMutation.isPending ? "Enviando..." : "Enviar solicitud"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

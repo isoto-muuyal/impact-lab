@@ -4,6 +4,7 @@ import {
   userProfiles,
   roles,
   userRoles,
+  roleRequests,
   projects,
   socialProjectParticipants,
   projectJoinRequests,
@@ -34,7 +35,11 @@ import {
   type InsertUserProfile,
   type Role,
   type UserRole,
+  type InsertUserRole,
   type UserWithProfile,
+  type RoleRequest,
+  type InsertRoleRequest,
+  type RoleRequestWithDetails,
   type Project,
   type InsertProject,
   type ProjectWithOwner,
@@ -136,9 +141,15 @@ export interface IStorage {
   
   // UserRole operations
   getUserRoles(userId: string): Promise<(UserRole & { role?: Role })[]>;
-  assignRole(userId: string, roleId: string): Promise<UserRole>;
+  assignRole(userId: string, roleId: string, status?: string): Promise<UserRole>;
   removeRole(userId: string, roleId: string): Promise<boolean>;
   setUserRoles(userId: string, roleIds: string[]): Promise<(UserRole & { role?: Role })[]>;
+  getRoleRequestsByUser(userId: string): Promise<RoleRequestWithDetails[]>;
+  getRoleRequests(): Promise<RoleRequestWithDetails[]>;
+  getRoleRequest(id: string): Promise<RoleRequestWithDetails | undefined>;
+  getPendingRoleRequest(userId: string, roleId: string): Promise<RoleRequest | undefined>;
+  createRoleRequest(data: InsertRoleRequest): Promise<RoleRequest>;
+  updateRoleRequest(id: string, data: Partial<InsertRoleRequest>): Promise<RoleRequest | undefined>;
   
   // Seed operations
   seedRoles(): Promise<void>;
@@ -430,18 +441,31 @@ export class DatabaseStorage implements IStorage {
       })
     );
 
-    return rolesWithDetails;
+    return rolesWithDetails.sort((a, b) => {
+      if (a.status === b.status) {
+        return new Date(a.assignedAt || a.createdAt || 0).getTime() - new Date(b.assignedAt || b.createdAt || 0).getTime();
+      }
+      return a.status === 'active' ? -1 : 1;
+    });
   }
 
-  async assignRole(userId: string, roleId: string): Promise<UserRole> {
+  async assignRole(userId: string, roleId: string, status: string = 'active'): Promise<UserRole> {
     // Check if already assigned
-    const existing = await db
+    const [existing] = await db
       .select()
       .from(userRoles)
       .where(and(eq(userRoles.userId, userId), eq(userRoles.roleId, roleId)));
     
-    if (existing.length > 0) {
-      return existing[0];
+    if (existing) {
+      const [updated] = await db
+        .update(userRoles)
+        .set({
+          status,
+          assignedAt: existing.assignedAt || new Date(),
+        })
+        .where(eq(userRoles.id, existing.id))
+        .returning();
+      return updated;
     }
     
     const [userRole] = await db
@@ -450,7 +474,7 @@ export class DatabaseStorage implements IStorage {
         userId,
         roleId,
         isPrimary: 'false',
-        status: 'active',
+        status,
       })
       .returning();
     return userRole;
@@ -464,15 +488,95 @@ export class DatabaseStorage implements IStorage {
   }
 
   async setUserRoles(userId: string, roleIds: string[]): Promise<(UserRole & { role?: Role })[]> {
-    // Remove all existing roles
-    await db.delete(userRoles).where(eq(userRoles.userId, userId));
-    
-    // Assign new roles
+    const existingRoles = await db
+      .select()
+      .from(userRoles)
+      .where(eq(userRoles.userId, userId));
+
+    const requestedRoleSet = new Set(roleIds);
+
+    for (const existingRole of existingRoles) {
+      await db
+        .update(userRoles)
+        .set({ status: requestedRoleSet.has(existingRole.roleId) ? 'active' : 'inactive' })
+        .where(eq(userRoles.id, existingRole.id));
+    }
+
     for (const roleId of roleIds) {
-      await this.assignRole(userId, roleId);
+      const existing = existingRoles.find((role) => role.roleId === roleId);
+      if (!existing) {
+        await this.assignRole(userId, roleId, 'active');
+      }
     }
     
     return this.getUserRoles(userId);
+  }
+
+  private async enrichRoleRequest(roleRequest: RoleRequest): Promise<RoleRequestWithDetails> {
+    return {
+      ...roleRequest,
+      user: await this.getUser(roleRequest.userId),
+      role: (await db.select().from(roles).where(eq(roles.id, roleRequest.roleId)))[0],
+      reviewedBy: roleRequest.reviewedByUserId ? await this.getUser(roleRequest.reviewedByUserId) : null,
+    };
+  }
+
+  async getRoleRequestsByUser(userId: string): Promise<RoleRequestWithDetails[]> {
+    const requests = await db
+      .select()
+      .from(roleRequests)
+      .where(eq(roleRequests.userId, userId))
+      .orderBy(desc(roleRequests.createdAt));
+
+    return Promise.all(requests.map((request) => this.enrichRoleRequest(request)));
+  }
+
+  async getRoleRequests(): Promise<RoleRequestWithDetails[]> {
+    const requests = await db
+      .select()
+      .from(roleRequests)
+      .orderBy(desc(roleRequests.createdAt));
+
+    return Promise.all(requests.map((request) => this.enrichRoleRequest(request)));
+  }
+
+  async getRoleRequest(id: string): Promise<RoleRequestWithDetails | undefined> {
+    const [request] = await db
+      .select()
+      .from(roleRequests)
+      .where(eq(roleRequests.id, id));
+
+    return request ? this.enrichRoleRequest(request) : undefined;
+  }
+
+  async getPendingRoleRequest(userId: string, roleId: string): Promise<RoleRequest | undefined> {
+    const [request] = await db
+      .select()
+      .from(roleRequests)
+      .where(and(
+        eq(roleRequests.userId, userId),
+        eq(roleRequests.roleId, roleId),
+        eq(roleRequests.status, 'pending'),
+      ));
+    return request;
+  }
+
+  async createRoleRequest(data: InsertRoleRequest): Promise<RoleRequest> {
+    const [request] = await db.insert(roleRequests).values(data).returning();
+    return request;
+  }
+
+  async updateRoleRequest(id: string, data: Partial<InsertRoleRequest>): Promise<RoleRequest | undefined> {
+    const [request] = await db
+      .update(roleRequests)
+      .set({
+        ...data,
+        updatedAt: new Date(),
+        reviewedAt: data.status && data.status !== 'pending' ? new Date() : undefined,
+      })
+      .where(eq(roleRequests.id, id))
+      .returning();
+    return request;
   }
 
   // Seed roles

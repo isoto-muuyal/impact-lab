@@ -7,6 +7,7 @@ import {
   insertActivityLogSchema,
   insertProjectSchema, 
   insertProjectJoinRequestSchema,
+  insertRoleRequestSchema,
   insertCourseSchema, 
   insertCourseChapterSchema,
   insertCourseVideoSchema,
@@ -239,13 +240,10 @@ export async function registerRoutes(
       const allRoles = await storage.getRoles();
       const roleMap = new Map(allRoles.map(r => [r.id, r]));
       
-      // Temporary testing bypass: allow users to toggle any of their own roles.
-      const selfRoleRestrictionsDisabled = true;
       const userWithProfile = await storage.getUserWithProfile(userId);
+      const isAdmin = userWithProfile?.username === 'impactlab';
       const isFacilitador = hasAnyRole(userWithProfile, 'facilitador');
-      const selfAssignableRoles = selfRoleRestrictionsDisabled
-        ? allRoles.map((role) => role.name)
-        : ['usuario', 'proponente'];
+      const grantedRoleIds = new Set((userWithProfile?.userRoles || []).map((userRole: any) => userRole.roleId));
       
       // Validate requested roles
       for (const roleId of roleIds) {
@@ -254,10 +252,9 @@ export async function registerRoutes(
           return res.status(400).json({ message: `Invalid role ID: ${roleId}` });
         }
         
-        // If user is not facilitador, they can only assign self-assignable roles
-        if (!isFacilitador && !selfAssignableRoles.includes(role.name)) {
+        if (!isAdmin && !isFacilitador && !grantedRoleIds.has(roleId)) {
           return res.status(403).json({ 
-            message: `Cannot self-assign privileged role: ${role.name}. Contact a facilitator.` 
+            message: `Cannot enable a role that has not been granted by admin: ${role.name}.` 
           });
         }
       }
@@ -267,6 +264,114 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error updating user roles:", error);
       res.status(500).json({ message: "Failed to update roles" });
+    }
+  });
+
+  app.get('/api/role-requests/my', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const requests = await storage.getRoleRequestsByUser(userId);
+      res.json(requests);
+    } catch (error) {
+      console.error("Error fetching role requests:", error);
+      res.status(500).json({ message: "Failed to fetch role requests" });
+    }
+  });
+
+  app.post('/api/role-requests', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const roleId = typeof req.body?.roleId === 'string' ? req.body.roleId : '';
+      const justification = typeof req.body?.justification === 'string' ? req.body.justification.trim() : '';
+      const attachments = Array.isArray(req.body?.attachments) ? req.body.attachments : [];
+
+      if (!roleId || !justification) {
+        return res.status(400).json({ message: "Role and justification are required" });
+      }
+
+      const role = await storage.getRoles().then((allRoles) => allRoles.find((item) => item.id === roleId));
+      if (!role) {
+        return res.status(400).json({ message: "Invalid role" });
+      }
+
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      if (userWithProfile?.userRoles?.some((userRole: any) => userRole.roleId === roleId)) {
+        return res.status(400).json({ message: "This role has already been granted to you" });
+      }
+
+      const pendingRequest = await storage.getPendingRoleRequest(userId, roleId);
+      if (pendingRequest) {
+        return res.status(400).json({ message: "You already have a pending request for this role" });
+      }
+
+      const validationResult = insertRoleRequestSchema.safeParse({
+        userId,
+        roleId,
+        justification,
+        attachmentsJson: JSON.stringify(attachments),
+        status: 'pending',
+        decisionNote: null,
+        reviewedByUserId: null,
+      });
+
+      if (!validationResult.success) {
+        return res.status(400).json({
+          message: "Invalid role request",
+          errors: validationResult.error.flatten().fieldErrors,
+        });
+      }
+
+      const request = await storage.createRoleRequest(validationResult.data);
+      res.status(201).json(request);
+    } catch (error) {
+      console.error("Error creating role request:", error);
+      res.status(500).json({ message: "Failed to create role request" });
+    }
+  });
+
+  app.get('/api/admin/role-requests', isImpactLabAdmin, async (_req, res) => {
+    try {
+      const requests = await storage.getRoleRequests();
+      res.json(requests);
+    } catch (error) {
+      console.error("Error fetching admin role requests:", error);
+      res.status(500).json({ message: "Failed to fetch role requests" });
+    }
+  });
+
+  app.patch('/api/admin/role-requests/:id', isImpactLabAdmin, async (req: any, res) => {
+    try {
+      const reviewerId = req.user.claims.sub;
+      const status = typeof req.body?.status === 'string' ? req.body.status : '';
+      const decisionNote = typeof req.body?.decisionNote === 'string' ? req.body.decisionNote.trim() : '';
+      const request = await storage.getRoleRequest(req.params.id);
+
+      if (!request) {
+        return res.status(404).json({ message: "Role request not found" });
+      }
+
+      if (request.status !== 'pending') {
+        return res.status(400).json({ message: "This request has already been reviewed" });
+      }
+
+      if (status !== 'approved' && status !== 'rejected') {
+        return res.status(400).json({ message: "Status must be approved or rejected" });
+      }
+
+      const updated = await storage.updateRoleRequest(req.params.id, {
+        status,
+        decisionNote: decisionNote || null,
+        reviewedByUserId: reviewerId,
+      });
+
+      if (status === 'approved') {
+        await storage.assignRole(request.userId, request.roleId, 'inactive');
+      }
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Error reviewing role request:", error);
+      res.status(500).json({ message: "Failed to review role request" });
     }
   });
 

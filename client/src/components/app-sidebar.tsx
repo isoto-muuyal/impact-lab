@@ -30,7 +30,8 @@ import {
   Building2,
   Trophy,
   FolderKanban,
-  Shield
+  Shield,
+  UserPlus
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -141,14 +142,24 @@ export function AppSidebar() {
                 </SidebarMenuItem>
               ))}
               {isImpactLabAdmin ? (
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={location === "/admin"}>
-                    <Link href="/admin" data-testid="link-nav-admin">
-                      <Shield className="h-4 w-4" />
-                      <span>Admin</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={location === "/admin"}>
+                      <Link href="/admin" data-testid="link-nav-admin">
+                        <Shield className="h-4 w-4" />
+                        <span>Admin</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={location === "/admin?tab=role-requests"}>
+                      <Link href="/admin?tab=role-requests" data-testid="link-nav-admin-role-requests">
+                        <UserPlus className="h-4 w-4" />
+                        <span>Role Requests</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </>
               ) : null}
             </SidebarMenu>
           </SidebarGroupContent>

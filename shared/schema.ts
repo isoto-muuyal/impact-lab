@@ -108,6 +108,22 @@ export const userRoles = pgTable("user_roles", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const roleRequestStatusEnum = pgEnum('role_request_status', ['pending', 'approved', 'rejected']);
+
+export const roleRequests = pgTable("role_requests", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  roleId: varchar("role_id").notNull().references(() => roles.id),
+  justification: text("justification").notNull(),
+  attachmentsJson: text("attachments_json"),
+  status: roleRequestStatusEnum("status").notNull().default('pending'),
+  decisionNote: text("decision_note"),
+  reviewedByUserId: varchar("reviewed_by_user_id").references(() => users.id),
+  reviewedAt: timestamp("reviewed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
   profile: one(userProfiles, {
@@ -115,6 +131,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     references: [userProfiles.userId],
   }),
   userRoles: many(userRoles),
+  roleRequests: many(roleRequests),
 }));
 
 export const userProfilesRelations = relations(userProfiles, ({ one }) => ({
@@ -126,6 +143,7 @@ export const userProfilesRelations = relations(userProfiles, ({ one }) => ({
 
 export const rolesRelations = relations(roles, ({ many }) => ({
   userRoles: many(userRoles),
+  roleRequests: many(roleRequests),
 }));
 
 export const userRolesRelations = relations(userRoles, ({ one }) => ({
@@ -136,6 +154,21 @@ export const userRolesRelations = relations(userRoles, ({ one }) => ({
   role: one(roles, {
     fields: [userRoles.roleId],
     references: [roles.id],
+  }),
+}));
+
+export const roleRequestsRelations = relations(roleRequests, ({ one }) => ({
+  user: one(users, {
+    fields: [roleRequests.userId],
+    references: [users.id],
+  }),
+  role: one(roles, {
+    fields: [roleRequests.roleId],
+    references: [roles.id],
+  }),
+  reviewedBy: one(users, {
+    fields: [roleRequests.reviewedByUserId],
+    references: [users.id],
   }),
 }));
 
@@ -168,6 +201,13 @@ export const insertUserRoleSchema = createInsertSchema(userRoles).omit({
   createdAt: true,
 });
 
+export const insertRoleRequestSchema = createInsertSchema(roleRequests).omit({
+  id: true,
+  reviewedAt: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -184,6 +224,9 @@ export type InsertRole = z.infer<typeof insertRoleSchema>;
 
 export type UserRole = typeof userRoles.$inferSelect;
 export type InsertUserRole = z.infer<typeof insertUserRoleSchema>;
+
+export type RoleRequest = typeof roleRequests.$inferSelect;
+export type InsertRoleRequest = z.infer<typeof insertRoleRequestSchema>;
 
 // Project status enum
 export const projectStatusEnum = pgEnum('project_status', ['draft', 'active', 'completed', 'paused', 'cancelled']);
@@ -309,6 +352,12 @@ export type InsertProjectJoinRequest = z.infer<typeof insertProjectJoinRequestSc
 export type UserWithProfile = User & {
   profile?: UserProfile | null;
   userRoles?: (UserRole & { role?: Role })[];
+};
+
+export type RoleRequestWithDetails = RoleRequest & {
+  user?: User;
+  role?: Role;
+  reviewedBy?: User | null;
 };
 
 export type ProjectWithOwner = Project & {

@@ -1,13 +1,15 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { BarChart3, Lock, MousePointerClick, ShieldAlert, UserRound } from "lucide-react";
+import { BarChart3, Copy, Lock, MousePointerClick, ShieldAlert, UserRound } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type ActivityRange = "week" | "month" | "all";
 
@@ -40,10 +42,39 @@ type ActivityReport = {
   topButtons: ActivityAggregate[];
 };
 
+type RoleRequestAttachment = {
+  name: string;
+  type: string;
+  size: number;
+  dataUrl: string;
+};
+
+type RoleRequestEntry = {
+  id: string;
+  justification: string;
+  attachmentsJson?: string | null;
+  status: "pending" | "approved" | "rejected";
+  decisionNote?: string | null;
+  createdAt?: string | null;
+  user?: {
+    username?: string | null;
+    email?: string | null;
+  } | null;
+  role?: {
+    id: string;
+    name: string;
+  } | null;
+};
+
 export default function AdminPage() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const [range, setRange] = useState<ActivityRange>("week");
+  const [activeTab, setActiveTab] = useState(() => {
+    if (typeof window === "undefined") return "activity";
+    return new URLSearchParams(window.location.search).get("tab") === "role-requests" ? "role-requests" : "activity";
+  });
   const [credentials, setCredentials] = useState({ username: "impactlab", password: "impactlab" });
+  const [decisionNotes, setDecisionNotes] = useState<Record<string, string>>({});
   const isImpactLabAdmin = user?.username === "impactlab";
 
   const loginMutation = useMutation({
@@ -69,6 +100,21 @@ export default function AdminPage() {
       return res.json();
     },
     enabled: isImpactLabAdmin,
+  });
+
+  const roleRequestsQuery = useQuery<RoleRequestEntry[]>({
+    queryKey: ["/api/admin/role-requests"],
+    enabled: isImpactLabAdmin,
+  });
+
+  const reviewRoleRequestMutation = useMutation({
+    mutationFn: async ({ id, status, decisionNote }: { id: string; status: "approved" | "rejected"; decisionNote: string }) => {
+      await apiRequest("PATCH", `/api/admin/role-requests/${id}`, { status, decisionNote });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/admin/role-requests"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+    },
   });
 
   const logs = reportQuery.data?.logs ?? [];
@@ -148,67 +194,181 @@ export default function AdminPage() {
           <h1 className="text-3xl font-semibold">Admin Activity</h1>
           <p className="text-muted-foreground">Tracking report for {reportTitle.toLowerCase()}.</p>
         </div>
-        <div className="flex gap-2">
-          <RangeButton active={range === "week"} onClick={() => setRange("week")}>This Week</RangeButton>
-          <RangeButton active={range === "month"} onClick={() => setRange("month")}>This Month</RangeButton>
-          <RangeButton active={range === "all"} onClick={() => setRange("all")}>All</RangeButton>
-        </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <SummaryCard title="Tracked Events" value={String(logs.length)} icon={<BarChart3 className="h-5 w-5" />} />
-        <SummaryCard title="Top Pages" value={String(topPages.length)} icon={<UserRound className="h-5 w-5" />} />
-        <SummaryCard title="Top Buttons" value={String(topButtons.length)} icon={<MousePointerClick className="h-5 w-5" />} />
-      </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="activity">Site Stats</TabsTrigger>
+          <TabsTrigger value="role-requests">Role Requests</TabsTrigger>
+        </TabsList>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <RankedList title="Top 10 Pages Visited" items={topPages} />
-        <RankedList title="Top 10 Buttons Clicked" items={topButtons} />
-      </div>
+        <TabsContent value="activity" className="space-y-6 mt-6">
+          <div className="flex gap-2">
+            <RangeButton active={range === "week"} onClick={() => setRange("week")}>This Week</RangeButton>
+            <RangeButton active={range === "month"} onClick={() => setRange("month")}>This Month</RangeButton>
+            <RangeButton active={range === "all"} onClick={() => setRange("all")}>All</RangeButton>
+          </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Activity Log</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {reportQuery.isLoading ? (
-            <p>Loading activity...</p>
-          ) : reportQuery.error ? (
-            <p className="text-destructive">Failed to load activity report.</p>
+          <div className="grid gap-4 md:grid-cols-3">
+            <SummaryCard title="Tracked Events" value={String(logs.length)} icon={<BarChart3 className="h-5 w-5" />} />
+            <SummaryCard title="Top Pages" value={String(topPages.length)} icon={<UserRound className="h-5 w-5" />} />
+            <SummaryCard title="Top Buttons" value={String(topButtons.length)} icon={<MousePointerClick className="h-5 w-5" />} />
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            <RankedList title="Top 10 Pages Visited" items={topPages} />
+            <RankedList title="Top 10 Buttons Clicked" items={topButtons} />
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Activity Log</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {reportQuery.isLoading ? (
+                <p>Loading activity...</p>
+              ) : reportQuery.error ? (
+                <p className="text-destructive">Failed to load activity report.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>When</TableHead>
+                        <TableHead>User</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Path</TableHead>
+                        <TableHead>Button</TableHead>
+                        <TableHead>IP</TableHead>
+                        <TableHead>Location</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {logs.map((log) => (
+                        <TableRow key={log.id}>
+                          <TableCell>{formatDate(log.createdAt)}</TableCell>
+                          <TableCell>{log.user?.username || log.user?.email || "Anonymous"}</TableCell>
+                          <TableCell>
+                            <Badge variant="secondary">{log.activityType}</Badge>
+                          </TableCell>
+                          <TableCell className="font-mono text-xs">{log.path}</TableCell>
+                          <TableCell>{log.buttonLabel || log.buttonId || "-"}</TableCell>
+                          <TableCell className="font-mono text-xs">{log.ipAddress || "-"}</TableCell>
+                          <TableCell>{[log.city, log.region, log.country].filter(Boolean).join(", ") || "-"}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="role-requests" className="space-y-4 mt-6">
+          {roleRequestsQuery.isLoading ? (
+            <p>Loading role requests...</p>
+          ) : roleRequestsQuery.error ? (
+            <p className="text-destructive">Failed to load role requests.</p>
+          ) : !roleRequestsQuery.data?.length ? (
+            <Card>
+              <CardContent className="p-6 text-muted-foreground">No role requests yet.</CardContent>
+            </Card>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>When</TableHead>
-                    <TableHead>User</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Path</TableHead>
-                    <TableHead>Button</TableHead>
-                    <TableHead>IP</TableHead>
-                    <TableHead>Location</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {logs.map((log) => (
-                    <TableRow key={log.id}>
-                      <TableCell>{formatDate(log.createdAt)}</TableCell>
-                      <TableCell>{log.user?.username || log.user?.email || "Anonymous"}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{log.activityType}</Badge>
-                      </TableCell>
-                      <TableCell className="font-mono text-xs">{log.path}</TableCell>
-                      <TableCell>{log.buttonLabel || log.buttonId || "-"}</TableCell>
-                      <TableCell className="font-mono text-xs">{log.ipAddress || "-"}</TableCell>
-                      <TableCell>{[log.city, log.region, log.country].filter(Boolean).join(", ") || "-"}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+            roleRequestsQuery.data.map((request) => {
+              const attachments = parseAttachments(request.attachmentsJson);
+              return (
+                <Card key={request.id}>
+                  <CardHeader>
+                    <div className="flex items-center justify-between gap-3">
+                      <CardTitle>{request.role?.name || "Role request"}</CardTitle>
+                      <Badge variant={request.status === "pending" ? "outline" : "secondary"}>{request.status}</Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <p className="text-sm font-medium">Username</p>
+                        <p className="text-sm text-muted-foreground">{request.user?.username || "-"}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Email</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm text-muted-foreground">{request.user?.email || "-"}</p>
+                          {request.user?.email ? (
+                            <Button variant="ghost" size="sm" onClick={() => navigator.clipboard.writeText(request.user?.email || "")}>
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Justification</p>
+                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">{request.justification}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Attachments</p>
+                      {attachments.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">No attachments.</p>
+                      ) : (
+                        <div className="flex flex-wrap gap-2 pt-2">
+                          {attachments.map((attachment) => (
+                            <a key={attachment.name} href={attachment.dataUrl} download={attachment.name} className="text-sm underline text-primary">
+                              {attachment.name}
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">Decision note</p>
+                      <Textarea
+                        rows={3}
+                        value={decisionNotes[request.id] ?? request.decisionNote ?? ""}
+                        onChange={(event) =>
+                          setDecisionNotes((current) => ({
+                            ...current,
+                            [request.id]: event.target.value,
+                          }))
+                        }
+                        disabled={request.status !== "pending"}
+                      />
+                    </div>
+                    {request.status === "pending" ? (
+                      <div className="flex gap-2 justify-end">
+                        <Button
+                          variant="outline"
+                          onClick={() =>
+                            reviewRoleRequestMutation.mutate({
+                              id: request.id,
+                              status: "rejected",
+                              decisionNote: decisionNotes[request.id] || "",
+                            })
+                          }
+                        >
+                          Reject
+                        </Button>
+                        <Button
+                          onClick={() =>
+                            reviewRoleRequestMutation.mutate({
+                              id: request.id,
+                              status: "approved",
+                              decisionNote: decisionNotes[request.id] || "",
+                            })
+                          }
+                        >
+                          Approve
+                        </Button>
+                      </div>
+                    ) : null}
+                  </CardContent>
+                </Card>
+              );
+            })
           )}
-        </CardContent>
-      </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
@@ -272,4 +432,14 @@ function formatDate(value?: string | null) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
+}
+
+function parseAttachments(value?: string | null): RoleRequestAttachment[] {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 }
