@@ -30,6 +30,8 @@ export default function Courses() {
   const { user, hasRole } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("catalog");
+  const [searchInput, setSearchInput] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [detailMode, setDetailMode] = useState<"view" | "manage">("view");
@@ -266,6 +268,24 @@ export default function Courses() {
 
   const isEnrolled = (courseId: string) => enrollments?.some((enrollment) => enrollment.courseId === courseId);
 
+  const filteredCourses = (courses || []).filter((course) => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+    if (!normalizedSearch) return true;
+
+    const creatorName = [course.createdBy?.firstName, course.createdBy?.lastName]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    const creatorEmail = course.createdBy?.email?.toLowerCase() || "";
+
+    return (
+      course.title.toLowerCase().includes(normalizedSearch) ||
+      (course.description || "").toLowerCase().includes(normalizedSearch) ||
+      creatorName.includes(normalizedSearch) ||
+      creatorEmail.includes(normalizedSearch)
+    );
+  });
+
   const managedCourses = courses?.filter((course) => course.createdByUserId === user?.id || hasRole("facilitador")) || [];
 
   const renderCourseCard = (course: CourseWithCreator) => {
@@ -320,7 +340,8 @@ export default function Courses() {
           )}
           {!canManage && (course.status === "open" || course.status === "ongoing") && !enrolled && (
             <Button onClick={() => enrollMutation.mutate(course.id)} disabled={enrollMutation.isPending}>
-              Inscribirme
+              <Plus className="mr-2 h-4 w-4" />
+              Agregar
             </Button>
           )}
           {!canManage && enrolled && (
@@ -454,12 +475,40 @@ export default function Courses() {
         </TabsList>
 
         <TabsContent value="catalog" className="mt-6">
+          <form
+            className="mb-4 flex flex-wrap gap-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              setSearchTerm(searchInput);
+            }}
+          >
+            <Input
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              placeholder="Buscar por curso o mentor"
+              className="max-w-md"
+            />
+            <Button type="submit" variant="outline">
+              Buscar
+            </Button>
+          </form>
+
           {!courses?.length ? (
             <Card>
-              <CardContent className="py-12 text-center text-muted-foreground">No hay cursos disponibles todavía.</CardContent>
+              <CardContent className="py-12 text-center text-muted-foreground">
+                No hay cursos disponibles todavía.
+                <br />
+                Solo ven cursos los usuarios cuando el curso está en estado `Abierto`, `En curso` o `Completado`.
+              </CardContent>
+            </Card>
+          ) : !filteredCourses.length ? (
+            <Card>
+              <CardContent className="py-12 text-center text-muted-foreground">
+                No se encontraron cursos con ese nombre o mentor.
+              </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{courses.map(renderCourseCard)}</div>
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{filteredCourses.map(renderCourseCard)}</div>
           )}
         </TabsContent>
 

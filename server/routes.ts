@@ -792,7 +792,7 @@ export async function registerRoutes(
         title: req.body?.title,
         description: req.body?.description,
         createdByUserId: userId,
-        status: 'draft',
+        status: 'open',
       };
 
       const validationResult = insertCourseSchema.safeParse(courseData);
