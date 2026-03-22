@@ -26,6 +26,79 @@ const statusLabels: Record<string, string> = {
   archived: "Archivado",
 };
 
+function getYoutubeEmbedUrl(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.replace(/^www\./, "");
+
+    if ((host === "youtube.com" || host === "m.youtube.com") && parsed.pathname.startsWith("/embed/")) {
+      return url;
+    }
+
+    if (host === "youtube.com" || host === "m.youtube.com") {
+      const videoId = parsed.searchParams.get("v");
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+    }
+
+    if (host === "youtu.be") {
+      const videoId = parsed.pathname.replace("/", "");
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+function isDirectVideoUrl(url: string): boolean {
+  try {
+    const { pathname } = new URL(url, window.location.origin);
+    return [".mp4", ".webm", ".ogg", ".mov", ".m4v"].some((extension) =>
+      pathname.toLowerCase().endsWith(extension)
+    );
+  } catch {
+    return false;
+  }
+}
+
+function renderVideoContent(url: string, title: string) {
+  const youtubeEmbedUrl = getYoutubeEmbedUrl(url);
+  if (youtubeEmbedUrl) {
+    return (
+      <div className="overflow-hidden rounded-md border bg-black">
+        <iframe
+          src={youtubeEmbedUrl}
+          title={title}
+          className="aspect-video w-full"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
+        />
+      </div>
+    );
+  }
+
+  if (isDirectVideoUrl(url)) {
+    return (
+      <div className="overflow-hidden rounded-md border bg-black">
+        <video controls className="aspect-video w-full">
+          <source src={url} />
+          Tu navegador no pudo reproducir este video.
+        </video>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-md bg-muted p-3 text-sm break-all">
+      <span className="font-medium">Video URL:</span>{" "}
+      <a href={url} target="_blank" rel="noreferrer" className="text-primary underline">
+        Abrir video
+      </a>
+    </div>
+  );
+}
+
 export default function Courses() {
   const { user, hasRole } = useAuth();
   const { toast } = useToast();
@@ -836,9 +909,7 @@ export default function Courses() {
                                     </Badge>
                                   </div>
 
-                                  <div className="rounded-md bg-muted p-3 text-sm break-all">
-                                    <span className="font-medium">Video URL:</span> {video.videoUrl}
-                                  </div>
+                                  {renderVideoContent(video.videoUrl, video.title)}
 
                                   {!!selectedCourse.enrollment && (
                                     <div className="flex items-center gap-3">
