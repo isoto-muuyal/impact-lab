@@ -40,7 +40,7 @@ jobs:
         run: |
           if [ "${GITHUB_REF_NAME}" = "qa" ]; then
             echo "deploy_env=qa" >> "$GITHUB_OUTPUT"
-            echo "remote_dir=~/apps/impactlab-qa" >> "$GITHUB_OUTPUT"
+            echo "remote_dir=/home/${{ secrets.EC2_USERNAME }}/apps/impactlab-qa" >> "$GITHUB_OUTPUT"
             echo "container_name=qa-impactlab" >> "$GITHUB_OUTPUT"
             echo "app_port=5050" >> "$GITHUB_OUTPUT"
             echo "db_host=${QA_DB_HOST}" >> "$GITHUB_OUTPUT"
@@ -53,7 +53,7 @@ jobs:
             echo "admin_db_name=${QA_ADMIN_DB_NAME}" >> "$GITHUB_OUTPUT"
           else
             echo "deploy_env=prod" >> "$GITHUB_OUTPUT"
-            echo "remote_dir=~/apps/impactlab" >> "$GITHUB_OUTPUT"
+            echo "remote_dir=/home/${{ secrets.EC2_USERNAME }}/apps/impactlab" >> "$GITHUB_OUTPUT"
             echo "container_name=impactlab" >> "$GITHUB_OUTPUT"
             echo "app_port=5000" >> "$GITHUB_OUTPUT"
             echo "db_host=${PROD_DB_HOST}" >> "$GITHUB_OUTPUT"
