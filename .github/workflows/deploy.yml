@@ -11,7 +11,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_REGION: ${{ secrets.AWS_REGIONgit }}
       ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
       EC2_PORT: ${{ secrets.EC2_PORT || '22' }}
       DOCKER_NETWORK: ${{ secrets.DOCKER_NETWORK || 'shared_network' }}
