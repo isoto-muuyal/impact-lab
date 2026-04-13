@@ -8,13 +8,14 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/contexts/LanguageContext";
-import { Calendar, Eye, Loader2, MapPin, Plus, Search, Trash2, User, UserPlus, Users } from "lucide-react";
-import type { ProjectJoinRequestWithDetails, ProjectWithOwner, SocialProjectParticipantWithUser } from "@shared/schema";
+import { Calendar, Eye, Loader2, MapPin, Plus, Search, Shield, Trash2, User, UserPlus, Users } from "lucide-react";
+import type { ProjectJoinRequestWithDetails, ProjectMentorMatch, ProjectWithOwner, SocialProjectParticipantWithUser, UserWithProfile } from "@shared/schema";
 
 const statusLabels: Record<string, string> = {
   draft: "Borrador",
@@ -38,6 +39,12 @@ const participantRoleLabels: Record<string, string> = {
   mentor: "Mentor",
   participant: "Participante",
 };
+
+const memberRoleOptions = [
+  { value: "participant", label: "Participante" },
+  { value: "mentor", label: "Mentor" },
+  { value: "proponente", label: "Proponente" },
+] as const;
 
 const joinRequestRoleLabels: Record<string, string> = {
   mentor: "Mentor",
@@ -97,6 +104,30 @@ async function fetchMyJoinRequests(): Promise<ProjectJoinRequestWithDetails[]> {
   return res.json();
 }
 
+async function fetchProjectMentorMatches(projectId: string): Promise<ProjectMentorMatch[]> {
+  const res = await fetch(`/api/projects/${projectId}/mentor-matches`, { credentials: "include" });
+
+  if (!res.ok) {
+    throw new Error(`${res.status}: ${await res.text()}`);
+  }
+
+  return res.json();
+}
+
+async function fetchProjectUsers(projectId: string, search: string): Promise<UserWithProfile[]> {
+  const query = search.trim();
+  const url = query
+    ? `/api/projects/${projectId}/user-search?search=${encodeURIComponent(query)}`
+    : `/api/projects/${projectId}/user-search`;
+  const res = await fetch(url, { credentials: "include" });
+
+  if (!res.ok) {
+    throw new Error(`${res.status}: ${await res.text()}`);
+  }
+
+  return res.json();
+}
+
 export default function Projects() {
   const { user, hasRole } = useAuth();
   const { toast } = useToast();
@@ -107,10 +138,12 @@ export default function Projects() {
   const [isJoinDialogOpen, setIsJoinDialogOpen] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [memberSearchQuery, setMemberSearchQuery] = useState("");
   const [joinRequestedRole, setJoinRequestedRole] = useState<"mentor" | "participant">("participant");
   const [joinHelpDescription, setJoinHelpDescription] = useState("");
 
   const deferredSearchQuery = useDeferredValue(searchQuery.trim());
+  const deferredMemberSearchQuery = useDeferredValue(memberSearchQuery.trim());
   const userRole = user?.userRoles?.[0]?.role?.name || "usuario";
   const hasProponenteRole = hasRole("proponente");
 
@@ -136,16 +169,33 @@ export default function Projects() {
   const selectedProject = selectedProjectQuery.data
     ?? projectsQuery.data?.find((project) => project.id === selectedProjectId)
     ?? null;
+  const selectedProjectIsAdmin = !!selectedProject && (
+    selectedProject.ownerId === user?.id ||
+    selectedProject.participants?.some((participant) => participant.userId === user?.id && participant.isProjectAdmin) ||
+    hasRole("facilitador")
+  );
 
   const joinRequestsQuery = useQuery<ProjectJoinRequestWithDetails[]>({
     queryKey: ["/api/projects", selectedProjectId, "join-requests"],
     queryFn: () => fetchJoinRequests(selectedProjectId!),
-    enabled: !!selectedProjectId && !!selectedProject && selectedProject.ownerId === user?.id && isViewDialogOpen,
+    enabled: !!selectedProjectId && !!selectedProject && selectedProjectIsAdmin && isViewDialogOpen,
   });
 
   const myJoinRequestsQuery = useQuery<ProjectJoinRequestWithDetails[]>({
     queryKey: ["/api/project-join-requests/my"],
     queryFn: fetchMyJoinRequests,
+  });
+
+  const mentorMatchesQuery = useQuery<ProjectMentorMatch[]>({
+    queryKey: ["/api/projects", selectedProjectId, "mentor-matches"],
+    queryFn: () => fetchProjectMentorMatches(selectedProjectId!),
+    enabled: !!selectedProjectId && !!selectedProject && selectedProjectIsAdmin && isViewDialogOpen,
+  });
+
+  const projectUserSearchQuery = useQuery<UserWithProfile[]>({
+    queryKey: ["/api/projects", selectedProjectId, "user-search", deferredMemberSearchQuery],
+    queryFn: () => fetchProjectUsers(selectedProjectId!, deferredMemberSearchQuery),
+    enabled: !!selectedProjectId && !!selectedProject && selectedProjectIsAdmin && isViewDialogOpen,
   });
 
   const createMutation = useMutation({
@@ -235,6 +285,57 @@ export default function Projects() {
     },
   });
 
+  const manageParticipantMutation = useMutation({
+    mutationFn: async (data: { projectId: string; userId: string; role: "participant" | "mentor" | "proponente"; isProjectAdmin: boolean; helpDescription?: string }) =>
+      apiRequest("POST", `/api/projects/${data.projectId}/participants`, data),
+    onSuccess: async (_, variables) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["/api/projects"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/projects", variables.projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/projects", variables.projectId, "user-search"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/projects", variables.projectId, "mentor-matches"] }),
+      ]);
+      setMemberSearchQuery("");
+      toast({ title: "Equipo actualizado", description: "La persona fue agregada o actualizada en el proyecto." });
+    },
+    onError: async (error: Error) => {
+      toast({ title: "Error", description: error.message || "No se pudo actualizar el equipo.", variant: "destructive" });
+    },
+  });
+
+  const updateParticipantMutation = useMutation({
+    mutationFn: async ({ projectId, participantId, data }: { projectId: string; participantId: string; data: Partial<SocialProjectParticipantWithUser> }) =>
+      apiRequest("PATCH", `/api/projects/${projectId}/participants/${participantId}`, data),
+    onSuccess: async (_, variables) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["/api/projects"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/projects", variables.projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/projects", variables.projectId, "mentor-matches"] }),
+      ]);
+      toast({ title: "Equipo actualizado", description: "Los permisos del miembro fueron actualizados." });
+    },
+    onError: async (error: Error) => {
+      toast({ title: "Error", description: error.message || "No se pudo actualizar el miembro.", variant: "destructive" });
+    },
+  });
+
+  const removeParticipantMutation = useMutation({
+    mutationFn: async ({ projectId, participantId }: { projectId: string; participantId: string }) =>
+      apiRequest("DELETE", `/api/projects/${projectId}/participants/${participantId}`),
+    onSuccess: async (_, variables) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["/api/projects"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/projects", variables.projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/projects", variables.projectId, "user-search"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/projects", variables.projectId, "mentor-matches"] }),
+      ]);
+      toast({ title: "Miembro removido", description: "La persona fue removida del proyecto." });
+    },
+    onError: async (error: Error) => {
+      toast({ title: "Error", description: error.message || "No se pudo remover al miembro.", variant: "destructive" });
+    },
+  });
+
   const handleCreateSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -248,6 +349,7 @@ export default function Projects() {
       title: formData.get("title") as string,
       description: formData.get("description") as string,
       objectives: formData.get("objectives") as string,
+      skillsNeeded: formData.get("skillsNeeded") as string,
       targetBeneficiaries: formData.get("targetBeneficiaries") as string,
       expectedImpact: formData.get("expectedImpact") as string,
       location: formData.get("location") as string,
@@ -267,6 +369,7 @@ export default function Projects() {
         title: formData.get("title") as string,
         description: formData.get("description") as string,
         objectives: formData.get("objectives") as string,
+        skillsNeeded: formData.get("skillsNeeded") as string,
         targetBeneficiaries: formData.get("targetBeneficiaries") as string,
         expectedImpact: formData.get("expectedImpact") as string,
         location: formData.get("location") as string,
@@ -304,10 +407,13 @@ export default function Projects() {
   }, [projectsQuery.data, user?.id]);
 
   const canEditProject = (project: ProjectWithOwner) =>
-    project.ownerId === user?.id || project.mentorId === user?.id || userRole === "facilitador";
+    project.ownerId === user?.id ||
+    project.mentorId === user?.id ||
+    project.participants?.some((participant) => participant.userId === user?.id && participant.isProjectAdmin) ||
+    hasRole("facilitador");
 
   const canDeleteProject = (project: ProjectWithOwner) =>
-    project.ownerId === user?.id || userRole === "facilitador";
+    project.ownerId === user?.id || hasRole("facilitador");
 
   const openProjectDetails = (project: ProjectWithOwner, editMode = false) => {
     setSelectedProjectId(project.id);
@@ -379,6 +485,16 @@ export default function Projects() {
                 <div className="space-y-2">
                   <Label htmlFor="objectives">Objetivos</Label>
                   <Textarea id="objectives" name="objectives" rows={2} data-testid="input-project-objectives" />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="skillsNeeded">Habilidades necesarias</Label>
+                  <Input
+                    id="skillsNeeded"
+                    name="skillsNeeded"
+                    placeholder="ej. finanzas, marketing, diseño comunitario"
+                    data-testid="input-project-skills-needed"
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -455,7 +571,7 @@ export default function Projects() {
             <Input
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Buscar proyecto por nombre, categoría, ubicación o impacto"
+              placeholder="Buscar proyecto por nombre, categoría, ubicación, impacto o habilidades"
               className="pl-9"
               data-testid="input-search-projects"
             />
@@ -701,6 +817,17 @@ export default function Projects() {
                     <Textarea id="edit-objectives" name="objectives" defaultValue={selectedProject.objectives || ""} rows={2} data-testid="input-edit-project-objectives" />
                   </div>
 
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-skillsNeeded">Habilidades necesarias</Label>
+                    <Input
+                      id="edit-skillsNeeded"
+                      name="skillsNeeded"
+                      defaultValue={selectedProject.skillsNeeded || ""}
+                      placeholder="ej. finanzas, marketing, diseño comunitario"
+                      data-testid="input-edit-project-skills-needed"
+                    />
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="edit-category">Categoría</Label>
@@ -772,14 +899,32 @@ export default function Projects() {
               ) : (
                 <ProjectDetailsView
                   project={selectedProject}
-                  isOwner={selectedProject.ownerId === user?.id}
+                  isProjectAdmin={selectedProjectIsAdmin}
                   canEdit={canEditProject(selectedProject)}
                   joinRequests={joinRequestsQuery.data ?? []}
                   isLoadingRequests={joinRequestsQuery.isLoading}
+                  mentorMatches={mentorMatchesQuery.data ?? []}
+                  isLoadingMentorMatches={mentorMatchesQuery.isLoading}
+                  availableUsers={projectUserSearchQuery.data ?? []}
+                  isLoadingAvailableUsers={projectUserSearchQuery.isLoading}
+                  memberSearchQuery={memberSearchQuery}
+                  onMemberSearchChange={setMemberSearchQuery}
                   onEdit={() => setIsEditMode(true)}
                   onClose={() => setIsViewDialogOpen(false)}
                   onReviewJoinRequest={(requestId, status, decisionReason) =>
                     reviewJoinRequestMutation.mutate({ projectId: selectedProject.id, requestId, status, decisionReason })
+                  }
+                  onAddParticipant={(payload) => manageParticipantMutation.mutate({ projectId: selectedProject.id, ...payload })}
+                  onUpdateParticipant={(participantId, data) =>
+                    updateParticipantMutation.mutate({ projectId: selectedProject.id, participantId, data })
+                  }
+                  onRemoveParticipant={(participantId) =>
+                    removeParticipantMutation.mutate({ projectId: selectedProject.id, participantId })
+                  }
+                  isManagingParticipants={
+                    manageParticipantMutation.isPending ||
+                    updateParticipantMutation.isPending ||
+                    removeParticipantMutation.isPending
                   }
                   isReviewingJoinRequest={reviewJoinRequestMutation.isPending}
                 />
@@ -796,34 +941,71 @@ export default function Projects() {
 
 function ProjectDetailsView({
   project,
-  isOwner,
+  isProjectAdmin,
   canEdit,
   joinRequests,
   isLoadingRequests,
+  mentorMatches,
+  isLoadingMentorMatches,
+  availableUsers,
+  isLoadingAvailableUsers,
+  memberSearchQuery,
+  onMemberSearchChange,
   onEdit,
   onClose,
   onReviewJoinRequest,
+  onAddParticipant,
+  onUpdateParticipant,
+  onRemoveParticipant,
+  isManagingParticipants,
   isReviewingJoinRequest,
 }: {
   project: ProjectWithOwner;
-  isOwner: boolean;
+  isProjectAdmin: boolean;
   canEdit: boolean;
   joinRequests: ProjectJoinRequestWithDetails[];
   isLoadingRequests: boolean;
+  mentorMatches: ProjectMentorMatch[];
+  isLoadingMentorMatches: boolean;
+  availableUsers: UserWithProfile[];
+  isLoadingAvailableUsers: boolean;
+  memberSearchQuery: string;
+  onMemberSearchChange: (value: string) => void;
   onEdit: () => void;
   onClose: () => void;
   onReviewJoinRequest: (requestId: string, status: "accepted" | "rejected", decisionReason: string) => void;
+  onAddParticipant: (payload: { userId: string; role: "participant" | "mentor" | "proponente"; isProjectAdmin: boolean; helpDescription?: string }) => void;
+  onUpdateParticipant: (participantId: string, data: Partial<SocialProjectParticipantWithUser>) => void;
+  onRemoveParticipant: (participantId: string) => void;
+  isManagingParticipants: boolean;
   isReviewingJoinRequest: boolean;
 }) {
   const [decisionReasons, setDecisionReasons] = useState<Record<string, string>>({});
+  const [newMemberRole, setNewMemberRole] = useState<"participant" | "mentor" | "proponente">("participant");
+  const [newMemberHelp, setNewMemberHelp] = useState("");
+  const [newMemberIsAdmin, setNewMemberIsAdmin] = useState(false);
   const participants = project.participants ?? [];
+  const existingParticipantUserIds = new Set(participants.map((participant) => participant.userId));
+  const availableMentorMatches = mentorMatches.filter((match) => !existingParticipantUserIds.has(match.mentor.id));
   const pendingRequests = joinRequests.filter((request) => request.status === "pending");
+
   const handleDecision = (requestId: string, status: "accepted" | "rejected") => {
     const reason = decisionReasons[requestId]?.trim() || "";
     if (!reason) {
       return;
     }
     onReviewJoinRequest(requestId, status, reason);
+  };
+
+  const handleAddParticipant = (userId: string) => {
+    onAddParticipant({
+      userId,
+      role: newMemberRole,
+      isProjectAdmin: newMemberIsAdmin,
+      helpDescription: newMemberHelp.trim(),
+    });
+    setNewMemberHelp("");
+    setNewMemberIsAdmin(false);
   };
 
   return (
@@ -839,35 +1021,90 @@ function ProjectDetailsView({
         <TabsList>
           <TabsTrigger value="overview">Resumen</TabsTrigger>
           <TabsTrigger value="participants">Participantes</TabsTrigger>
-          {isOwner ? <TabsTrigger value="requests">Solicitudes</TabsTrigger> : null}
+          {isProjectAdmin ? <TabsTrigger value="requests">Solicitudes</TabsTrigger> : null}
+          {isProjectAdmin ? <TabsTrigger value="team">Administración</TabsTrigger> : null}
         </TabsList>
 
         <TabsContent value="overview" className="mt-4">
-          <div className="space-y-4">
-            <DetailBlock label="Descripción" value={project.description || "Sin descripción"} />
-            {project.objectives && <DetailBlock label="Objetivos" value={project.objectives} />}
-            {project.targetBeneficiaries && <DetailBlock label="Beneficiarios" value={project.targetBeneficiaries} />}
-            {project.expectedImpact && <DetailBlock label="Impacto Esperado" value={project.expectedImpact} />}
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium text-muted-foreground">Datos generales</h4>
-              <div className="space-y-2 text-sm">
-                {project.location && (
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-muted-foreground" />
-                    <span>{project.location}</span>
-                  </div>
-                )}
-                {project.owner && (
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <span>
-                      {project.owner.firstName || project.owner.email || "Usuario"}
-                      {project.owner.lastName ? ` ${project.owner.lastName}` : ""}
-                    </span>
-                  </div>
-                )}
+          <div className={`grid gap-6 ${isProjectAdmin ? "lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]" : ""}`}>
+            <div className="space-y-4">
+              <DetailBlock label="Descripción" value={project.description || "Sin descripción"} />
+              {project.objectives && <DetailBlock label="Objetivos" value={project.objectives} />}
+              {project.skillsNeeded && <DetailBlock label="Habilidades necesarias" value={project.skillsNeeded} />}
+              {project.targetBeneficiaries && <DetailBlock label="Beneficiarios" value={project.targetBeneficiaries} />}
+              {project.expectedImpact && <DetailBlock label="Impacto Esperado" value={project.expectedImpact} />}
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-muted-foreground">Datos generales</h4>
+                <div className="space-y-2 text-sm">
+                  {project.location && (
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                      <span>{project.location}</span>
+                    </div>
+                  )}
+                  {project.owner && (
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <span>
+                        {project.owner.firstName || project.owner.email || "Usuario"}
+                        {project.owner.lastName ? ` ${project.owner.lastName}` : ""}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
+
+            {isProjectAdmin ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Mentores sugeridos</CardTitle>
+                  <CardDescription>
+                    Coincidencias basadas en las habilidades necesarias del proyecto.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {isLoadingMentorMatches ? (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Buscando mentores...
+                    </div>
+                  ) : availableMentorMatches.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      Agrega habilidades necesarias al proyecto para recibir sugerencias.
+                    </p>
+                  ) : (
+                    availableMentorMatches.slice(0, 6).map((match) => (
+                      <div key={match.mentor.id} className="rounded-lg border p-3 space-y-2">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="font-medium">
+                              {match.mentor.firstName || match.mentor.email || "Usuario"}
+                              {match.mentor.lastName ? ` ${match.mentor.lastName}` : ""}
+                            </p>
+                            <p className="text-xs text-muted-foreground">{match.mentor.email}</p>
+                          </div>
+                          <Badge variant="secondary">{match.score} match</Badge>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {match.matchedSkills.map((skill) => (
+                            <Badge key={`${match.mentor.id}-${skill}`} variant="outline">{skill}</Badge>
+                          ))}
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => onAddParticipant({ userId: match.mentor.id, role: "mentor", isProjectAdmin: false })}
+                          disabled={isManagingParticipants}
+                        >
+                          Agregar como mentor
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
+            ) : null}
           </div>
         </TabsContent>
 
@@ -893,11 +1130,43 @@ function ProjectDetailsView({
                           <p className="text-xs text-muted-foreground">{participant.user.email}</p>
                         )}
                       </div>
-                      <Badge variant="secondary">{participantRoleLabels[participant.role]}</Badge>
+                      <div className="flex items-center gap-2 flex-wrap justify-end">
+                        {participant.isProjectAdmin || participant.userId === project.ownerId ? (
+                          <Badge variant="outline" className="gap-1">
+                            <Shield className="h-3 w-3" />
+                            Admin
+                          </Badge>
+                        ) : null}
+                        <Badge variant="secondary">{participantRoleLabels[participant.role]}</Badge>
+                      </div>
                     </div>
                     {participant.helpDescription && (
                       <p className="text-sm text-muted-foreground mt-2">{participant.helpDescription}</p>
                     )}
+                    {isProjectAdmin ? (
+                      <div className="mt-3 flex items-center justify-between gap-3 flex-wrap">
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            checked={participant.isProjectAdmin || participant.userId === project.ownerId}
+                            disabled={isManagingParticipants || participant.userId === project.ownerId}
+                            onCheckedChange={(checked) =>
+                              onUpdateParticipant(participant.id, { isProjectAdmin: checked === true })
+                            }
+                          />
+                          <span className="text-sm">Admin del proyecto</span>
+                        </div>
+                        {participant.userId !== project.ownerId ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => onRemoveParticipant(participant.id)}
+                            disabled={isManagingParticipants}
+                          >
+                            Remover
+                          </Button>
+                        ) : null}
+                      </div>
+                    ) : null}
                   </div>
                 ))}
               </div>
@@ -905,7 +1174,7 @@ function ProjectDetailsView({
           </div>
         </TabsContent>
 
-        {isOwner ? (
+        {isProjectAdmin ? (
           <TabsContent value="requests" className="mt-4">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -972,6 +1241,100 @@ function ProjectDetailsView({
                 </div>
               )}
             </div>
+          </TabsContent>
+        ) : null}
+
+        {isProjectAdmin ? (
+          <TabsContent value="team" className="mt-4 space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Agregar personas al proyecto</CardTitle>
+                <CardDescription>
+                  Busca usuarios y asígnales un rol dentro del proyecto.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="member-search">Buscar usuario</Label>
+                    <Input
+                      id="member-search"
+                      value={memberSearchQuery}
+                      onChange={(event) => onMemberSearchChange(event.target.value)}
+                      placeholder="Nombre o correo"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Rol dentro del proyecto</Label>
+                    <Select value={newMemberRole} onValueChange={(value: "participant" | "mentor" | "proponente") => setNewMemberRole(value)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {memberRoleOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="member-help">Cómo apoyará al proyecto</Label>
+                  <Textarea
+                    id="member-help"
+                    value={newMemberHelp}
+                    onChange={(event) => setNewMemberHelp(event.target.value)}
+                    rows={3}
+                    placeholder="Describe la colaboración esperada."
+                  />
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Checkbox checked={newMemberIsAdmin} onCheckedChange={(checked) => setNewMemberIsAdmin(checked === true)} />
+                  <span className="text-sm">Agregar también como admin del proyecto</span>
+                </div>
+
+                {isLoadingAvailableUsers ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Buscando usuarios...
+                  </div>
+                ) : availableUsers.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    No hay usuarios disponibles con ese criterio.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {availableUsers.map((candidate) => (
+                      <div key={candidate.id} className="rounded-lg border p-3 flex items-start justify-between gap-3">
+                        <div className="space-y-2">
+                          <div>
+                            <p className="font-medium">
+                              {candidate.firstName || candidate.email || "Usuario"}
+                              {candidate.lastName ? ` ${candidate.lastName}` : ""}
+                            </p>
+                            <p className="text-xs text-muted-foreground">{candidate.email}</p>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {(candidate.profile?.skills || []).slice(0, 5).map((skill) => (
+                              <Badge key={`${candidate.id}-${skill}`} variant="outline">{skill}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => handleAddParticipant(candidate.id)}
+                          disabled={isManagingParticipants}
+                        >
+                          Agregar
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
         ) : null}
       </Tabs>

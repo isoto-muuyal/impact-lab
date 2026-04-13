@@ -430,6 +430,74 @@ export async function registerRoutes(
     }
   });
 
+  app.get('/api/projects/:id/mentor-matches', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const project = await storage.getProject(req.params.id);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const isFacilitador = hasAnyRole(userWithProfile, 'facilitador');
+      const isProjectAdmin = await storage.isProjectAdmin(req.params.id, userId);
+
+      if (!isFacilitador && !isProjectAdmin) {
+        return res.status(403).json({ message: "Only project admins can view mentor matches" });
+      }
+
+      const matches = await storage.findSocialProjectMentorMatches(req.params.id);
+      res.json(matches);
+    } catch (error) {
+      console.error("Error fetching project mentor matches:", error);
+      res.status(500).json({ message: "Failed to fetch mentor matches" });
+    }
+  });
+
+  app.get('/api/projects/:id/user-search', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const project = await storage.getProject(req.params.id);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const isFacilitador = hasAnyRole(userWithProfile, 'facilitador');
+      const isProjectAdmin = await storage.isProjectAdmin(req.params.id, userId);
+
+      if (!isFacilitador && !isProjectAdmin) {
+        return res.status(403).json({ message: "Only project admins can search users" });
+      }
+
+      const search = typeof req.query.search === 'string' ? req.query.search.trim().toLowerCase() : '';
+      const participants = await storage.getSocialProjectParticipants(req.params.id);
+      const existingUserIds = new Set(participants.map((participant) => participant.userId));
+      const users = await storage.getAllUsers();
+
+      const filteredUsers = users
+        .filter((candidate) => !existingUserIds.has(candidate.id))
+        .filter((candidate) => {
+          if (!search) return true;
+          return [
+            candidate.email,
+            candidate.username,
+            candidate.firstName,
+            candidate.lastName,
+          ]
+            .filter(Boolean)
+            .some((value) => value!.toLowerCase().includes(search));
+        })
+        .slice(0, 20);
+
+      const detailedUsers = await Promise.all(filteredUsers.map((candidate) => storage.getUserWithProfile(candidate.id)));
+      res.json(detailedUsers.filter(Boolean));
+    } catch (error) {
+      console.error("Error searching project users:", error);
+      res.status(500).json({ message: "Failed to search users" });
+    }
+  });
+
   // Create project
   app.post('/api/projects', isAuthenticated, async (req: any, res) => {
     try {
@@ -444,6 +512,7 @@ export async function registerRoutes(
         title: req.body.title,
         description: req.body.description,
         objectives: req.body.objectives,
+        skillsNeeded: req.body.skillsNeeded,
         targetBeneficiaries: req.body.targetBeneficiaries,
         expectedImpact: req.body.expectedImpact,
         location: req.body.location,
@@ -455,7 +524,7 @@ export async function registerRoutes(
       };
       
       // Only facilitadores can assign a mentor during creation
-      if (userRole === 'facilitador' && req.body.mentorId) {
+      if (hasAnyRole(userWithProfile, 'facilitador') && req.body.mentorId) {
         projectData.mentorId = req.body.mentorId;
       }
       
@@ -490,15 +559,16 @@ export async function registerRoutes(
       const userWithProfile = await storage.getUserWithProfile(userId);
       const userRole = userWithProfile?.userRoles?.[0]?.role?.name;
       
-      if (project.ownerId !== userId && userRole !== 'facilitador' && userRole !== 'mentor') {
+      const isProjectAdmin = await storage.isProjectAdmin(req.params.id, userId);
+      if (project.ownerId !== userId && userRole !== 'facilitador' && !isProjectAdmin) {
         return res.status(403).json({ message: "Not authorized to update this project" });
       }
       
       // Whitelist allowed fields to prevent ownerId reassignment
-      const allowedFields = ['title', 'description', 'objectives', 'targetBeneficiaries', 'expectedImpact', 'location', 'category', 'status', 'startDate', 'endDate'];
+      const allowedFields = ['title', 'description', 'objectives', 'skillsNeeded', 'targetBeneficiaries', 'expectedImpact', 'location', 'category', 'status', 'startDate', 'endDate'];
       
       // Only facilitadores can assign/change mentor
-      if (userRole === 'facilitador' && req.body.mentorId !== undefined) {
+      if (hasAnyRole(userWithProfile, 'facilitador') && req.body.mentorId !== undefined) {
         allowedFields.push('mentorId');
       }
       
@@ -545,9 +615,22 @@ export async function registerRoutes(
 
   app.get('/api/projects/:id/participants', isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
       const project = await storage.getProject(req.params.id);
       if (!project) {
         return res.status(404).json({ message: "Project not found" });
+      }
+
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const participant = await storage.getSocialProjectParticipant(req.params.id, userId);
+      const canAccess =
+        project.ownerId === userId ||
+        project.mentorId === userId ||
+        !!participant ||
+        hasAnyRole(userWithProfile, 'facilitador');
+
+      if (!canAccess) {
+        return res.status(403).json({ message: "Not authorized to view participants" });
       }
 
       const participants = await storage.getSocialProjectParticipants(req.params.id);
@@ -566,8 +649,11 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Project not found" });
       }
 
-      if (project.ownerId !== userId) {
-        return res.status(403).json({ message: "Only the project creator can view join requests" });
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const isFacilitador = hasAnyRole(userWithProfile, 'facilitador');
+      const isProjectAdmin = await storage.isProjectAdmin(req.params.id, userId);
+      if (!isFacilitador && !isProjectAdmin) {
+        return res.status(403).json({ message: "Only project admins can view join requests" });
       }
 
       const requests = await storage.getProjectJoinRequests(req.params.id);
@@ -648,8 +734,11 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Project not found" });
       }
 
-      if (project.ownerId !== userId) {
-        return res.status(403).json({ message: "Only the project creator can decide join requests" });
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const isFacilitador = hasAnyRole(userWithProfile, 'facilitador');
+      const isProjectAdmin = await storage.isProjectAdmin(req.params.projectId, userId);
+      if (!isFacilitador && !isProjectAdmin) {
+        return res.status(403).json({ message: "Only project admins can decide join requests" });
       }
 
       if (status !== 'accepted' && status !== 'rejected') {
@@ -706,6 +795,150 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error updating join request:", error);
       res.status(500).json({ message: "Failed to update join request" });
+    }
+  });
+
+  app.post('/api/projects/:id/participants', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const project = await storage.getProject(req.params.id);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const isFacilitador = hasAnyRole(userWithProfile, 'facilitador');
+      const isProjectAdmin = await storage.isProjectAdmin(req.params.id, userId);
+      if (!isFacilitador && !isProjectAdmin) {
+        return res.status(403).json({ message: "Only project admins can manage members" });
+      }
+
+      const memberUserId = typeof req.body?.userId === 'string' ? req.body.userId : '';
+      const role = typeof req.body?.role === 'string' ? req.body.role : '';
+      const helpDescription = typeof req.body?.helpDescription === 'string' ? req.body.helpDescription.trim() : '';
+      const makeAdmin = req.body?.isProjectAdmin === true;
+
+      if (!memberUserId || !['proponente', 'mentor', 'participant'].includes(role)) {
+        return res.status(400).json({ message: "Invalid participant data" });
+      }
+
+      const member = await storage.getUserWithProfile(memberUserId);
+      if (!member) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      if (role === 'mentor' && !member.userRoles?.some((entry: any) => entry.role?.name === 'mentor' && entry.status === 'active')) {
+        return res.status(400).json({ message: "Selected user does not have an active mentor role" });
+      }
+
+      const existingParticipant = await storage.getSocialProjectParticipant(req.params.id, memberUserId);
+      const payload = {
+        projectId: req.params.id,
+        userId: memberUserId,
+        role: role as 'proponente' | 'mentor' | 'participant',
+        isProjectAdmin: makeAdmin,
+        helpDescription: helpDescription || null,
+        isActive: true,
+      };
+
+      const participant = existingParticipant
+        ? await storage.updateSocialProjectParticipant(existingParticipant.id, payload)
+        : await storage.createSocialProjectParticipant(payload);
+
+      res.status(existingParticipant ? 200 : 201).json(participant);
+    } catch (error: any) {
+      console.error("Error managing project participant:", error);
+      if (error?.message === "A project must have at least one admin") {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to manage project participant" });
+    }
+  });
+
+  app.patch('/api/projects/:projectId/participants/:participantId', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const project = await storage.getProject(req.params.projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const isFacilitador = hasAnyRole(userWithProfile, 'facilitador');
+      const isProjectAdmin = await storage.isProjectAdmin(req.params.projectId, userId);
+      if (!isFacilitador && !isProjectAdmin) {
+        return res.status(403).json({ message: "Only project admins can manage members" });
+      }
+
+      const participants = await storage.getSocialProjectParticipants(req.params.projectId);
+      const participant = participants.find((entry) => entry.id === req.params.participantId);
+      if (!participant) {
+        return res.status(404).json({ message: "Participant not found" });
+      }
+
+      if (participant.userId === project.ownerId && req.body?.isProjectAdmin === false) {
+        return res.status(400).json({ message: "The project creator must remain a project admin" });
+      }
+
+      if (participant.userId === project.ownerId && req.body?.role && req.body.role !== 'proponente') {
+        return res.status(400).json({ message: "The project creator must keep the proponente role" });
+      }
+
+      if (req.body?.role === 'mentor') {
+        const member = await storage.getUserWithProfile(participant.userId);
+        if (!member?.userRoles?.some((entry: any) => entry.role?.name === 'mentor' && entry.status === 'active')) {
+          return res.status(400).json({ message: "Selected user does not have an active mentor role" });
+        }
+      }
+
+      const updated = await storage.updateSocialProjectParticipant(req.params.participantId, {
+        role: req.body?.role,
+        isProjectAdmin: typeof req.body?.isProjectAdmin === 'boolean' ? req.body.isProjectAdmin : undefined,
+        helpDescription: typeof req.body?.helpDescription === 'string' ? req.body.helpDescription.trim() || null : undefined,
+      });
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Error updating project participant:", error);
+      if (error?.message === "A project must have at least one admin") {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to update project participant" });
+    }
+  });
+
+  app.delete('/api/projects/:projectId/participants/:participantId', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const project = await storage.getProject(req.params.projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+
+      const userWithProfile = await storage.getUserWithProfile(userId);
+      const isFacilitador = hasAnyRole(userWithProfile, 'facilitador');
+      const isProjectAdmin = await storage.isProjectAdmin(req.params.projectId, userId);
+      if (!isFacilitador && !isProjectAdmin) {
+        return res.status(403).json({ message: "Only project admins can manage members" });
+      }
+
+      const participants = await storage.getSocialProjectParticipants(req.params.projectId);
+      const participant = participants.find((entry) => entry.id === req.params.participantId);
+      if (!participant) {
+        return res.status(404).json({ message: "Participant not found" });
+      }
+
+      if (participant.userId === project.ownerId) {
+        return res.status(400).json({ message: "The project creator cannot be removed from the project" });
+      }
+
+      await storage.deleteSocialProjectParticipant(req.params.participantId);
+      res.json({ message: "Participant removed successfully" });
+    } catch (error: any) {
+      console.error("Error deleting project participant:", error);
+      if (error?.message === "A project must have at least one admin") {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to delete project participant" });
     }
   });
 
