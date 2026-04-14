@@ -1,8 +1,11 @@
-import type { Express } from "express";
+import express, { type Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isImpactLabAdmin } from "./auth";
 import { sendEmail, isEmailConfigured, getContactRecipient } from "./email";
+import { mkdir, writeFile } from "fs/promises";
+import path from "path";
+import { randomUUID } from "crypto";
 import { 
   insertActivityLogSchema,
   insertProjectSchema, 
@@ -30,6 +33,14 @@ function getUserRoleNames(userWithProfile: any): string[] {
 function hasAnyRole(userWithProfile: any, ...roleNames: string[]): boolean {
   const roles = new Set(getUserRoleNames(userWithProfile));
   return roleNames.some((roleName) => roles.has(roleName));
+}
+
+function sanitizeUploadFilename(value: string): string {
+  return value.replace(/[^a-zA-Z0-9._-]/g, "_");
+}
+
+function getRoleRequestUploadDir(): string {
+  return path.resolve(process.cwd(), "uploads", "role-requests");
 }
 
 export async function registerRoutes(
@@ -226,6 +237,68 @@ export async function registerRoutes(
     }
   });
 
+  app.post(
+    '/api/uploads/role-request-attachments',
+    isAuthenticated,
+    express.raw({ type: '*/*', limit: '10mb' }),
+    async (req: any, res) => {
+      try {
+        const fileNameHeader = typeof req.headers['x-file-name'] === 'string' ? req.headers['x-file-name'] : '';
+        const fileTypeHeader = typeof req.headers['content-type'] === 'string' ? req.headers['content-type'] : 'application/octet-stream';
+        const declaredSize = Number(req.headers['x-file-size'] || 0);
+        const originalName = decodeURIComponent(fileNameHeader || '').trim();
+        const buffer = Buffer.isBuffer(req.body) ? req.body : Buffer.from([]);
+
+        if (!originalName) {
+          return res.status(400).json({ message: "File name is required" });
+        }
+
+        if (!buffer.length) {
+          return res.status(400).json({ message: "Attachment file is empty" });
+        }
+
+        if (declaredSize && declaredSize !== buffer.length) {
+          return res.status(400).json({ message: "Attachment size does not match the uploaded content" });
+        }
+
+        const safeName = sanitizeUploadFilename(originalName);
+        const storageKey = `${randomUUID()}-${safeName}`;
+        const uploadDir = getRoleRequestUploadDir();
+        await mkdir(uploadDir, { recursive: true });
+        await writeFile(path.join(uploadDir, storageKey), buffer);
+
+        res.status(201).json({
+          name: originalName,
+          type: fileTypeHeader,
+          size: buffer.length,
+          storageKey,
+          url: `/api/uploads/role-request-attachments/${storageKey}`,
+        });
+      } catch (error) {
+        console.error("Error uploading role request attachment:", error);
+        res.status(500).json({ message: "Failed to upload attachment" });
+      }
+    },
+  );
+
+  app.get('/api/uploads/role-request-attachments/:fileName', isAuthenticated, async (req, res) => {
+    try {
+      const safeName = path.basename(req.params.fileName);
+      if (!safeName) {
+        return res.status(400).json({ message: "Invalid attachment name" });
+      }
+
+      res.sendFile(path.join(getRoleRequestUploadDir(), safeName), (error) => {
+        if (error && !res.headersSent) {
+          res.status(error.statusCode || 404).json({ message: "Attachment not found" });
+        }
+      });
+    } catch (error) {
+      console.error("Error serving role request attachment:", error);
+      res.status(500).json({ message: "Failed to fetch attachment" });
+    }
+  });
+
   // Update user's own roles
   app.put('/api/auth/user/roles', isAuthenticated, async (req: any, res) => {
     try {
@@ -284,6 +357,16 @@ export async function registerRoutes(
       const roleId = typeof req.body?.roleId === 'string' ? req.body.roleId : '';
       const justification = typeof req.body?.justification === 'string' ? req.body.justification.trim() : '';
       const attachments = Array.isArray(req.body?.attachments) ? req.body.attachments : [];
+      const normalizedAttachments = attachments
+        .filter((attachment: any) => attachment && typeof attachment === 'object')
+        .map((attachment: any) => ({
+          name: typeof attachment.name === 'string' ? attachment.name : 'attachment',
+          type: typeof attachment.type === 'string' ? attachment.type : 'application/octet-stream',
+          size: Number(attachment.size || 0),
+          url: typeof attachment.url === 'string' ? attachment.url : null,
+          storageKey: typeof attachment.storageKey === 'string' ? attachment.storageKey : null,
+        }))
+        .filter((attachment: any) => attachment.url && attachment.storageKey);
 
       if (!roleId || !justification) {
         return res.status(400).json({ message: "Role and justification are required" });
@@ -308,7 +391,7 @@ export async function registerRoutes(
         userId,
         roleId,
         justification,
-        attachmentsJson: JSON.stringify(attachments),
+        attachmentsJson: JSON.stringify(normalizedAttachments),
         status: 'pending',
         decisionNote: null,
         reviewedByUserId: null,

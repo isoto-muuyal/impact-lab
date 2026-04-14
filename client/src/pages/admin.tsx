@@ -46,7 +46,9 @@ type RoleRequestAttachment = {
   name: string;
   type: string;
   size: number;
-  dataUrl: string;
+  dataUrl?: string | null;
+  url?: string | null;
+  storageKey?: string | null;
 };
 
 type RoleRequestEntry = {
@@ -314,7 +316,14 @@ export default function AdminPage() {
                       ) : (
                         <div className="flex flex-wrap gap-2 pt-2">
                           {attachments.map((attachment) => (
-                            <a key={attachment.name} href={attachment.dataUrl} download={attachment.name} className="text-sm underline text-primary">
+                            <a
+                              key={`${attachment.storageKey || attachment.name}`}
+                              href={attachment.url || attachment.dataUrl || "#"}
+                              download={attachment.name}
+                              className="text-sm underline text-primary"
+                              target="_blank"
+                              rel="noreferrer"
+                            >
                               {attachment.name}
                             </a>
                           ))}
