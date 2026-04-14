@@ -240,6 +240,7 @@ export const projects = pgTable("projects", {
   title: varchar("title").notNull(),
   description: text("description"),
   objectives: text("objectives"),
+  skillsNeeded: text("skills_needed"),
   targetBeneficiaries: varchar("target_beneficiaries"),
   expectedImpact: text("expected_impact"),
   location: varchar("location"),
@@ -283,6 +284,7 @@ export const socialProjectParticipants = pgTable("social_project_participants", 
   projectId: varchar("project_id").notNull().references(() => projects.id),
   userId: varchar("user_id").notNull().references(() => users.id),
   role: socialProjectParticipantRoleEnum("role").notNull().default('participant'),
+  isProjectAdmin: boolean("is_project_admin").default(false),
   helpDescription: text("help_description"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
@@ -365,6 +367,13 @@ export type ProjectWithOwner = Project & {
   mentor?: User | null;
   participants?: SocialProjectParticipantWithUser[];
   joinRequests?: ProjectJoinRequestWithDetails[];
+};
+
+export type ProjectMentorMatch = {
+  mentor: UserWithProfile;
+  score: number;
+  reasons: string[];
+  matchedSkills: string[];
 };
 
 export type SocialProjectParticipantWithUser = SocialProjectParticipant & {

@@ -11,7 +11,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_REGION: ${{ secrets.AWS_REGIONgit }}
       ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
       EC2_PORT: ${{ secrets.EC2_PORT || '22' }}
       DOCKER_NETWORK: ${{ secrets.DOCKER_NETWORK || 'shared_network' }}
@@ -40,7 +40,7 @@ jobs:
         run: |
           if [ "${GITHUB_REF_NAME}" = "qa" ]; then
             echo "deploy_env=qa" >> "$GITHUB_OUTPUT"
-            echo "remote_dir=~/apps/impactlab-qa" >> "$GITHUB_OUTPUT"
+            echo "remote_dir=/home/${{ secrets.EC2_USERNAME }}/apps/impactlab-qa" >> "$GITHUB_OUTPUT"
             echo "container_name=qa-impactlab" >> "$GITHUB_OUTPUT"
             echo "app_port=5050" >> "$GITHUB_OUTPUT"
             echo "db_host=${QA_DB_HOST}" >> "$GITHUB_OUTPUT"
@@ -53,7 +53,7 @@ jobs:
             echo "admin_db_name=${QA_ADMIN_DB_NAME}" >> "$GITHUB_OUTPUT"
           else
             echo "deploy_env=prod" >> "$GITHUB_OUTPUT"
-            echo "remote_dir=~/apps/impactlab" >> "$GITHUB_OUTPUT"
+            echo "remote_dir=/home/${{ secrets.EC2_USERNAME }}/apps/impactlab" >> "$GITHUB_OUTPUT"
             echo "container_name=impactlab" >> "$GITHUB_OUTPUT"
             echo "app_port=5000" >> "$GITHUB_OUTPUT"
             echo "db_host=${PROD_DB_HOST}" >> "$GITHUB_OUTPUT"
@@ -71,7 +71,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Ensure ECR repository exists
         run: |
@@ -111,7 +111,7 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          port: ${{ env.EC2_PORT }}
+          port: ${{ secrets.EC2_PORT }}
           target: ${{ steps.target.outputs.remote_dir }}
           source: docker-compose.yml,db,package.json,package-lock.json,drizzle.config.ts,shared
 
@@ -121,7 +121,7 @@ jobs:
           IMAGE_URI: ${{ steps.build-image.outputs.image_uri }}
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_PASSWORD: ${{ steps.ecr-password.outputs.password }}
-          DOCKER_NETWORK: ${{ env.DOCKER_NETWORK }}
+          DOCKER_NETWORK: ${{ secrets.DOCKER_NETWORK }}
           REMOTE_DIR: ${{ steps.target.outputs.remote_dir }}
           CONTAINER_NAME: ${{ steps.target.outputs.container_name }}
           APP_PORT: ${{ steps.target.outputs.app_port }}
