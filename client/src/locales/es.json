@@ -61,7 +61,123 @@
     "ctaTitle": "Comienza a crear impacto hoy",
     "ctaDescription": "Únete a nuestra comunidad de emprendedores sociales y transforma tu visión en realidad.",
     "joinNow": "Unirse ahora",
-    "copyright": "Plataforma de Gestión de Proyectos Sociales"
+    "copyright": "Plataforma de Gestión de Proyectos Sociales",
+    "tabs": {
+      "inicio": "Inicio",
+      "nosotros": "Nosotros"
+    }
+  },
+  "about": {
+    "badge": "Global Approach for Social Innovation",
+    "heroTitle": "Espacio operativo de",
+    "heroHighlight": "Global Approach for Social Innovation",
+    "heroDescription": "Integramos formación, colaboración y desarrollo de proyectos en un solo espacio. ImpactLAB es donde las ideas de impacto social toman forma, se fortalecen y se convierten en realidad.",
+    "startNow": "Empieza ahora",
+    "learnMore": "Conoce más",
+    "origin": {
+      "title": "El Origen",
+      "videoLabel": "Ver video institucional",
+      "mission": {
+        "title": "Misión",
+        "description": "Potenciar el ecosistema de innovación social en América Latina, conectando talento, recursos y conocimiento para transformar ideas en proyectos de impacto real."
+      },
+      "vision": {
+        "title": "Visión",
+        "description": "Ser la plataforma de referencia global para la creación colaborativa de soluciones que aborden los desafíos sociales más urgentes, impulsando un desarrollo sostenible e inclusivo."
+      },
+      "objectives": {
+        "title": "Objetivos",
+        "description": "Facilitar procesos de formación, diseño de proyectos y prototipado colaborativo que permitan a emprendedores sociales llevar sus ideas del concepto a la implementación."
+      }
+    },
+    "model": {
+      "title": "Nuestro Modelo",
+      "subtitle": "Dos laboratorios interconectados que cubren todo el ciclo de innovación social",
+      "learningLab": {
+        "title": "Learning-Lab",
+        "subtitle": "Formación y capacitación",
+        "description": "Espacio dedicado a la formación continua de emprendedores sociales a través de cursos estructurados, mentorías personalizadas y recursos educativos de alta calidad.",
+        "tags": ["Cursos", "Mentorías", "Certificaciones", "Evaluaciones"]
+      },
+      "coLab": {
+        "title": "Co-Lab",
+        "subtitle": "Colaboración y prototipado",
+        "description": "Laboratorio de co-creación donde las ideas se convierten en proyectos a través de metodologías colaborativas, equipos multidisciplinarios y procesos de prototipado ágil.",
+        "tags": ["Gran Idea", "Metodológico", "Prototipado", "Revisiones"]
+      },
+      "cycle": {
+        "title": "Ciclo entero",
+        "steps": [
+          { "title": "Ideación", "desc": "Generar y validar ideas" },
+          { "title": "Formación", "desc": "Aprender y capacitarse" },
+          { "title": "Colaboración", "desc": "Co-crear en equipo" },
+          { "title": "Lanzamiento", "desc": "Implementar y medir" }
+        ]
+      }
+    },
+    "audiences": {
+      "title": "A Quiénes Servimos",
+      "subtitle": "Conectamos a todos los actores del ecosistema de innovación social",
+      "items": [
+        { "title": "Organizaciones sociales", "desc": "ONGs y fundaciones que buscan innovar" },
+        { "title": "Universidades e Institutos", "desc": "Instituciones académicas comprometidas" },
+        { "title": "Gobierno y Sector Público", "desc": "Entidades que impulsan políticas sociales" },
+        { "title": "Emprendedores Sociales", "desc": "Personas con ideas de impacto" },
+        { "title": "Inversionistas de Impacto", "desc": "Financiadores de proyectos sociales" }
+      ]
+    },
+    "benefits": {
+      "title": "Qué gana el Talento",
+      "subtitle": "Cada persona que participa en ImpactLAB desarrolla habilidades, conexiones y resultados tangibles",
+      "items": [
+        { "title": "Networking", "desc": "Red de contactos con emprendedores, mentores e inversionistas del ecosistema social" },
+        { "title": "Certificaciones", "desc": "Acreditaciones reconocidas que validan competencias en innovación social" },
+        { "title": "Experiencia Real", "desc": "Participación directa en proyectos con impacto social medible y documentado" },
+        { "title": "Crecimiento", "desc": "Desarrollo profesional continuo con mentoría personalizada y seguimiento" },
+        { "title": "Innovación", "desc": "Acceso a metodologías de vanguardia en diseño de proyectos sociales" },
+        { "title": "Visibilidad", "desc": "Portafolio de proyectos y perfil público dentro del ecosistema GA4SI" },
+        { "title": "Mentoría", "desc": "Acompañamiento de expertos con trayectoria comprobada en impacto social" },
+        { "title": "Herramientas", "desc": "Acceso a plantillas, frameworks y recursos para acelerar proyectos" }
+      ]
+    },
+    "methodology": {
+      "title": "Nuestra Metodología",
+      "subtitle": "Un proceso estructurado que guía cada proyecto desde la idea hasta el impacto",
+      "steps": [
+        { "step": "01", "title": "Diagnóstico", "desc": "Análisis del contexto y definición del problema social a resolver" },
+        { "step": "02", "title": "Diseño", "desc": "Co-creación de la solución con metodologías de design thinking" },
+        { "step": "03", "title": "Prototipado", "desc": "Desarrollo del MVP y pruebas de concepto con usuarios reales" },
+        { "step": "04", "title": "Validación", "desc": "Medición de resultados e iteración basada en datos de impacto" },
+        { "step": "05", "title": "Escalamiento", "desc": "Estrategia de crecimiento y búsqueda de alianzas estratégicas" }
+      ],
+      "stepLabel": "PASO"
+    },
+    "history": {
+      "title": "Nuestra Historia",
+      "subtitle": "El camino que hemos recorrido para construir el ecosistema de innovación social",
+      "events": [
+        { "year": "2018", "title": "El Comienzo", "desc": "GA4SI es fundada con la visión de conectar actores de innovación social en América Latina a través de metodologías colaborativas." },
+        { "year": "2020", "title": "Primeros Programas", "desc": "Lanzamiento de los primeros programas de capacitación y mentoría para emprendedores sociales en 5 países de la región." },
+        { "year": "2022", "title": "ImpactLAB Nace", "desc": "Se concibe ImpactLAB como la plataforma digital que integra formación, colaboración y gestión de proyectos en un solo espacio." },
+        { "year": "2024", "title": "Consolidación", "desc": "Más de 500 emprendedores formados, 120 proyectos incubados y presencia activa en 12 países de América Latina y el Caribe." },
+        { "year": "2025", "title": "Expansión Global", "desc": "Apertura de nuevos laboratorios y alianzas estratégicas con universidades y organismos internacionales para escalar el impacto." }
+      ]
+    },
+    "leadership": {
+      "title": "Liderazgo con Propósito",
+      "subtitle": "Un equipo comprometido con la transformación social a través de la innovación",
+      "members": [
+        { "name": "Enzo Perdomo", "role": "Director Ejecutivo" },
+        { "name": "María López", "role": "Directora de Programas" },
+        { "name": "Carlos Rivera", "role": "Director de Tecnología" },
+        { "name": "Valeria Sánchez", "role": "Directora de Comunidad" }
+      ]
+    },
+    "cta": {
+      "title": "¿Listo para generar impacto?",
+      "description": "Únete a la comunidad de emprendedores, mentores y organizaciones que están transformando América Latina a través de la innovación social.",
+      "button": "Empieza tu proyecto"
+    }
   },
   "features": {
     "projects": {
@@ -506,13 +622,5 @@
       "description": "Selecciona tu idioma preferido",
       "select": "Seleccionar idioma"
     }
-  },
-  "common": {
-    "cancel": "Cancelar",
-    "save": "Guardar",
-    "delete": "Eliminar",
-    "edit": "Editar",
-    "create": "Crear",
-    "loading": "Cargando..."
   }
 }

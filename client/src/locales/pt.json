@@ -47,7 +47,11 @@
     "ctaTitle": "Comece a criar impacto hoje",
     "ctaDescription": "Junte-se à nossa comunidade de empreendedores sociais e transforme sua visão em realidade.",
     "joinNow": "Junte-se agora",
-    "copyright": "Plataforma de Gestão de Projetos Sociais"
+    "copyright": "Plataforma de Gestão de Projetos Sociais",
+    "tabs": {
+      "inicio": "Início",
+      "nosotros": "Sobre Nós"
+    }
   },
   "features": {
     "projects": {
@@ -71,20 +75,43 @@
     "organization": {
       "title": "Organizações",
       "description": "Instituições que têm ideias de impacto ou acreditam programas e certificações.",
-      "features": ["Propor desafios", "Acreditar cursos", "Certificar mentorias", "Validar projetos"],
-      "roles": ["Acreditador"]
+      "features": [
+        "Propor desafios",
+        "Acreditar cursos",
+        "Certificar mentorias",
+        "Validar projetos"
+      ],
+      "roles": [
+        "Acreditador"
+      ]
     },
     "proponent": {
       "title": "Proponentes",
       "description": "Empreendedores e comunidades que propõem ideias e participam como mentorados no desenvolvimento de projetos.",
-      "features": ["Propor projetos", "Inscrever-se em cursos", "Receber mentoria", "Participar de aceleração"],
-      "roles": ["Proponente", "Usuário"]
+      "features": [
+        "Propor projetos",
+        "Inscrever-se em cursos",
+        "Receber mentoria",
+        "Participar de aceleração"
+      ],
+      "roles": [
+        "Proponente",
+        "Usuário"
+      ]
     },
     "supporter": {
       "title": "Apoiadores",
       "description": "Especialistas que apoiam o desenvolvimento de ideias através de funções de mentoria ou facilitação.",
-      "features": ["Oferecer mentoria", "Facilitar programas", "Guiar projetos", "Coordenar eventos"],
-      "roles": ["Mentor", "Facilitador"]
+      "features": [
+        "Oferecer mentoria",
+        "Facilitar programas",
+        "Guiar projetos",
+        "Coordenar eventos"
+      ],
+      "roles": [
+        "Mentor",
+        "Facilitador"
+      ]
     }
   },
   "labs": {
@@ -94,27 +121,62 @@
       "courses": {
         "title": "Cursos",
         "description": "Formação estruturada para o desenvolvimento de habilidades",
-        "subgroups": ["Catálogo de Cursos", "Registro de Curso", "Registro de Aula", "Registro de Participante", "Acompanhamento de Progresso", "Avaliação", "Acreditação"]
+        "subgroups": [
+          "Catálogo de Cursos",
+          "Registro de Curso",
+          "Registro de Aula",
+          "Registro de Participante",
+          "Acompanhamento de Progresso",
+          "Avaliação",
+          "Acreditação"
+        ]
       },
       "mentorship": {
         "title": "Mentorias",
         "description": "Acompanhamento personalizado de especialistas",
-        "subgroups": ["Catálogo de Mentorias", "Registro de Programa de Mentoria", "Mentores e Mentorados", "Sessões", "Relatórios"]
+        "subgroups": [
+          "Catálogo de Mentorias",
+          "Registro de Programa de Mentoria",
+          "Mentores e Mentorados",
+          "Sessões",
+          "Relatórios"
+        ]
       }
     },
     "coLab": {
       "title": "Co-Lab",
       "description": "Espaço colaborativo para desenvolver ideias de impacto",
-      "subgroups": ["Chamada", "Candidatura", "Avaliação", "Coorte", "Sessões", "Marcos"],
+      "subgroups": [
+        "Chamada",
+        "Candidatura",
+        "Avaliação",
+        "Coorte",
+        "Sessões",
+        "Marcos"
+      ],
       "granIdea": {
         "title": "CoLab para uma Grande Ideia",
         "description": "Desenvolvimento colaborativo de projetos de alto impacto",
-        "subgroups": ["Programa Grande Ideia", "Ideia Central", "Papéis da Equipe", "Contribuições", "Decisões", "Revisões"]
+        "subgroups": [
+          "Programa Grande Ideia",
+          "Ideia Central",
+          "Papéis da Equipe",
+          "Contribuições",
+          "Decisões",
+          "Revisões"
+        ]
       },
       "metodologico": {
         "title": "CoLab Metodológico",
         "description": "Aplicação de metodologias para o desenvolvimento de projetos",
-        "subgroups": ["Programa Metodológico", "Framework Metodológico", "Trilha de Ideias", "Progresso por Etapa", "Decisões", "Revisões"]
+        "subgroups": [
+          "Programa Metodológico",
+          "Framework Metodológico",
+          "Trilha de Ideias",
+          "Progresso por Etapa",
+          "Decisões",
+          "Revisões"
+        ]
       }
     }
   },
@@ -375,6 +437,231 @@
       "approve": "Aprovar",
       "reject": "Rejeitar",
       "cancel": "Cancelar"
+    }
+  },
+  "about": {
+    "badge": "Global Approach for Social Innovation",
+    "heroTitle": "Espaço operacional de",
+    "heroHighlight": "Global Approach for Social Innovation",
+    "heroDescription": "Integramos formação, colaboração e desenvolvimento de projetos em um único espaço. ImpactLAB é onde as ideias de impacto social tomam forma, se fortalecem e se tornam realidade.",
+    "startNow": "Começar agora",
+    "learnMore": "Saiba mais",
+    "origin": {
+      "title": "A Origem",
+      "videoLabel": "Ver vídeo institucional",
+      "mission": {
+        "title": "Missão",
+        "description": "Potencializar o ecossistema de inovação social na América Latina, conectando talento, recursos e conhecimento para transformar ideias em projetos de impacto real."
+      },
+      "vision": {
+        "title": "Visão",
+        "description": "Ser a plataforma de referência global para a criação colaborativa de soluções que abordem os desafios sociais mais urgentes, impulsionando um desenvolvimento sustentável e inclusivo."
+      },
+      "objectives": {
+        "title": "Objetivos",
+        "description": "Facilitar processos de formação, design de projetos e prototipagem colaborativa que permitam aos empreendedores sociais levar suas ideias do conceito à implementação."
+      }
+    },
+    "model": {
+      "title": "Nosso Modelo",
+      "subtitle": "Dois laboratórios interconectados que cobrem todo o ciclo de inovação social",
+      "learningLab": {
+        "title": "Learning-Lab",
+        "subtitle": "Formação e capacitação",
+        "description": "Espaço dedicado à formação contínua de empreendedores sociais através de cursos estruturados, mentorias personalizadas e recursos educacionais de alta qualidade.",
+        "tags": [
+          "Cursos",
+          "Mentorias",
+          "Certificações",
+          "Avaliações"
+        ]
+      },
+      "coLab": {
+        "title": "Co-Lab",
+        "subtitle": "Colaboração e prototipagem",
+        "description": "Laboratório de co-criação onde as ideias se tornam projetos através de metodologias colaborativas, equipes multidisciplinares e processos de prototipagem ágil.",
+        "tags": [
+          "Grande Ideia",
+          "Metodológico",
+          "Prototipagem",
+          "Revisões"
+        ]
+      },
+      "cycle": {
+        "title": "Ciclo completo",
+        "steps": [
+          {
+            "title": "Ideação",
+            "desc": "Gerar e validar ideias"
+          },
+          {
+            "title": "Formação",
+            "desc": "Aprender e capacitar-se"
+          },
+          {
+            "title": "Colaboração",
+            "desc": "Co-criar em equipe"
+          },
+          {
+            "title": "Lançamento",
+            "desc": "Implementar e medir"
+          }
+        ]
+      }
+    },
+    "audiences": {
+      "title": "A quem servimos",
+      "subtitle": "Conectamos todos os atores do ecossistema de inovação social",
+      "items": [
+        {
+          "title": "Organizações sociais",
+          "desc": "ONGs e fundações que buscam inovar"
+        },
+        {
+          "title": "Universidades e Institutos",
+          "desc": "Instituições acadêmicas comprometidas"
+        },
+        {
+          "title": "Governo e Setor Público",
+          "desc": "Entidades que impulsionam políticas sociais"
+        },
+        {
+          "title": "Empreendedores Sociais",
+          "desc": "Pessoas com ideias de impacto"
+        },
+        {
+          "title": "Investidores de Impacto",
+          "desc": "Financiadores de projetos sociais"
+        }
+      ]
+    },
+    "benefits": {
+      "title": "O que o Talento ganha",
+      "subtitle": "Cada pessoa que participa do ImpactLAB desenvolve habilidades, conexões e resultados tangíveis",
+      "items": [
+        {
+          "title": "Networking",
+          "desc": "Rede de contatos com empreendedores, mentores e investidores do ecossistema social"
+        },
+        {
+          "title": "Certificações",
+          "desc": "Acreditações reconhecidas que validam competências em inovação social"
+        },
+        {
+          "title": "Experiência Real",
+          "desc": "Participação direta em projetos com impacto social mensurável e documentado"
+        },
+        {
+          "title": "Crescimento",
+          "desc": "Desenvolvimento profissional contínuo com mentoria personalizada"
+        },
+        {
+          "title": "Inovação",
+          "desc": "Acesso a metodologias de vanguarda em design de projetos sociais"
+        },
+        {
+          "title": "Visibilidade",
+          "desc": "Portfólio de projetos e perfil público dentro do ecossistema GA4SI"
+        },
+        {
+          "title": "Mentoria",
+          "desc": "Acompanhamento de especialistas com trajetória comprovada em impacto social"
+        },
+        {
+          "title": "Ferramentas",
+          "desc": "Acesso a templates, frameworks e recursos para acelerar projetos"
+        }
+      ]
+    },
+    "methodology": {
+      "title": "Nossa Metodologia",
+      "subtitle": "Um processo estruturado que guia cada projeto da ideia ao impacto",
+      "steps": [
+        {
+          "step": "01",
+          "title": "Diagnóstico",
+          "desc": "Análise do contexto e definição do problema social a resolver"
+        },
+        {
+          "step": "02",
+          "title": "Design",
+          "desc": "Co-criação da solução com metodologias de design thinking"
+        },
+        {
+          "step": "03",
+          "title": "Prototipagem",
+          "desc": "Desenvolvimento do MVP e testes de conceito com usuários reais"
+        },
+        {
+          "step": "04",
+          "title": "Validação",
+          "desc": "Medição de resultados e iteração baseada em dados de impacto"
+        },
+        {
+          "step": "05",
+          "title": "Escalabilidade",
+          "desc": "Estratégia de crescimento e busca de alianças estratégicas"
+        }
+      ],
+      "stepLabel": "PASSO"
+    },
+    "history": {
+      "title": "Nossa História",
+      "subtitle": "O caminho que percorremos para construir o ecossistema de inovação social",
+      "events": [
+        {
+          "year": "2018",
+          "title": "O Começo",
+          "desc": "GA4SI é fundada com a visão de conectar atores de inovação social na América Latina."
+        },
+        {
+          "year": "2020",
+          "title": "Primeiros Programas",
+          "desc": "Lançamento dos primeiros programas de capacitação e mentoria para empreendedores sociais em 5 países."
+        },
+        {
+          "year": "2022",
+          "title": "ImpactLAB Nasce",
+          "desc": "ImpactLAB é concebido como a plataforma digital que integra formação, colaboração e gestão de projetos."
+        },
+        {
+          "year": "2024",
+          "title": "Consolidação",
+          "desc": "Mais de 500 empreendedores formados, 120 projetos incubados e presença ativa em 12 países."
+        },
+        {
+          "year": "2025",
+          "title": "Expansão Global",
+          "desc": "Abertura de novos laboratórios e alianças estratégicas com universidades e organismos internacionais."
+        }
+      ]
+    },
+    "leadership": {
+      "title": "Liderança com Propósito",
+      "subtitle": "Uma equipe comprometida com a transformação social através da inovação",
+      "members": [
+        {
+          "name": "Enzo Perdomo",
+          "role": "Diretor Executivo"
+        },
+        {
+          "name": "María López",
+          "role": "Diretora de Programas"
+        },
+        {
+          "name": "Carlos Rivera",
+          "role": "Diretor de Tecnologia"
+        },
+        {
+          "name": "Valeria Sánchez",
+          "role": "Diretora de Comunidade"
+        }
+      ]
+    },
+    "cta": {
+      "title": "Pronto para gerar impacto?",
+      "description": "Junte-se à comunidade de empreendedores, mentores e organizações que estão transformando a América Latina através da inovação social.",
+      "button": "Comece seu projeto"
     }
   }
 }

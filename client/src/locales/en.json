@@ -47,7 +47,123 @@
     "ctaTitle": "Start creating impact today",
     "ctaDescription": "Join our community of social entrepreneurs and transform your vision into reality.",
     "joinNow": "Join Now",
-    "copyright": "Social Project Management Platform"
+    "copyright": "Social Project Management Platform",
+    "tabs": {
+      "inicio": "Home",
+      "nosotros": "About Us"
+    }
+  },
+  "about": {
+    "badge": "Global Approach for Social Innovation",
+    "heroTitle": "Operational space of",
+    "heroHighlight": "Global Approach for Social Innovation",
+    "heroDescription": "We integrate training, collaboration, and project development in a single space. ImpactLAB is where social impact ideas take shape, strengthen, and become reality.",
+    "startNow": "Get Started",
+    "learnMore": "Learn More",
+    "origin": {
+      "title": "The Origin",
+      "videoLabel": "Watch institutional video",
+      "mission": {
+        "title": "Mission",
+        "description": "Empower the social innovation ecosystem in Latin America by connecting talent, resources, and knowledge to transform ideas into real-impact projects."
+      },
+      "vision": {
+        "title": "Vision",
+        "description": "Be the global reference platform for collaborative creation of solutions that address the most urgent social challenges, driving sustainable and inclusive development."
+      },
+      "objectives": {
+        "title": "Objectives",
+        "description": "Facilitate training processes, project design, and collaborative prototyping that enable social entrepreneurs to take their ideas from concept to implementation."
+      }
+    },
+    "model": {
+      "title": "Our Model",
+      "subtitle": "Two interconnected laboratories covering the entire social innovation cycle",
+      "learningLab": {
+        "title": "Learning-Lab",
+        "subtitle": "Training and capacity building",
+        "description": "A space dedicated to the continuous training of social entrepreneurs through structured courses, personalized mentoring, and high-quality educational resources.",
+        "tags": ["Courses", "Mentorships", "Certifications", "Evaluations"]
+      },
+      "coLab": {
+        "title": "Co-Lab",
+        "subtitle": "Collaboration and prototyping",
+        "description": "A co-creation laboratory where ideas become projects through collaborative methodologies, multidisciplinary teams, and agile prototyping processes.",
+        "tags": ["Big Idea", "Methodological", "Prototyping", "Reviews"]
+      },
+      "cycle": {
+        "title": "Full Cycle",
+        "steps": [
+          { "title": "Ideation", "desc": "Generate and validate ideas" },
+          { "title": "Training", "desc": "Learn and build capacity" },
+          { "title": "Collaboration", "desc": "Co-create as a team" },
+          { "title": "Launch", "desc": "Implement and measure" }
+        ]
+      }
+    },
+    "audiences": {
+      "title": "Who We Serve",
+      "subtitle": "We connect all actors in the social innovation ecosystem",
+      "items": [
+        { "title": "Social Organizations", "desc": "NGOs and foundations seeking innovation" },
+        { "title": "Universities & Institutes", "desc": "Committed academic institutions" },
+        { "title": "Government & Public Sector", "desc": "Entities driving social policies" },
+        { "title": "Social Entrepreneurs", "desc": "People with impact ideas" },
+        { "title": "Impact Investors", "desc": "Funders of social projects" }
+      ]
+    },
+    "benefits": {
+      "title": "What Talent Gains",
+      "subtitle": "Every person who participates in ImpactLAB develops skills, connections, and tangible results",
+      "items": [
+        { "title": "Networking", "desc": "Contact network with entrepreneurs, mentors, and investors in the social ecosystem" },
+        { "title": "Certifications", "desc": "Recognized accreditations that validate competencies in social innovation" },
+        { "title": "Real Experience", "desc": "Direct participation in projects with measurable and documented social impact" },
+        { "title": "Growth", "desc": "Continuous professional development with personalized mentoring and follow-up" },
+        { "title": "Innovation", "desc": "Access to cutting-edge methodologies in social project design" },
+        { "title": "Visibility", "desc": "Project portfolio and public profile within the GA4SI ecosystem" },
+        { "title": "Mentoring", "desc": "Guidance from experts with proven track record in social impact" },
+        { "title": "Tools", "desc": "Access to templates, frameworks, and resources to accelerate projects" }
+      ]
+    },
+    "methodology": {
+      "title": "Our Methodology",
+      "subtitle": "A structured process that guides each project from idea to impact",
+      "steps": [
+        { "step": "01", "title": "Diagnosis", "desc": "Context analysis and definition of the social problem to solve" },
+        { "step": "02", "title": "Design", "desc": "Co-creation of the solution with design thinking methodologies" },
+        { "step": "03", "title": "Prototyping", "desc": "MVP development and proof of concept with real users" },
+        { "step": "04", "title": "Validation", "desc": "Results measurement and iteration based on impact data" },
+        { "step": "05", "title": "Scaling", "desc": "Growth strategy and search for strategic alliances" }
+      ],
+      "stepLabel": "STEP"
+    },
+    "history": {
+      "title": "Our Story",
+      "subtitle": "The path we have traveled to build the social innovation ecosystem",
+      "events": [
+        { "year": "2018", "title": "The Beginning", "desc": "GA4SI is founded with the vision of connecting social innovation actors in Latin America through collaborative methodologies." },
+        { "year": "2020", "title": "First Programs", "desc": "Launch of the first training and mentoring programs for social entrepreneurs in 5 countries in the region." },
+        { "year": "2022", "title": "ImpactLAB Is Born", "desc": "ImpactLAB is conceived as the digital platform that integrates training, collaboration, and project management in a single space." },
+        { "year": "2024", "title": "Consolidation", "desc": "Over 500 entrepreneurs trained, 120 projects incubated, and active presence in 12 countries in Latin America and the Caribbean." },
+        { "year": "2025", "title": "Global Expansion", "desc": "Opening of new labs and strategic alliances with universities and international organizations to scale impact." }
+      ]
+    },
+    "leadership": {
+      "title": "Purpose-Driven Leadership",
+      "subtitle": "A team committed to social transformation through innovation",
+      "members": [
+        { "name": "Enzo Perdomo", "role": "Executive Director" },
+        { "name": "María López", "role": "Programs Director" },
+        { "name": "Carlos Rivera", "role": "Technology Director" },
+        { "name": "Valeria Sánchez", "role": "Community Director" }
+      ]
+    },
+    "cta": {
+      "title": "Ready to generate impact?",
+      "description": "Join the community of entrepreneurs, mentors, and organizations that are transforming Latin America through social innovation.",
+      "button": "Start your project"
+    }
   },
   "features": {
     "projects": {

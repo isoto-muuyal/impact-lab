@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageSelector } from "@/components/language-selector";
 import { useTranslation } from "@/contexts/LanguageContext";
+import LandingAbout from "@/components/landing-about";
 import { 
   Users, 
   BookOpen, 
@@ -32,8 +34,11 @@ import {
 } from "lucide-react";
 import impactLabBanner from "@assets/BANNER_IMPACTLAB_1766790182200.jpg";
 
+type LandingTab = "inicio" | "nosotros";
+
 export default function Landing() {
   const { t, tArray } = useTranslation();
+  const [activeTab, setActiveTab] = useState<LandingTab>("inicio");
 
   return (
     <div className="min-h-screen bg-background">
@@ -57,7 +62,59 @@ export default function Landing() {
               <span className="text-[10px] text-muted-foreground -mt-1">By GA4SI</span>
             </div>
           </div>
+
+          {/* Tab Navigation */}
+          <nav className="hidden md:flex items-center" data-testid="landing-tabs">
+            <div className="flex items-center bg-muted/50 rounded-lg p-1 gap-1">
+              <button
+                onClick={() => setActiveTab("inicio")}
+                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${
+                  activeTab === "inicio"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                data-testid="tab-inicio"
+              >
+                {t("landing.tabs.inicio")}
+              </button>
+              <button
+                onClick={() => setActiveTab("nosotros")}
+                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${
+                  activeTab === "nosotros"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                data-testid="tab-nosotros"
+              >
+                {t("landing.tabs.nosotros")}
+              </button>
+            </div>
+          </nav>
+
           <div className="flex items-center gap-2">
+            {/* Mobile tab switcher */}
+            <div className="flex md:hidden items-center bg-muted/50 rounded-lg p-0.5 gap-0.5">
+              <button
+                onClick={() => setActiveTab("inicio")}
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-all duration-200 ${
+                  activeTab === "inicio"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground"
+                }`}
+              >
+                {t("landing.tabs.inicio")}
+              </button>
+              <button
+                onClick={() => setActiveTab("nosotros")}
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-all duration-200 ${
+                  activeTab === "nosotros"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground"
+                }`}
+              >
+                {t("landing.tabs.nosotros")}
+              </button>
+            </div>
             <LanguageSelector />
             <ThemeToggle />
             <a href="/login">
@@ -69,6 +126,43 @@ export default function Landing() {
         </div>
       </header>
 
+      {/* Tab Content */}
+      {activeTab === "inicio" ? (
+        <LandingHome t={t} tArray={tArray} />
+      ) : (
+        <LandingAbout />
+      )}
+
+      {/* Footer - shared across tabs */}
+      <footer className="border-t py-12">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-orange-500">
+                  <div className="h-2.5 w-2.5 rounded-full bg-white" />
+                </div>
+                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary -ml-1.5">
+                  <div className="h-1.5 w-1.5 rounded-full bg-white" />
+                </div>
+              </div>
+              <span className="font-semibold">{t("app.name")}</span>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              © 2025 {t("app.name")}. {t("landing.copyright")}.
+            </p>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+/* ─────────────── Landing Home Tab (original content) ─────────────── */
+
+function LandingHome({ t, tArray }: { t: (key: string) => string; tArray: (key: string) => string[] }) {
+  return (
+    <>
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/10" />
@@ -256,26 +350,11 @@ export default function Landing() {
           </a>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="border-t py-12">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                <Sparkles className="h-4 w-4 text-primary-foreground" />
-              </div>
-              <span className="font-semibold">{t("app.name")}</span>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              © 2025 {t("app.name")}. {t("landing.copyright")}.
-            </p>
-          </div>
-        </div>
-      </footer>
-    </div>
+    </>
   );
 }
+
+/* ─────────────── Shared Components ─────────────── */
 
 function FeatureCard({ icon, title, description }: { 
   icon: React.ReactNode; 
