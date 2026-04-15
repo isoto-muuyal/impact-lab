@@ -639,22 +639,58 @@
     "leadership": {
       "title": "有使命的领导力",
       "subtitle": "致力于通过创新推动社会变革的团队",
-      "members": [
+      "foundersLabel": "创始团队",
+      "advisorsLabel": "顾问委员会 + 运营团队",
+      "founders": [
         {
-          "name": "Enzo Perdomo",
-          "role": "执行总监"
+          "name": "Karla España",
+          "role": "创始人兼首席战略与影响力官",
+          "desc": "社会创新、可持续发展和国际合作顾问",
+          "area": "战略与创新方向"
         },
         {
-          "name": "María López",
-          "role": "项目总监"
+          "name": "Nadya Bayona",
+          "role": "企业传播策略师",
+          "desc": "PR & 故事讲述",
+          "area": "战略传播、品牌和公共关系方向"
         },
         {
-          "name": "Carlos Rivera",
-          "role": "技术总监"
+          "name": "Julián Suaza",
+          "role": "战略金融领导者",
+          "desc": "22年以上银行和企业金融经验",
+          "area": "金融、可持续发展和战略联盟专业指导"
+        }
+      ],
+      "advisors": [
+        {
+          "name": "Israel Soto",
+          "role": "软件工程",
+          "desc": "高级软件工程师 | Java后端 | DevOps & 云 | 可扩展系统 | AI开发"
         },
         {
-          "name": "Valeria Sánchez",
-          "role": "社区总监"
+          "name": "Pedro César del Campo",
+          "role": "数据科学 / 统计学",
+          "desc": "数据科学家 | 大数据 | 分析 | 影响力投资"
+        },
+        {
+          "name": "Milena Castellano",
+          "role": "社会学",
+          "desc": "社会学家 | 公共政策 | 社会发展 | 性别与跨文化"
+        },
+        {
+          "name": "Astrid Klindt",
+          "role": "领导力与人类发展",
+          "desc": "意识领导力导师 | 教练 | 九型人格 | 关系智慧"
+        },
+        {
+          "name": "Luz Elena Lopera",
+          "role": "人力资源",
+          "desc": "人力资源业务伙伴 | 人才管理 | 变革管理"
+        },
+        {
+          "name": "Luis Castañeda",
+          "role": "技术导师",
+          "desc": "纽约电气工程高年级学生 | Web开发、应用和数字定位"
         }
       ]
     },

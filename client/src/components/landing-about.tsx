@@ -24,10 +24,27 @@ import {
   Handshake,
   Shield,
   Zap,
-  Star,
   BarChart3,
   Layers,
+  Linkedin,
+  ExternalLink,
 } from "lucide-react";
+
+// Founder/advisor data with LinkedIn links
+const founders = [
+  { initials: "KE", linkedin: "https://www.linkedin.com/in/karlaespana/", gradient: "bg-gradient-to-br from-orange-500 to-rose-600" },
+  { initials: "NB", linkedin: "https://www.linkedin.com/in/nadyabayonaprieto/", gradient: "bg-gradient-to-br from-violet-500 to-purple-700" },
+  { initials: "JS", linkedin: "https://www.linkedin.com/in/juliansuaza/", gradient: "bg-gradient-to-br from-blue-500 to-indigo-700" },
+];
+
+const advisors = [
+  { initials: "IS", linkedin: "https://www.linkedin.com/in/israel-soto-923649b8/", gradient: "bg-gradient-to-br from-emerald-500 to-teal-700" },
+  { initials: "PC", linkedin: "https://www.linkedin.com/in/pcdelcampon/", gradient: "bg-gradient-to-br from-cyan-500 to-blue-600" },
+  { initials: "MC", linkedin: "https://www.linkedin.com/in/milena-carolina-castellanos-pinilla-0ba80295/", gradient: "bg-gradient-to-br from-pink-500 to-rose-600" },
+  { initials: "AK", linkedin: "https://www.linkedin.com/in/astridklindt-lifetrainer/", gradient: "bg-gradient-to-br from-amber-500 to-orange-600" },
+  { initials: "LL", linkedin: "https://www.linkedin.com/in/luz-elena-lopera/", gradient: "bg-gradient-to-br from-indigo-500 to-violet-600" },
+  { initials: "LC", linkedin: "", gradient: "bg-gradient-to-br from-slate-600 to-slate-800" },
+];
 
 export default function LandingAbout() {
   const { t } = useTranslation();
@@ -68,14 +85,6 @@ export default function LandingAbout() {
     { icon: <BookOpen className="h-6 w-6" />, color: "bg-primary/10 text-primary" },
     { icon: <Users className="h-6 w-6" />, color: "bg-orange-500/10 text-orange-500" },
     { icon: <Rocket className="h-6 w-6" />, color: "bg-primary/10 text-primary" },
-  ];
-
-  // Team member images
-  const memberImages = [
-    "/team-member-1.png",
-    "/team-member-2.png",
-    "/team-member-3.png",
-    "/team-member-4.png",
   ];
 
   return (
@@ -422,27 +431,94 @@ export default function LandingAbout() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {memberImages.map((image, idx) => (
-              <div key={idx} className="text-center group">
-                <div className="relative mb-5">
-                  <div className="w-36 h-36 mx-auto rounded-full overflow-hidden border-4 border-muted group-hover:border-primary transition-colors duration-300 shadow-lg">
-                    <img
-                      src={image}
-                      alt={t(`about.leadership.members.${idx}.name`)}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2">
-                    <div className="h-6 w-6 rounded-full bg-orange-500 flex items-center justify-center shadow-md">
-                      <Star className="h-3 w-3 text-white" />
+          {/* Founding Team */}
+          <div className="mb-16">
+            <div className="flex items-center gap-3 mb-8 justify-center">
+              <div className="h-px flex-1 max-w-[80px] bg-gradient-to-r from-transparent to-orange-500/40" />
+              <h3 className="text-lg font-semibold text-orange-500 uppercase tracking-wider">
+                {t("about.leadership.foundersLabel")}
+              </h3>
+              <div className="h-px flex-1 max-w-[80px] bg-gradient-to-l from-transparent to-orange-500/40" />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {founders.map((founder, idx) => (
+                <Card key={idx} className="border-none shadow-lg overflow-hidden group hover:shadow-xl transition-shadow duration-300">
+                  <CardContent className="p-6 text-center">
+                    <div className="relative mb-5 inline-block">
+                      <div className="w-28 h-28 mx-auto rounded-full overflow-hidden border-4 border-muted group-hover:border-primary transition-colors duration-300 shadow-lg">
+                        <div className={`w-full h-full flex items-center justify-center text-white font-bold text-2xl ${founder.gradient}`}>
+                          {founder.initials}
+                        </div>
+                      </div>
+                      {founder.linkedin && (
+                        <a
+                          href={founder.linkedin}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-[#0077b5] flex items-center justify-center shadow-md hover:scale-110 transition-transform duration-200"
+                        >
+                          <Linkedin className="h-4 w-4 text-white" />
+                        </a>
+                      )}
                     </div>
+                    <h3 className="font-semibold text-lg mb-1">{t(`about.leadership.founders.${idx}.name`)}</h3>
+                    <p className="text-sm font-medium text-primary mb-1">{t(`about.leadership.founders.${idx}.role`)}</p>
+                    <p className="text-xs text-muted-foreground mb-3 leading-relaxed">{t(`about.leadership.founders.${idx}.desc`)}</p>
+                    <Badge variant="secondary" className="bg-orange-500/10 text-orange-600 text-xs">
+                      {t(`about.leadership.founders.${idx}.area`)}
+                    </Badge>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          {/* Advisory Board */}
+          <div>
+            <div className="flex items-center gap-3 mb-8 justify-center">
+              <div className="h-px flex-1 max-w-[120px] bg-gradient-to-r from-transparent to-primary/30" />
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                {t("about.leadership.advisorsLabel")}
+              </h3>
+              <div className="h-px flex-1 max-w-[120px] bg-gradient-to-l from-transparent to-primary/30" />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {advisors.map((advisor, idx) => (
+                <div key={idx} className="flex items-start gap-4 p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors duration-200 group">
+                  <div className="relative shrink-0">
+                    <div className="w-14 h-14 rounded-full overflow-hidden shadow-md">
+                      <div className={`w-full h-full flex items-center justify-center text-white font-bold text-sm ${advisor.gradient}`}>
+                        {advisor.initials}
+                      </div>
+                    </div>
+                    {advisor.linkedin && (
+                      <a
+                        href={advisor.linkedin}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="absolute -bottom-0.5 -right-0.5 h-5 w-5 rounded-full bg-[#0077b5] flex items-center justify-center shadow-sm hover:scale-110 transition-transform duration-200"
+                      >
+                        <Linkedin className="h-2.5 w-2.5 text-white" />
+                      </a>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-semibold text-sm">{t(`about.leadership.advisors.${idx}.name`)}</h4>
+                      {advisor.linkedin && (
+                        <a href={advisor.linkedin} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      )}
+                    </div>
+                    <p className="text-xs font-medium text-primary mb-1">{t(`about.leadership.advisors.${idx}.role`)}</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{t(`about.leadership.advisors.${idx}.desc`)}</p>
                   </div>
                 </div>
-                <h3 className="font-semibold text-lg">{t(`about.leadership.members.${idx}.name`)}</h3>
-                <p className="text-sm text-muted-foreground">{t(`about.leadership.members.${idx}.role`)}</p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </section>

@@ -639,22 +639,58 @@
     "leadership": {
       "title": "Liderança com Propósito",
       "subtitle": "Uma equipe comprometida com a transformação social através da inovação",
-      "members": [
+      "foundersLabel": "Equipe Fundadora",
+      "advisorsLabel": "Conselho Consultivo + Equipe Operacional",
+      "founders": [
         {
-          "name": "Enzo Perdomo",
-          "role": "Diretor Executivo"
+          "name": "Karla España",
+          "role": "Fundadora & Diretora de Estratégia e Impacto",
+          "desc": "Consultora em inovação social, desenvolvimento sustentável e cooperação internacional",
+          "area": "Direção de Estratégia e Inovação"
         },
         {
-          "name": "María López",
-          "role": "Diretora de Programas"
+          "name": "Nadya Bayona",
+          "role": "Estrategista de Comunicação Corporativa",
+          "desc": "PR & Storytelling",
+          "area": "Direção de Comunicação Estratégica, Marca e Relações Públicas"
         },
         {
-          "name": "Carlos Rivera",
-          "role": "Diretor de Tecnologia"
+          "name": "Julián Suaza",
+          "role": "Líder Financeiro Estratégico",
+          "desc": "+22 anos em banco e finanças corporativas",
+          "area": "Direção Pro Bono de Finanças, Sustentabilidade e Alianças Estratégicas"
+        }
+      ],
+      "advisors": [
+        {
+          "name": "Israel Soto",
+          "role": "Engenharia de Software",
+          "desc": "Engenheiro de Software Senior | Backend Java | DevOps & Cloud | Sistemas Escaláveis | Desenvolvimento com IA"
         },
         {
-          "name": "Valeria Sánchez",
-          "role": "Diretora de Comunidade"
+          "name": "Pedro César del Campo",
+          "role": "Ciência de Dados / Estatística",
+          "desc": "Data Scientist | Big Data | Analytics | Investimento de Impacto"
+        },
+        {
+          "name": "Milena Castellano",
+          "role": "Sociologia",
+          "desc": "Socióloga | Políticas públicas | Desenvolvimento social | Gênero e interculturalidade"
+        },
+        {
+          "name": "Astrid Klindt",
+          "role": "Liderança e Desenvolvimento Humano",
+          "desc": "Mentora em liderança consciente | Coaching | Eneagrama | Inteligência relacional"
+        },
+        {
+          "name": "Luz Elena Lopera",
+          "role": "Recursos Humanos",
+          "desc": "Parceira de RH | Gestão de Talentos | Gestão de Mudanças"
+        },
+        {
+          "name": "Luis Castañeda",
+          "role": "Mentor em Tecnologia",
+          "desc": "Estudante avançado de Engenharia Elétrica (NY) | Desenvolvimento web, apps e posicionamento digital"
         }
       ]
     },
