@@ -234,33 +234,33 @@
       "stepLabel": "PASO"
     },
     "history": {
-      "title": "Nuestra Historia",
-      "subtitle": "El camino que hemos recorrido para construir el ecosistema de innovación social",
+      "title": "Nuestra Trayectoria",
+      "subtitle": "Del concepto académico a la plataforma de impacto global",
       "events": [
         {
-          "year": "2018",
-          "title": "El Comienzo",
-          "desc": "GA4SI es fundada con la visión de conectar actores de innovación social en América Latina a través de metodologías colaborativas."
-        },
-        {
-          "year": "2020",
-          "title": "Primeros Programas",
-          "desc": "Lanzamiento de los primeros programas de capacitación y mentoría para emprendedores sociales en 5 países de la región."
-        },
-        {
-          "year": "2022",
-          "title": "ImpactLAB Nace",
-          "desc": "Se concibe ImpactLAB como la plataforma digital que integra formación, colaboración y gestión de proyectos en un solo espacio."
-        },
-        {
           "year": "2024",
-          "title": "Consolidación",
-          "desc": "Más de 500 emprendedores formados, 120 proyectos incubados y presencia activa en 12 países de América Latina y el Caribe."
+          "title": "El Origen: Idea e Incubación en MIT Sloan",
+          "desc": "Gestación del concepto en la Stavros Niarchos Library y desarrollo del modelo operativo dentro del ecosistema de innovación del Sloan School of Management (MIT), fusionando visión urbana con rigor académico."
         },
         {
           "year": "2025",
-          "title": "Expansión Global",
-          "desc": "Apertura de nuevos laboratorios y alianzas estratégicas con universidades y organismos internacionales para escalar el impacto."
+          "title": "El Lanzamiento: Epicentro en Nueva York",
+          "desc": "Establecimiento de ImpactLab en NYC como el nodo central de operaciones, consolidando el espacio donde el talento local se vincula con proyectos de innovación social de clase mundial."
+        },
+        {
+          "year": "2026",
+          "title": "La Estructura: Laboratorios Duales y Acreditación ARNI",
+          "desc": "Creación del Learning Lab y CoLab para solucionar desafíos urbanos reales. Implementación de la metodología de impacto certificada y acreditada por ARNI, asegurando estándares de excelencia en el voluntariado profesional."
+        },
+        {
+          "year": "2026",
+          "title": "El Presente: Consolidación del Ciclo de Impacto",
+          "desc": "Ejecución activa del ciclo Activar → Estructurar → Aplicar → Generar Impacto. Estamos en la fase de validación de resultados en tiempo real, maximizando el valor entregado a nuestras organizaciones aliadas."
+        },
+        {
+          "year": "→",
+          "title": "El Futuro Inmediato: Expansión Estratégica Global",
+          "desc": "Escalamiento del modelo como una solución replicable, conectando instituciones académicas y organizaciones de impacto en múltiples ciudades, exportando la innovación nacida en Nueva York hacia el resto del mundo."
         }
       ]
     },
