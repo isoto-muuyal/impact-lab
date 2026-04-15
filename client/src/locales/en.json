@@ -224,14 +224,14 @@
       "subtitle": "From academic concept to global impact platform",
       "events": [
         {
-          "year": "2024",
-          "title": "The Origin: Idea & Incubation at MIT Sloan",
-          "desc": "Concept development at the Stavros Niarchos Library and creation of the operational model within the innovation ecosystem of the Sloan School of Management (MIT), merging urban vision with academic rigor."
-        },
-        {
           "year": "2025",
           "title": "The Launch: Epicenter in New York",
           "desc": "Establishment of ImpactLab in NYC as the central operations hub, consolidating the space where local talent connects with world-class social innovation projects."
+        },
+        {
+          "year": "2024",
+          "title": "The Origin: Idea & Incubation at MIT Sloan",
+          "desc": "Concept development at the Stavros Niarchos Library and creation of the operational model within the innovation ecosystem of the Sloan School of Management (MIT), merging urban vision with academic rigor."
         },
         {
           "year": "2026",
