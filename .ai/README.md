@@ -60,3 +60,7 @@ Whether these run automatically depends on the AI tool you use.
 3. If your AI tool supports hooks, point it at the scripts in `.ai/hooks/`.
 4. Keep the examples versioned so the whole team shares the same expectations.
 
+
+## QA Environment
+domain = qa.impactlab.muuyal.tech
+

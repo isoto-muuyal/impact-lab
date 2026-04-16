@@ -4,26 +4,74 @@ on:
   push:
     branches:
       - main
+      - qa
   workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_REGION: ${{ secrets.AWS_REGIONgit }}
       ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
       EC2_PORT: ${{ secrets.EC2_PORT || '22' }}
       DOCKER_NETWORK: ${{ secrets.DOCKER_NETWORK || 'shared_network' }}
+      PROD_DB_HOST: ${{ secrets.DB_HOST }}
+      PROD_DB_PORT: ${{ secrets.DB_PORT || '5432' }}
+      PROD_DB_ADMIN_USER: ${{ secrets.DB_ADMIN_USER }}
+      PROD_DB_ADMIN_PASSWORD: ${{ secrets.DB_ADMIN_PASSWORD }}
+      PROD_APP_DB_NAME: ${{ secrets.APP_DB_NAME || 'impactlab' }}
+      PROD_APP_DB_USER: ${{ secrets.APP_DB_USER || 'impactlab' }}
+      PROD_APP_DB_PASSWORD: ${{ secrets.APP_DB_PASSWORD || 'impactlab' }}
+      PROD_ADMIN_DB_NAME: ${{ secrets.ADMIN_DB_NAME || 'postgres' }}
+      QA_DB_HOST: ${{ secrets.QA_DB_HOST || secrets.DB_HOST }}
+      QA_DB_PORT: ${{ secrets.QA_DB_PORT || secrets.DB_PORT || '5432' }}
+      QA_DB_ADMIN_USER: ${{ secrets.QA_DB_ADMIN_USER || secrets.DB_ADMIN_USER }}
+      QA_DB_ADMIN_PASSWORD: ${{ secrets.QA_DB_ADMIN_PASSWORD || secrets.DB_ADMIN_PASSWORD }}
+      QA_APP_DB_NAME: ${{ secrets.QA_APP_DB_NAME || 'impactlab_qa' }}
+      QA_APP_DB_USER: ${{ secrets.QA_APP_DB_USER || secrets.APP_DB_USER || 'impactlab' }}
+      QA_APP_DB_PASSWORD: ${{ secrets.QA_APP_DB_PASSWORD || secrets.APP_DB_PASSWORD || 'impactlab' }}
+      QA_ADMIN_DB_NAME: ${{ secrets.QA_ADMIN_DB_NAME || secrets.ADMIN_DB_NAME || 'postgres' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Set deployment target
+        id: target
+        run: |
+          if [ "${GITHUB_REF_NAME}" = "qa" ]; then
+            echo "deploy_env=qa" >> "$GITHUB_OUTPUT"
+            echo "remote_dir=/home/${{ secrets.EC2_USERNAME }}/apps/impactlab-qa" >> "$GITHUB_OUTPUT"
+            echo "container_name=qa-impactlab" >> "$GITHUB_OUTPUT"
+            echo "app_port=5050" >> "$GITHUB_OUTPUT"
+            echo "db_host=${QA_DB_HOST}" >> "$GITHUB_OUTPUT"
+            echo "db_port=${QA_DB_PORT}" >> "$GITHUB_OUTPUT"
+            echo "db_admin_user=${QA_DB_ADMIN_USER}" >> "$GITHUB_OUTPUT"
+            echo "db_admin_password=${QA_DB_ADMIN_PASSWORD}" >> "$GITHUB_OUTPUT"
+            echo "app_db_name=${QA_APP_DB_NAME}" >> "$GITHUB_OUTPUT"
+            echo "app_db_user=${QA_APP_DB_USER}" >> "$GITHUB_OUTPUT"
+            echo "app_db_password=${QA_APP_DB_PASSWORD}" >> "$GITHUB_OUTPUT"
+            echo "admin_db_name=${QA_ADMIN_DB_NAME}" >> "$GITHUB_OUTPUT"
+          else
+            echo "deploy_env=prod" >> "$GITHUB_OUTPUT"
+            echo "remote_dir=/home/${{ secrets.EC2_USERNAME }}/apps/impactlab" >> "$GITHUB_OUTPUT"
+            echo "container_name=impactlab" >> "$GITHUB_OUTPUT"
+            echo "app_port=5000" >> "$GITHUB_OUTPUT"
+            echo "db_host=${PROD_DB_HOST}" >> "$GITHUB_OUTPUT"
+            echo "db_port=${PROD_DB_PORT}" >> "$GITHUB_OUTPUT"
+            echo "db_admin_user=${PROD_DB_ADMIN_USER}" >> "$GITHUB_OUTPUT"
+            echo "db_admin_password=${PROD_DB_ADMIN_PASSWORD}" >> "$GITHUB_OUTPUT"
+            echo "app_db_name=${PROD_APP_DB_NAME}" >> "$GITHUB_OUTPUT"
+            echo "app_db_user=${PROD_APP_DB_USER}" >> "$GITHUB_OUTPUT"
+            echo "app_db_password=${PROD_APP_DB_PASSWORD}" >> "$GITHUB_OUTPUT"
+            echo "admin_db_name=${PROD_ADMIN_DB_NAME}" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Ensure ECR repository exists
         run: |
@@ -63,8 +111,8 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          port: ${{ env.EC2_PORT }}
-          target: ~/apps/impactlab
+          port: ${{ secrets.EC2_PORT }}
+          target: ${{ steps.target.outputs.remote_dir }}
           source: docker-compose.yml,db,package.json,package-lock.json,drizzle.config.ts,shared
 
       - name: Deploy on EC2
@@ -73,25 +121,28 @@ jobs:
           IMAGE_URI: ${{ steps.build-image.outputs.image_uri }}
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_PASSWORD: ${{ steps.ecr-password.outputs.password }}
-          DOCKER_NETWORK: ${{ env.DOCKER_NETWORK }}
-          PGHOST: ${{ secrets.DB_HOST }}
-          PGPORT: ${{ secrets.DB_PORT || '5432' }}
-          PGUSER: ${{ secrets.DB_ADMIN_USER }}
-          PGPASSWORD: ${{ secrets.DB_ADMIN_PASSWORD }}
-          APP_DB_NAME: ${{ secrets.APP_DB_NAME || 'impactlab' }}
-          APP_DB_USER: ${{ secrets.APP_DB_USER || 'impactlab' }}
-          APP_DB_PASSWORD: ${{ secrets.APP_DB_PASSWORD || 'impactlab' }}
-          ADMIN_DB_NAME: ${{ secrets.ADMIN_DB_NAME || 'postgres' }}
+          DOCKER_NETWORK: ${{ secrets.DOCKER_NETWORK }}
+          REMOTE_DIR: ${{ steps.target.outputs.remote_dir }}
+          CONTAINER_NAME: ${{ steps.target.outputs.container_name }}
+          APP_PORT: ${{ steps.target.outputs.app_port }}
+          PGHOST: ${{ steps.target.outputs.db_host }}
+          PGPORT: ${{ steps.target.outputs.db_port }}
+          PGUSER: ${{ steps.target.outputs.db_admin_user }}
+          PGPASSWORD: ${{ steps.target.outputs.db_admin_password }}
+          APP_DB_NAME: ${{ steps.target.outputs.app_db_name }}
+          APP_DB_USER: ${{ steps.target.outputs.app_db_user }}
+          APP_DB_PASSWORD: ${{ steps.target.outputs.app_db_password }}
+          ADMIN_DB_NAME: ${{ steps.target.outputs.admin_db_name }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           port: ${{ env.EC2_PORT }}
-          envs: IMAGE_URI,ECR_REGISTRY,ECR_PASSWORD,DOCKER_NETWORK,PGHOST,PGPORT,PGUSER,PGPASSWORD,APP_DB_NAME,APP_DB_USER,APP_DB_PASSWORD,ADMIN_DB_NAME
+          envs: IMAGE_URI,ECR_REGISTRY,ECR_PASSWORD,DOCKER_NETWORK,REMOTE_DIR,CONTAINER_NAME,APP_PORT,PGHOST,PGPORT,PGUSER,PGPASSWORD,APP_DB_NAME,APP_DB_USER,APP_DB_PASSWORD,ADMIN_DB_NAME
           script: |
             set -e
-            mkdir -p ~/apps/impactlab
-            cd ~/apps/impactlab
+            mkdir -p "${REMOTE_DIR}"
+            cd "${REMOTE_DIR}"
 
             touch .env
 
@@ -105,6 +156,18 @@ jobs:
               sed -i "s|^DOCKER_NETWORK=.*|DOCKER_NETWORK=${DOCKER_NETWORK}|" .env
             else
               printf 'DOCKER_NETWORK=%s\n' "${DOCKER_NETWORK}" >> .env
+            fi
+
+            if grep -q '^CONTAINER_NAME=' .env; then
+              sed -i "s|^CONTAINER_NAME=.*|CONTAINER_NAME=${CONTAINER_NAME}|" .env
+            else
+              printf 'CONTAINER_NAME=%s\n' "${CONTAINER_NAME}" >> .env
+            fi
+
+            if grep -q '^APP_PORT=' .env; then
+              sed -i "s|^APP_PORT=.*|APP_PORT=${APP_PORT}|" .env
+            else
+              printf 'APP_PORT=%s\n' "${APP_PORT}" >> .env
             fi
 
             docker network inspect "${DOCKER_NETWORK}" >/dev/null 2>&1 || docker network create "${DOCKER_NETWORK}"

@@ -68,10 +68,54 @@ type RoleRequestAttachment = {
   name: string;
   type: string;
   size: number;
-  dataUrl: string;
+  url: string;
+  storageKey: string;
 };
 
+function getApiErrorMessage(error: unknown, fallback: string): string {
+  if (!(error instanceof Error) || !error.message) {
+    return fallback;
+  }
+
+  const normalized = error.message.replace(/^\d+:\s*/, "").trim();
+  if (!normalized) {
+    return fallback;
+  }
+
+  try {
+    const parsed = JSON.parse(normalized);
+    if (parsed && typeof parsed.message === "string") {
+      return parsed.message;
+    }
+  } catch {
+    return normalized;
+  }
+
+  return normalized;
+}
+
+async function uploadRoleRequestAttachment(file: File): Promise<RoleRequestAttachment> {
+  const response = await fetch("/api/uploads/role-request-attachments", {
+    method: "POST",
+    headers: {
+      "Content-Type": file.type || "application/octet-stream",
+      "X-File-Name": encodeURIComponent(file.name),
+      "X-File-Size": String(file.size),
+    },
+    body: file,
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const text = (await response.text()) || response.statusText;
+    throw new Error(`${response.status}: ${text}`);
+  }
+
+  return response.json();
+}
+
 const timezones = [
+  { value: "America/New_York", label: "New York (GMT-5)" },
   { value: "America/Mexico_City", label: "Ciudad de México (GMT-6)" },
   { value: "America/Bogota", label: "Bogotá (GMT-5)" },
   { value: "America/Lima", label: "Lima (GMT-5)" },
@@ -91,6 +135,7 @@ export default function Profile() {
   const [requestedRoleId, setRequestedRoleId] = useState<string | null>(null);
   const [roleRequestJustification, setRoleRequestJustification] = useState("");
   const [roleRequestAttachments, setRoleRequestAttachments] = useState<RoleRequestAttachment[]>([]);
+  const [isUploadingRoleAttachments, setIsUploadingRoleAttachments] = useState(false);
   
   const isImpactLabAdmin = user?.username === "impactlab";
 
@@ -119,7 +164,7 @@ export default function Profile() {
       bio: "",
       country: "",
       city: "",
-      timezone: "America/Mexico_City",
+      timezone: "America/New_York",
       linkedinUrl: "",
       skills: "",
       interests: "",
@@ -135,7 +180,7 @@ export default function Profile() {
         bio: user.profile?.bio || "",
         country: user.profile?.country || "",
         city: user.profile?.city || "",
-        timezone: user.timezone || "America/Mexico_City",
+        timezone: user.timezone || "America/New_York",
         linkedinUrl: user.profile?.linkedinUrl || "",
         skills: user.profile?.skills?.join(", ") || "",
         interests: user.profile?.interests?.join(", ") || "",
@@ -228,10 +273,10 @@ export default function Profile() {
         description: "El admin revisará tu solicitud de rol.",
       });
     },
-    onError: () => {
+    onError: (error) => {
       toast({
         title: "Error",
-        description: "No se pudo enviar la solicitud de rol.",
+        description: getApiErrorMessage(error, "No se pudo enviar la solicitud de rol."),
         variant: "destructive",
       });
     },
@@ -269,25 +314,26 @@ export default function Profile() {
   const handleRoleRequestAttachments = async (files: FileList | null) => {
     if (!files?.length) return;
 
-    const nextAttachments = await Promise.all(
-      Array.from(files).slice(0, 5).map(
-        (file) =>
-          new Promise<RoleRequestAttachment>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () =>
-              resolve({
-                name: file.name,
-                type: file.type,
-                size: file.size,
-                dataUrl: String(reader.result || ""),
-              });
-            reader.onerror = () => reject(reader.error);
-            reader.readAsDataURL(file);
-          })
-      )
-    );
-
-    setRoleRequestAttachments(nextAttachments);
+    try {
+      setIsUploadingRoleAttachments(true);
+      const nextAttachments = await Promise.all(
+        Array.from(files).slice(0, 5).map((file) => uploadRoleRequestAttachment(file))
+      );
+      setRoleRequestAttachments(nextAttachments);
+      toast({
+        title: "Adjuntos cargados",
+        description: "Los archivos se cargaron correctamente.",
+      });
+    } catch (error) {
+      setRoleRequestAttachments([]);
+      toast({
+        title: "Error",
+        description: getApiErrorMessage(error, "No se pudo cargar el archivo adjunto."),
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingRoleAttachments(false);
+    }
   };
 
   const handleSubmitRoleRequest = () => {
@@ -800,10 +846,14 @@ export default function Profile() {
                 id="role-request-attachments"
                 type="file"
                 multiple
+                accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.webp"
                 onChange={(event) => {
                   void handleRoleRequestAttachments(event.target.files);
                 }}
               />
+              {isUploadingRoleAttachments ? (
+                <p className="text-sm text-muted-foreground">Cargando adjuntos...</p>
+              ) : null}
               {roleRequestAttachments.length > 0 ? (
                 <div className="space-y-2 rounded-md border p-3 text-sm">
                   {roleRequestAttachments.map((attachment) => (
@@ -820,7 +870,7 @@ export default function Profile() {
             <Button type="button" variant="outline" onClick={() => setIsRoleRequestDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button type="button" onClick={handleSubmitRoleRequest} disabled={roleRequestMutation.isPending}>
+            <Button type="button" onClick={handleSubmitRoleRequest} disabled={roleRequestMutation.isPending || isUploadingRoleAttachments}>
               {roleRequestMutation.isPending ? "Enviando..." : "Enviar solicitud"}
             </Button>
           </DialogFooter>

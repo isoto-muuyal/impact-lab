@@ -49,6 +49,7 @@ import {
   type ProjectJoinRequest,
   type InsertProjectJoinRequest,
   type ProjectJoinRequestWithDetails,
+  type ProjectMentorMatch,
   type Notification,
   type InsertNotification,
   type Course,
@@ -103,6 +104,7 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, or, and, isNull, gte, lte, sql } from "drizzle-orm";
+import { scoreProjectMentorMatches } from "./services/projectMentorMatcher";
 
 export type ActivityRange = 'week' | 'month' | 'all';
 
@@ -164,9 +166,13 @@ export interface IStorage {
   createProject(project: InsertProject): Promise<ProjectWithOwner>;
   updateProject(id: string, project: Partial<InsertProject>): Promise<ProjectWithOwner | undefined>;
   deleteProject(id: string): Promise<boolean>;
+  isProjectAdmin(projectId: string, userId: string): Promise<boolean>;
+  getProjectAdminParticipants(projectId: string): Promise<SocialProjectParticipantWithUser[]>;
   getSocialProjectParticipants(projectId: string): Promise<SocialProjectParticipantWithUser[]>;
   getSocialProjectParticipant(projectId: string, userId: string): Promise<SocialProjectParticipant | undefined>;
   createSocialProjectParticipant(data: InsertSocialProjectParticipant): Promise<SocialProjectParticipant>;
+  updateSocialProjectParticipant(id: string, data: Partial<InsertSocialProjectParticipant>): Promise<SocialProjectParticipant | undefined>;
+  deleteSocialProjectParticipant(id: string): Promise<boolean>;
   getProjectJoinRequests(projectId: string): Promise<ProjectJoinRequestWithDetails[]>;
   getProjectJoinRequest(id: string): Promise<ProjectJoinRequestWithDetails | undefined>;
   getPendingProjectJoinRequest(projectId: string, userId: string): Promise<ProjectJoinRequest | undefined>;
@@ -220,6 +226,7 @@ export interface IStorage {
   getMentors(): Promise<User[]>;
   getMentorsWithProfiles(): Promise<UserWithProfile[]>;
   findMentorMatchesForProject(projectId: string): Promise<{ mentor: UserWithProfile; score: number; reasons: string[] }[]>;
+  findSocialProjectMentorMatches(projectId: string): Promise<ProjectMentorMatch[]>;
   
   // Organization operations
   getOrganizations(activeOnly?: boolean): Promise<Organization[]>;
@@ -707,6 +714,7 @@ export class DatabaseStorage implements IStorage {
         project.description,
         project.category,
         project.location,
+        project.skillsNeeded,
         project.targetBeneficiaries,
         project.expectedImpact,
       ]
@@ -756,6 +764,7 @@ export class DatabaseStorage implements IStorage {
       projectId: project.id,
       userId: project.ownerId,
       role: 'proponente',
+      isProjectAdmin: true,
       helpDescription: null,
       isActive: true,
     });
@@ -785,6 +794,33 @@ export class DatabaseStorage implements IStorage {
     return true;
   }
 
+  async isProjectAdmin(projectId: string, userId: string): Promise<boolean> {
+    const project = await this.getProject(projectId);
+    if (!project) return false;
+
+    if (project.ownerId === userId) {
+      return true;
+    }
+
+    const [participant] = await db
+      .select()
+      .from(socialProjectParticipants)
+      .where(and(
+        eq(socialProjectParticipants.projectId, projectId),
+        eq(socialProjectParticipants.userId, userId),
+        eq(socialProjectParticipants.isActive, true),
+        eq(socialProjectParticipants.isProjectAdmin, true),
+      ));
+
+    return Boolean(participant);
+  }
+
+  async getProjectAdminParticipants(projectId: string): Promise<SocialProjectParticipantWithUser[]> {
+    const participants = await this.getSocialProjectParticipants(projectId);
+    const project = await this.getProject(projectId);
+    return participants.filter((participant) => participant.isProjectAdmin || participant.userId === project?.ownerId);
+  }
+
   async getSocialProjectParticipants(projectId: string): Promise<SocialProjectParticipantWithUser[]> {
     const [project, participants] = await Promise.all([
       db.select().from(projects).where(eq(projects.id, projectId)).then((rows) => rows[0]),
@@ -811,6 +847,7 @@ export class DatabaseStorage implements IStorage {
         projectId: project.id,
         userId: project.ownerId,
         role: 'proponente',
+        isProjectAdmin: true,
         helpDescription: null,
         isActive: true,
         createdAt: project.createdAt,
@@ -825,6 +862,7 @@ export class DatabaseStorage implements IStorage {
         projectId: project.id,
         userId: project.mentorId,
         role: 'mentor',
+        isProjectAdmin: false,
         helpDescription: null,
         isActive: true,
         createdAt: project.createdAt,
@@ -851,7 +889,54 @@ export class DatabaseStorage implements IStorage {
 
   async createSocialProjectParticipant(data: InsertSocialProjectParticipant): Promise<SocialProjectParticipant> {
     const [participant] = await db.insert(socialProjectParticipants).values(data).returning();
+    await this.syncPrimaryProjectMentor(data.projectId);
     return participant;
+  }
+
+  async updateSocialProjectParticipant(id: string, data: Partial<InsertSocialProjectParticipant>): Promise<SocialProjectParticipant | undefined> {
+    const [current] = await db
+      .select()
+      .from(socialProjectParticipants)
+      .where(eq(socialProjectParticipants.id, id));
+
+    if (!current) return undefined;
+
+    if (current.isProjectAdmin && data.isProjectAdmin === false) {
+      if (await this.getProjectAdminCount(current.projectId) <= 1) {
+        throw new Error("A project must have at least one admin");
+      }
+    }
+
+    const [participant] = await db
+      .update(socialProjectParticipants)
+      .set({
+        ...data,
+        updatedAt: new Date(),
+      })
+      .where(eq(socialProjectParticipants.id, id))
+      .returning();
+
+    await this.syncPrimaryProjectMentor(current.projectId);
+    return participant;
+  }
+
+  async deleteSocialProjectParticipant(id: string): Promise<boolean> {
+    const [participant] = await db
+      .select()
+      .from(socialProjectParticipants)
+      .where(eq(socialProjectParticipants.id, id));
+
+    if (!participant) return false;
+
+    if (participant.isProjectAdmin) {
+      if (await this.getProjectAdminCount(participant.projectId) <= 1) {
+        throw new Error("A project must have at least one admin");
+      }
+    }
+
+    await db.delete(socialProjectParticipants).where(eq(socialProjectParticipants.id, id));
+    await this.syncPrimaryProjectMentor(participant.projectId);
+    return true;
   }
 
   async getProjectJoinRequests(projectId: string): Promise<ProjectJoinRequestWithDetails[]> {
@@ -953,6 +1038,49 @@ export class DatabaseStorage implements IStorage {
       .returning();
 
     return notification;
+  }
+
+  private async getProjectAdminCount(projectId: string): Promise<number> {
+    const [project] = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.id, projectId));
+
+    if (!project) {
+      return 0;
+    }
+
+    const adminParticipants = await db
+      .select()
+      .from(socialProjectParticipants)
+      .where(and(
+        eq(socialProjectParticipants.projectId, projectId),
+        eq(socialProjectParticipants.isActive, true),
+        eq(socialProjectParticipants.isProjectAdmin, true),
+      ));
+
+    const hasOwnerAdminRow = adminParticipants.some((participant) => participant.userId === project.ownerId);
+    return adminParticipants.length + (hasOwnerAdminRow ? 0 : 1);
+  }
+
+  private async syncPrimaryProjectMentor(projectId: string): Promise<void> {
+    const [primaryMentor] = await db
+      .select()
+      .from(socialProjectParticipants)
+      .where(and(
+        eq(socialProjectParticipants.projectId, projectId),
+        eq(socialProjectParticipants.role, 'mentor'),
+        eq(socialProjectParticipants.isActive, true),
+      ))
+      .orderBy(desc(socialProjectParticipants.createdAt));
+
+    await db
+      .update(projects)
+      .set({
+        mentorId: primaryMentor?.userId || null,
+        updatedAt: new Date(),
+      })
+      .where(eq(projects.id, projectId));
   }
 
   // Course operations
@@ -1383,7 +1511,10 @@ export class DatabaseStorage implements IStorage {
     const mentorUserRoles = await db
       .select()
       .from(userRoles)
-      .where(eq(userRoles.roleId, mentorRole.id));
+      .where(and(
+        eq(userRoles.roleId, mentorRole.id),
+        eq(userRoles.status, 'active'),
+      ));
     
     const mentors = await Promise.all(
       mentorUserRoles.map(async (ur) => {
@@ -1425,21 +1556,19 @@ export class DatabaseStorage implements IStorage {
       const reasons: string[] = [];
       const profile = mentor.profile;
 
-      // Match based on SDG tags
       const projectSdgTags = project.sdgTags || [];
       const mentorInterests = profile?.interests || [];
-      
+
       for (const sdg of projectSdgTags) {
-        if (mentorInterests.some(interest => interest.toLowerCase().includes(sdg.toLowerCase().replace('SDG', '')))) {
+        if (mentorInterests.some((interest) => interest.toLowerCase().includes(sdg.toLowerCase().replace('SDG', '')))) {
           score += 15;
           reasons.push(`Interest match: ${sdg}`);
         }
       }
 
-      // Match based on skills
       const mentorSkills = profile?.skills || [];
       const projectImpactFocus = project.impactFocus?.toLowerCase() || '';
-      
+
       for (const skill of mentorSkills) {
         if (projectImpactFocus.includes(skill.toLowerCase())) {
           score += 20;
@@ -1447,20 +1576,18 @@ export class DatabaseStorage implements IStorage {
         }
       }
 
-      // Match based on location (city or country)
-      if (profile?.city && project.locationCity && 
+      if (profile?.city && project.locationCity &&
           profile.city.toLowerCase() === project.locationCity.toLowerCase()) {
         score += 25;
         reasons.push(`Same city: ${profile.city}`);
-      } else if (profile?.country && project.locationCountry && 
+      } else if (profile?.country && project.locationCountry &&
                  profile.country.toLowerCase() === project.locationCountry.toLowerCase()) {
         score += 10;
         reasons.push(`Same country: ${profile.country}`);
       }
 
-      // Check mentor's existing workload (fewer active mentorships = higher score)
       const activeMentorships = await this.getMentorshipsByMentor(mentor.id);
-      const activeMentorshipCount = activeMentorships.filter(m => m.status === 'active').length;
+      const activeMentorshipCount = activeMentorships.filter((m) => m.status === 'active').length;
       if (activeMentorshipCount === 0) {
         score += 15;
         reasons.push('Available: No active mentorships');
@@ -1469,14 +1596,20 @@ export class DatabaseStorage implements IStorage {
         reasons.push(`Light workload: ${activeMentorshipCount} active mentorships`);
       }
 
-      // Only include mentors with at least some matching criteria
       if (score > 0) {
         matches.push({ mentor, score, reasons });
       }
     }
 
-    // Sort by score descending
     return matches.sort((a, b) => b.score - a.score);
+  }
+
+  async findSocialProjectMentorMatches(projectId: string): Promise<ProjectMentorMatch[]> {
+    const project = await this.getProject(projectId);
+    if (!project) return [];
+
+    const mentors = await this.getMentorsWithProfiles();
+    return scoreProjectMentorMatches(project, mentors);
   }
 
   // Organization operations
