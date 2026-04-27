@@ -376,5 +376,26 @@
       "reject": "拒绝",
       "cancel": "取消"
     }
+  },
+  "nosotros": {
+    "navTitle": "关于我们",
+    "teamTitle": "创始团队",
+    "members": {
+      "karla": {
+        "title": "创始人兼首席战略与影响官",
+        "description": "社会创新、可持续发展和国际合作顾问",
+        "department": "战略与创新部门"
+      },
+      "nadya": {
+        "title": "企业传播战略家",
+        "description": "公关与故事叙述",
+        "department": "战略传播、品牌与公共关系部门"
+      },
+      "julian": {
+        "title": "战略金融领导者",
+        "description": "+22年银行和企业金融经验",
+        "department": "公益金融、可持续发展与战略联盟部门"
+      }
+    }
   }
 }

@@ -57,6 +57,15 @@ export default function Landing() {
               <span className="text-[10px] text-muted-foreground -mt-1">By GA4SI</span>
             </div>
           </div>
+          <nav className="hidden sm:flex items-center gap-1">
+            <Button variant="secondary" size="sm" disabled>
+              {t("nav.home")}
+            </Button>
+            <a href="/nosotros">
+              <Button variant="ghost" size="sm">{t("nosotros.navTitle")}</Button>
+            </a>
+          </nav>
+
           <div className="flex items-center gap-2">
             <LanguageSelector />
             <ThemeToggle />

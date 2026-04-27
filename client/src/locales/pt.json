@@ -376,5 +376,26 @@
       "reject": "Rejeitar",
       "cancel": "Cancelar"
     }
+  },
+  "nosotros": {
+    "navTitle": "Sobre Nós",
+    "teamTitle": "EQUIPE FUNDADORA",
+    "members": {
+      "karla": {
+        "title": "Fundadora & Diretora de Estratégia e Impacto",
+        "description": "Consultora em inovação social, desenvolvimento sustentável e cooperação internacional",
+        "department": "Direção de Estratégia e Inovação"
+      },
+      "nadya": {
+        "title": "Estrategista de Comunicação Corporativa",
+        "description": "RP & Storytelling",
+        "department": "Direção de Comunicação Estratégica, Marca e Relações Públicas"
+      },
+      "julian": {
+        "title": "Líder Financeiro Estratégico",
+        "description": "+22 anos em banca e finanças corporativas",
+        "department": "Direção Pro Bono de Finanças, Sustentabilidade e Alianças Estratégicas"
+      }
+    }
   }
 }

@@ -376,5 +376,26 @@
       "reject": "Reject",
       "cancel": "Cancel"
     }
+  },
+  "nosotros": {
+    "navTitle": "About Us",
+    "teamTitle": "FOUNDING TEAM",
+    "members": {
+      "karla": {
+        "title": "Founder & Chief Strategy & Impact Officer",
+        "description": "Consultant in social innovation, sustainable development and international cooperation",
+        "department": "Strategy & Innovation Division"
+      },
+      "nadya": {
+        "title": "Corporate Communication Strategist",
+        "description": "PR & Storytelling",
+        "department": "Strategic Communication, Brand & Public Relations Division"
+      },
+      "julian": {
+        "title": "Strategic Financial Leader",
+        "description": "+22 years in banking and corporate finance",
+        "department": "Pro Bono Finance, Sustainability & Strategic Alliances Division"
+      }
+    }
   }
 }
