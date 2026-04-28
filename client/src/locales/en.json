@@ -47,7 +47,272 @@
     "ctaTitle": "Start creating impact today",
     "ctaDescription": "Join our community of social entrepreneurs and transform your vision into reality.",
     "joinNow": "Join Now",
-    "copyright": "Social Project Management Platform"
+    "copyright": "Social Project Management Platform",
+    "tabs": {
+      "inicio": "Home",
+      "nosotros": "About Us"
+    }
+  },
+  "about": {
+    "badge": "Global Approach for Social Innovation",
+    "heroTitle": "Operational space of",
+    "heroHighlight": "Global Approach for Social Innovation",
+    "heroDescription": "We integrate training, collaboration, and project development in a single space. ImpactLAB is where social impact ideas take shape, strengthen, and become reality.",
+    "startNow": "Get Started",
+    "learnMore": "Learn More",
+    "origin": {
+      "title": "The Origin",
+      "videoLabel": "Watch institutional video",
+      "mission": {
+        "title": "Mission",
+        "description": "Empower the social innovation ecosystem in Latin America by connecting talent, resources, and knowledge to transform ideas into real-impact projects."
+      },
+      "vision": {
+        "title": "Vision",
+        "description": "Be the global reference platform for collaborative creation of solutions that address the most urgent social challenges, driving sustainable and inclusive development."
+      },
+      "objectives": {
+        "title": "Objectives",
+        "description": "Facilitate training processes, project design, and collaborative prototyping that enable social entrepreneurs to take their ideas from concept to implementation."
+      }
+    },
+    "model": {
+      "title": "Our Model",
+      "subtitle": "Two interconnected laboratories covering the entire social innovation cycle",
+      "learningLab": {
+        "title": "Learning-Lab",
+        "subtitle": "Training and capacity building",
+        "description": "A space dedicated to the continuous training of social entrepreneurs through structured courses, personalized mentoring, and high-quality educational resources.",
+        "tags": [
+          "Courses",
+          "Mentorships",
+          "Certifications",
+          "Evaluations"
+        ]
+      },
+      "coLab": {
+        "title": "Co-Lab",
+        "subtitle": "Collaboration and prototyping",
+        "description": "A co-creation laboratory where ideas become projects through collaborative methodologies, multidisciplinary teams, and agile prototyping processes.",
+        "tags": [
+          "Big Idea",
+          "Methodological",
+          "Prototyping",
+          "Reviews"
+        ]
+      },
+      "cycle": {
+        "title": "Full Cycle",
+        "steps": [
+          {
+            "title": "Ideation",
+            "desc": "Generate and validate ideas"
+          },
+          {
+            "title": "Training",
+            "desc": "Learn and build capacity"
+          },
+          {
+            "title": "Collaboration",
+            "desc": "Co-create as a team"
+          },
+          {
+            "title": "Launch",
+            "desc": "Implement and measure"
+          }
+        ]
+      }
+    },
+    "audiences": {
+      "title": "Who We Serve",
+      "subtitle": "We connect all actors in the social innovation ecosystem",
+      "items": [
+        {
+          "title": "Social Organizations",
+          "desc": "NGOs and foundations seeking innovation"
+        },
+        {
+          "title": "Universities & Institutes",
+          "desc": "Committed academic institutions"
+        },
+        {
+          "title": "Government & Public Sector",
+          "desc": "Entities driving social policies"
+        },
+        {
+          "title": "Social Entrepreneurs",
+          "desc": "People with impact ideas"
+        },
+        {
+          "title": "Impact Investors",
+          "desc": "Funders of social projects"
+        }
+      ]
+    },
+    "benefits": {
+      "title": "What Talent Gains",
+      "subtitle": "Every person who participates in ImpactLAB develops skills, connections, and tangible results",
+      "items": [
+        {
+          "title": "Networking",
+          "desc": "Contact network with entrepreneurs, mentors, and investors in the social ecosystem"
+        },
+        {
+          "title": "Certifications",
+          "desc": "Recognized accreditations that validate competencies in social innovation"
+        },
+        {
+          "title": "Real Experience",
+          "desc": "Direct participation in projects with measurable and documented social impact"
+        },
+        {
+          "title": "Growth",
+          "desc": "Continuous professional development with personalized mentoring and follow-up"
+        },
+        {
+          "title": "Innovation",
+          "desc": "Access to cutting-edge methodologies in social project design"
+        },
+        {
+          "title": "Visibility",
+          "desc": "Project portfolio and public profile within the GA4SI ecosystem"
+        },
+        {
+          "title": "Mentoring",
+          "desc": "Guidance from experts with proven track record in social impact"
+        },
+        {
+          "title": "Tools",
+          "desc": "Access to templates, frameworks, and resources to accelerate projects"
+        }
+      ]
+    },
+    "methodology": {
+      "title": "Our Methodology",
+      "subtitle": "A structured process that guides each project from idea to impact",
+      "steps": [
+        {
+          "step": "01",
+          "title": "Diagnosis",
+          "desc": "Context analysis and definition of the social problem to solve"
+        },
+        {
+          "step": "02",
+          "title": "Design",
+          "desc": "Co-creation of the solution with design thinking methodologies"
+        },
+        {
+          "step": "03",
+          "title": "Prototyping",
+          "desc": "MVP development and proof of concept with real users"
+        },
+        {
+          "step": "04",
+          "title": "Validation",
+          "desc": "Results measurement and iteration based on impact data"
+        },
+        {
+          "step": "05",
+          "title": "Scaling",
+          "desc": "Growth strategy and search for strategic alliances"
+        }
+      ],
+      "stepLabel": "STEP"
+    },
+    "history": {
+      "title": "Our Journey",
+      "subtitle": "From academic concept to global impact platform",
+      "events": [
+        {
+          "year": "2025",
+          "title": "The Launch: Epicenter in New York",
+          "desc": "Establishment of ImpactLab in NYC as the central operations hub, consolidating the space where local talent connects with world-class social innovation projects."
+        },
+        {
+          "year": "2026",
+          "title": "The Structure: Dual Labs & ARNI Accreditation",
+          "desc": "Creation of the Learning Lab and CoLab to solve real urban challenges. Implementation of certified and ARNI-accredited impact methodology, ensuring excellence standards in professional volunteering."
+        },
+        {
+          "year": "2024",
+          "title": "The Origin: Idea & Incubation at MIT Sloan",
+          "desc": "Concept development at the Stavros Niarchos Library and creation of the operational model within the innovation ecosystem of the Sloan School of Management (MIT), merging urban vision with academic rigor."
+        },
+        {
+          "year": "2026",
+          "title": "The Present: Impact Cycle Consolidation",
+          "desc": "Active execution of the Activate → Structure → Apply → Generate Impact cycle. Currently in the real-time results validation phase, maximizing value delivered to our partner organizations."
+        },
+        {
+          "year": "→",
+          "title": "The Immediate Future: Strategic Global Expansion",
+          "desc": "Scaling the model as a replicable solution, connecting academic institutions and impact organizations across multiple cities, exporting innovation born in New York to the rest of the world."
+        }
+      ]
+    },
+    "leadership": {
+      "title": "Purpose-Driven Leadership",
+      "subtitle": "A team committed to social transformation through innovation",
+      "foundersLabel": "Founding Team",
+      "advisorsLabel": "Advisory Board + Operational Team",
+      "founders": [
+        {
+          "name": "Karla España",
+          "role": "Founder & Chief Strategy & Impact Officer",
+          "desc": "Consultant in social innovation, sustainable development and international cooperation",
+          "area": "Strategy & Innovation Direction"
+        },
+        {
+          "name": "Nadya Bayona",
+          "role": "Corporate Communication Strategist",
+          "desc": "PR & Storytelling",
+          "area": "Strategic Communication, Brand & Public Relations Direction"
+        },
+        {
+          "name": "Julián Suaza",
+          "role": "Strategic Financial Leader",
+          "desc": "22+ years in banking and corporate finance",
+          "area": "Pro Bono Finance, Sustainability & Strategic Alliances Direction"
+        }
+      ],
+      "advisors": [
+        {
+          "name": "Israel Soto",
+          "role": "Software Engineering",
+          "desc": "Senior Software Engineer | Backend Java | DevOps & Cloud | Scalable Systems | AI Development"
+        },
+        {
+          "name": "Pedro César del Campo",
+          "role": "Data Science / Statistics",
+          "desc": "Data Scientist | Big Data | Analytics | Impact Investment"
+        },
+        {
+          "name": "Milena Castellano",
+          "role": "Sociology",
+          "desc": "Sociologist | Public policy | Social development | Gender & interculturality"
+        },
+        {
+          "name": "Astrid Klindt",
+          "role": "Leadership & Human Development",
+          "desc": "Conscious leadership mentor | Coaching | Enneagram | Relational intelligence"
+        },
+        {
+          "name": "Luz Elena Lopera",
+          "role": "Human Resources",
+          "desc": "Human Resources Business Partner | Talent Management | Change Management"
+        },
+        {
+          "name": "Luis Castañeda",
+          "role": "Technology Mentor",
+          "desc": "Advanced Electrical Engineering student (NY) | Web development, apps & digital positioning"
+        }
+      ]
+    },
+    "cta": {
+      "title": "Ready to generate impact?",
+      "description": "Join the community of entrepreneurs, mentors, and organizations that are transforming Latin America through social innovation.",
+      "button": "Start your project"
+    }
   },
   "features": {
     "projects": {
@@ -71,20 +336,43 @@
     "organization": {
       "title": "Organizations",
       "description": "Institutions that have impact ideas or accredit programs and certifications.",
-      "features": ["Propose challenges", "Accredit courses", "Certify mentorships", "Validate projects"],
-      "roles": ["Accreditor"]
+      "features": [
+        "Propose challenges",
+        "Accredit courses",
+        "Certify mentorships",
+        "Validate projects"
+      ],
+      "roles": [
+        "Accreditor"
+      ]
     },
     "proponent": {
       "title": "Proponents",
       "description": "Entrepreneurs and communities who propose ideas and participate as mentees in project development.",
-      "features": ["Propose projects", "Enroll in courses", "Receive mentorship", "Participate in acceleration"],
-      "roles": ["Proponent", "User"]
+      "features": [
+        "Propose projects",
+        "Enroll in courses",
+        "Receive mentorship",
+        "Participate in acceleration"
+      ],
+      "roles": [
+        "Proponent",
+        "User"
+      ]
     },
     "supporter": {
       "title": "Supporters",
       "description": "Experts who support the development of ideas through mentoring or facilitation roles.",
-      "features": ["Offer mentorship", "Facilitate programs", "Guide projects", "Coordinate events"],
-      "roles": ["Mentor", "Facilitator"]
+      "features": [
+        "Offer mentorship",
+        "Facilitate programs",
+        "Guide projects",
+        "Coordinate events"
+      ],
+      "roles": [
+        "Mentor",
+        "Facilitator"
+      ]
     }
   },
   "labs": {
@@ -94,27 +382,62 @@
       "courses": {
         "title": "Courses",
         "description": "Structured training for skill development",
-        "subgroups": ["Course Catalog", "Course Registration", "Class Registration", "Participant Registration", "Progress Tracking", "Evaluation", "Accreditation"]
+        "subgroups": [
+          "Course Catalog",
+          "Course Registration",
+          "Class Registration",
+          "Participant Registration",
+          "Progress Tracking",
+          "Evaluation",
+          "Accreditation"
+        ]
       },
       "mentorship": {
         "title": "Mentorships",
         "description": "Personalized guidance from experts",
-        "subgroups": ["Mentorship Catalog", "Mentorship Program Registration", "Mentors & Mentees", "Sessions", "Reports"]
+        "subgroups": [
+          "Mentorship Catalog",
+          "Mentorship Program Registration",
+          "Mentors & Mentees",
+          "Sessions",
+          "Reports"
+        ]
       }
     },
     "coLab": {
       "title": "Co-Lab",
       "description": "Collaborative space to develop impact ideas",
-      "subgroups": ["Call for Applications", "Application", "Evaluation", "Cohort", "Sessions", "Milestones"],
+      "subgroups": [
+        "Call for Applications",
+        "Application",
+        "Evaluation",
+        "Cohort",
+        "Sessions",
+        "Milestones"
+      ],
       "granIdea": {
         "title": "CoLab for a Big Idea",
         "description": "Collaborative development of high-impact projects",
-        "subgroups": ["Big Idea Program", "Focus Idea", "Team Roles", "Contributions", "Decisions", "Reviews"]
+        "subgroups": [
+          "Big Idea Program",
+          "Focus Idea",
+          "Team Roles",
+          "Contributions",
+          "Decisions",
+          "Reviews"
+        ]
       },
       "metodologico": {
         "title": "Methodological CoLab",
         "description": "Application of methodologies for project development",
-        "subgroups": ["Method Program", "Method Framework", "Idea Tracks", "Stage Progress", "Decisions", "Reviews"]
+        "subgroups": [
+          "Method Program",
+          "Method Framework",
+          "Idea Tracks",
+          "Stage Progress",
+          "Decisions",
+          "Reviews"
+        ]
       }
     }
   },

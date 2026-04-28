@@ -26,7 +26,7 @@ export const languages: LanguageInfo[] = [
   { code: "pt", name: "Portuguese", nativeName: "Português", flag: "PT", dir: "ltr" },
 ];
 
-type TranslationValue = string | string[] | { [key: string]: TranslationValue };
+type TranslationValue = string | TranslationValue[] | { [key: string]: TranslationValue };
 type Translations = { [key: string]: TranslationValue };
 
 const translationsMap: Record<Language, Translations> = {
@@ -58,6 +58,13 @@ function getNestedValue(obj: Translations, path: string): TranslationValue | und
   for (const key of keys) {
     if (current && typeof current === "object" && !Array.isArray(current)) {
       current = (current as { [key: string]: TranslationValue })[key];
+    } else if (Array.isArray(current)) {
+      const index = parseInt(key, 10);
+      if (!isNaN(index) && index >= 0 && index < current.length) {
+        current = current[index] as TranslationValue;
+      } else {
+        return undefined;
+      }
     } else {
       return undefined;
     }
