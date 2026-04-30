@@ -38,11 +38,14 @@ const founders = [
 ];
 
 const advisors = [
-  { initials: "IS", linkedin: "https://www.linkedin.com/in/israel-soto-923649b8/", gradient: "bg-gradient-to-br from-emerald-500 to-teal-700", photo: "https://media.licdn.com/dms/image/v2/D5603AQFz1i5Fayg55w/profile-displayphoto-scale_400_400/B56ZzZlenoKMAg-/0/1773177018802?e=1778112000&v=beta&t=e_3K3FhhnUo6LezokNM3eVYnK4E57onqV6OSk5-xZ2c" },
   { initials: "PC", linkedin: "https://www.linkedin.com/in/pcdelcampon/", gradient: "bg-gradient-to-br from-cyan-500 to-blue-600", photo: "https://media.licdn.com/dms/image/v2/D4E03AQEnK1H2k19FRA/profile-displayphoto-scale_400_400/B4EZp1cA5vJ0Ag-/0/1762906885484?e=1778112000&v=beta&t=Vm77U6IPWvfRAaOIOqIhBnf5SaAAZbwXeM53zGAkA04" },
   { initials: "MC", linkedin: "https://www.linkedin.com/in/milena-carolina-castellanos-pinilla-0ba80295/", gradient: "bg-gradient-to-br from-pink-500 to-rose-600", photo: "https://media.licdn.com/dms/image/v2/D4E03AQGYnZPlUrBEig/profile-displayphoto-shrink_400_400/profile-displayphoto-shrink_400_400/0/1673142180595?e=1778112000&v=beta&t=M29c3Yp4mq3XmtRzh-RUqP5_KW1LHRJ_G8CSrofNJGs" },
   { initials: "AK", linkedin: "https://www.linkedin.com/in/astridklindt-lifetrainer/", gradient: "bg-gradient-to-br from-amber-500 to-orange-600", photo: "https://media.licdn.com/dms/image/v2/D4E03AQE0Q7disGLyvw/profile-displayphoto-scale_400_400/B4EZ1E6vJgIEAk-/0/1774977742825?e=1778112000&v=beta&t=rzy8QjZX-_Y1enWGKiC8Nx5_lYmPZpjixWb3T4G-Vq8" },
   { initials: "LL", linkedin: "https://www.linkedin.com/in/luz-elena-lopera/", gradient: "bg-gradient-to-br from-indigo-500 to-violet-600", photo: "https://media.licdn.com/dms/image/v2/D4E03AQEBgnNrv6K2cQ/profile-displayphoto-shrink_400_400/profile-displayphoto-shrink_400_400/0/1685725920241?e=1778112000&v=beta&t=UOOLwUU7Ag5Jtr3tPJ4O9GuwNquAHoCtTCq9yRM4IlE" },
+];
+
+const techTeam = [
+  { initials: "IS", linkedin: "https://www.linkedin.com/in/israel-soto-923649b8/", gradient: "bg-gradient-to-br from-emerald-500 to-teal-700", photo: "https://media.licdn.com/dms/image/v2/D5603AQFz1i5Fayg55w/profile-displayphoto-scale_400_400/B56ZzZlenoKMAg-/0/1773177018802?e=1778112000&v=beta&t=e_3K3FhhnUo6LezokNM3eVYnK4E57onqV6OSk5-xZ2c" },
   { initials: "LC", linkedin: "", gradient: "bg-gradient-to-br from-slate-600 to-slate-800", photo: "" },
 ];
 
@@ -478,8 +481,54 @@ export default function LandingAbout() {
             </div>
           </div>
 
-          {/* Advisory Board */}
+          {/* Tech Team */}
           <div>
+            <div className="flex items-center gap-3 mb-8 justify-center">
+              <div className="h-px flex-1 max-w-[120px] bg-gradient-to-r from-transparent to-primary/30" />
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                {t("about.leadership.techTeamLabel")}
+              </h3>
+              <div className="h-px flex-1 max-w-[120px] bg-gradient-to-l from-transparent to-primary/30" />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {techTeam.map((member, idx) => (
+                <Card key={idx} className="border-none shadow-md overflow-hidden group hover:shadow-lg transition-shadow duration-300 h-full">
+                  <CardContent className="p-6 flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left h-full">
+                    <div className="relative shrink-0">
+                      <div className="w-24 h-24 rounded-full overflow-hidden shadow-md border-2 border-muted group-hover:border-primary transition-colors">
+                        {member.photo ? (
+                          <img src={member.photo} alt={t(`about.leadership.techTeam.${idx}.name`)} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className={`w-full h-full flex items-center justify-center text-white font-bold text-2xl ${member.gradient}`}>
+                            {member.initials}
+                          </div>
+                        )}
+                      </div>
+                      {member.linkedin && (
+                        <a
+                          href={member.linkedin}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-[#0077b5] flex items-center justify-center shadow-md hover:scale-110 transition-transform duration-200"
+                        >
+                          <Linkedin className="h-3.5 w-3.5 text-white" />
+                        </a>
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-lg">{t(`about.leadership.techTeam.${idx}.name`)}</h4>
+                      <p className="text-sm font-medium text-primary mb-2">{t(`about.leadership.techTeam.${idx}.role`)}</p>
+                      <p className="text-sm text-muted-foreground leading-relaxed">{t(`about.leadership.techTeam.${idx}.desc`)}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          {/* Advisory Board */}
+          <div className="mt-16">
             <div className="flex items-center gap-3 mb-8 justify-center">
               <div className="h-px flex-1 max-w-[120px] bg-gradient-to-r from-transparent to-primary/30" />
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
@@ -488,9 +537,9 @@ export default function LandingAbout() {
               <div className="h-px flex-1 max-w-[120px] bg-gradient-to-l from-transparent to-primary/30" />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {advisors.map((advisor, idx) => (
-                <div key={idx} className="flex items-start gap-4 p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors duration-200 group">
+                <div key={idx} className="flex items-start gap-4 p-5 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors duration-200 group h-full">
                   <div className="relative shrink-0">
                     <div className="w-14 h-14 rounded-full overflow-hidden shadow-md">
                       {advisor.photo ? (

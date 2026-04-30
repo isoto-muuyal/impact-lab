@@ -269,32 +269,28 @@
       "subtitle": "Un equipo comprometido con la transformación social a través de la innovación",
       "foundersLabel": "Equipo Fundador",
       "advisorsLabel": "Consejo Consultivo + Cierre Operativo",
+      "techTeamLabel": "Tech Team",
       "founders": [
         {
           "name": "Karla España",
-          "role": "Founder & Chief Strategy & Impact Officer",
+          "role": "Fundadora y Directora de Estrategia e Impacto",
           "desc": "Consultora en innovación social, desarrollo sostenible y cooperación internacional",
           "area": "Dirección de Estrategia e Innovación"
         },
         {
           "name": "Nadya Bayona",
-          "role": "Corporate Communication Strategist",
+          "role": "Estratega de Comunicación Corporativa",
           "desc": "PR & Storytelling",
           "area": "Dirección de Comunicación Estratégica, Marca y Relaciones Públicas"
         },
         {
           "name": "Julián Suaza",
-          "role": "Strategic Financial Leader",
+          "role": "Líder Financiero Estratégico",
           "desc": "+22 años en banca y finanzas corporativas",
           "area": "Dirección Pro Bono de Finanzas, Sostenibilidad y Alianzas Estratégicas"
         }
       ],
       "advisors": [
-        {
-          "name": "Israel Soto",
-          "role": "Ingeniería de Software",
-          "desc": "Ingeniero de Software Senior | Backend Java | DevOps & Cloud | Sistemas Escalables | Desarrollo con IA"
-        },
         {
           "name": "Pedro César del Campo",
           "role": "Ciencia de Datos / Estadística",
@@ -314,6 +310,13 @@
           "name": "Luz Elena Lopera",
           "role": "Recursos Humanos",
           "desc": "Human Resources Business Partner | Talent Management | Change Management"
+        }
+      ],
+      "techTeam": [
+        {
+          "name": "Israel Soto",
+          "role": "Ingeniería de Software",
+          "desc": "Ingeniero de Software Senior | Backend Java | DevOps & Cloud | Sistemas Escalables | Desarrollo con IA"
         },
         {
           "name": "Luis Castañeda",

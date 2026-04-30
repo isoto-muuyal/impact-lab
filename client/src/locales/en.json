@@ -255,6 +255,7 @@
       "subtitle": "A team committed to social transformation through innovation",
       "foundersLabel": "Founding Team",
       "advisorsLabel": "Advisory Board + Operational Team",
+      "techTeamLabel": "Tech Team",
       "founders": [
         {
           "name": "Karla España",
@@ -277,11 +278,6 @@
       ],
       "advisors": [
         {
-          "name": "Israel Soto",
-          "role": "Software Engineering",
-          "desc": "Senior Software Engineer | Backend Java | DevOps & Cloud | Scalable Systems | AI Development"
-        },
-        {
           "name": "Pedro César del Campo",
           "role": "Data Science / Statistics",
           "desc": "Data Scientist | Big Data | Analytics | Impact Investment"
@@ -300,6 +296,13 @@
           "name": "Luz Elena Lopera",
           "role": "Human Resources",
           "desc": "Human Resources Business Partner | Talent Management | Change Management"
+        }
+      ],
+      "techTeam": [
+        {
+          "name": "Israel Soto",
+          "role": "Software Engineering",
+          "desc": "Senior Software Engineer | Backend Java | DevOps & Cloud | Scalable Systems | AI Development"
         },
         {
           "name": "Luis Castañeda",
