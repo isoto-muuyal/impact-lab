@@ -32,10 +32,6 @@ import {
   Target,
   FileCheck
 } from "lucide-react";
-import impactLabBanner from "@assets/BANNER_IMPACTLAB_1766790182200.jpg";
-
-type LandingTab = "inicio" | "nosotros";
-
 export default function Landing() {
   const { t, tArray } = useTranslation();
   const [activeTab, setActiveTab] = useState<LandingTab>("inicio");
@@ -204,16 +200,18 @@ function LandingHome({ t, tArray }: { t: (key: string) => string; tArray: (key: 
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </a>
-              <Button size="lg" variant="outline" data-testid="button-learn-more">
-                {t("landing.learnMore")}
-              </Button>
+              <a href="#features">
+                <Button size="lg" variant="outline" data-testid="button-learn-more">
+                  {t("landing.learnMore")}
+                </Button>
+              </a>
             </div>
           </div>
         </div>
       </section>
 
       {/* Features Section - Labs */}
-      <section className="py-20 bg-muted/30">
+      <section id="features" className="py-20 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-semibold mb-4">{t("landing.featuresTitle")}</h2>

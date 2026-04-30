@@ -26,6 +26,7 @@ import AdminPage from "@/pages/admin";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
 import NotFound from "@/pages/not-found";
+import Nosotros from "@/pages/nosotros";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -40,6 +41,7 @@ function Router() {
         <Route path="/login" component={Login} />
         <Route path="/register" component={Register} />
         <Route path="/admin" component={AdminPage} />
+        <Route path="/nosotros" component={Nosotros} />
         <Route path="/" component={Landing} />
         <Route component={Landing} />
       </Switch>
