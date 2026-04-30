@@ -38,15 +38,15 @@ const founders = [
 ];
 
 const advisors = [
-  { initials: "PC", linkedin: "https://www.linkedin.com/in/pcdelcampon/", gradient: "bg-gradient-to-br from-cyan-500 to-blue-600", photo: "https://media.licdn.com/dms/image/v2/D4E03AQEnK1H2k19FRA/profile-displayphoto-scale_400_400/B4EZp1cA5vJ0Ag-/0/1762906885484?e=1778112000&v=beta&t=Vm77U6IPWvfRAaOIOqIhBnf5SaAAZbwXeM53zGAkA04" },
-  { initials: "MC", linkedin: "https://www.linkedin.com/in/milena-carolina-castellanos-pinilla-0ba80295/", gradient: "bg-gradient-to-br from-pink-500 to-rose-600", photo: "https://media.licdn.com/dms/image/v2/D4E03AQGYnZPlUrBEig/profile-displayphoto-shrink_400_400/profile-displayphoto-shrink_400_400/0/1673142180595?e=1778112000&v=beta&t=M29c3Yp4mq3XmtRzh-RUqP5_KW1LHRJ_G8CSrofNJGs" },
-  { initials: "AK", linkedin: "https://www.linkedin.com/in/astridklindt-lifetrainer/", gradient: "bg-gradient-to-br from-amber-500 to-orange-600", photo: "https://media.licdn.com/dms/image/v2/D4E03AQE0Q7disGLyvw/profile-displayphoto-scale_400_400/B4EZ1E6vJgIEAk-/0/1774977742825?e=1778112000&v=beta&t=rzy8QjZX-_Y1enWGKiC8Nx5_lYmPZpjixWb3T4G-Vq8" },
-  { initials: "LL", linkedin: "https://www.linkedin.com/in/luz-elena-lopera/", gradient: "bg-gradient-to-br from-indigo-500 to-violet-600", photo: "https://media.licdn.com/dms/image/v2/D4E03AQEBgnNrv6K2cQ/profile-displayphoto-shrink_400_400/profile-displayphoto-shrink_400_400/0/1685725920241?e=1778112000&v=beta&t=UOOLwUU7Ag5Jtr3tPJ4O9GuwNquAHoCtTCq9yRM4IlE" },
+  { tIndex: 1, initials: "PC", linkedin: "https://www.linkedin.com/in/pcdelcampon/", gradient: "bg-gradient-to-br from-cyan-500 to-blue-600", photo: "https://media.licdn.com/dms/image/v2/D4E03AQEnK1H2k19FRA/profile-displayphoto-scale_400_400/B4EZp1cA5vJ0Ag-/0/1762906885484?e=1778112000&v=beta&t=Vm77U6IPWvfRAaOIOqIhBnf5SaAAZbwXeM53zGAkA04" },
+  { tIndex: 2, initials: "MC", linkedin: "https://www.linkedin.com/in/milena-carolina-castellanos-pinilla-0ba80295/", gradient: "bg-gradient-to-br from-pink-500 to-rose-600", photo: "https://media.licdn.com/dms/image/v2/D4E03AQGYnZPlUrBEig/profile-displayphoto-shrink_400_400/profile-displayphoto-shrink_400_400/0/1673142180595?e=1778112000&v=beta&t=M29c3Yp4mq3XmtRzh-RUqP5_KW1LHRJ_G8CSrofNJGs" },
+  { tIndex: 3, initials: "AK", linkedin: "https://www.linkedin.com/in/astridklindt-lifetrainer/", gradient: "bg-gradient-to-br from-amber-500 to-orange-600", photo: "https://media.licdn.com/dms/image/v2/D4E03AQE0Q7disGLyvw/profile-displayphoto-scale_400_400/B4EZ1E6vJgIEAk-/0/1774977742825?e=1778112000&v=beta&t=rzy8QjZX-_Y1enWGKiC8Nx5_lYmPZpjixWb3T4G-Vq8" },
+  { tIndex: 4, initials: "LL", linkedin: "https://www.linkedin.com/in/luz-elena-lopera/", gradient: "bg-gradient-to-br from-indigo-500 to-violet-600", photo: "https://media.licdn.com/dms/image/v2/D4E03AQEBgnNrv6K2cQ/profile-displayphoto-shrink_400_400/profile-displayphoto-shrink_400_400/0/1685725920241?e=1778112000&v=beta&t=UOOLwUU7Ag5Jtr3tPJ4O9GuwNquAHoCtTCq9yRM4IlE" },
 ];
 
 const techTeam = [
-  { initials: "IS", linkedin: "https://www.linkedin.com/in/israel-soto-923649b8/", gradient: "bg-gradient-to-br from-emerald-500 to-teal-700", photo: "https://media.licdn.com/dms/image/v2/D5603AQFz1i5Fayg55w/profile-displayphoto-scale_400_400/B56ZzZlenoKMAg-/0/1773177018802?e=1778112000&v=beta&t=e_3K3FhhnUo6LezokNM3eVYnK4E57onqV6OSk5-xZ2c" },
-  { initials: "LC", linkedin: "", gradient: "bg-gradient-to-br from-slate-600 to-slate-800", photo: "" },
+  { tIndex: 0, initials: "IS", linkedin: "https://www.linkedin.com/in/israel-soto-923649b8/", gradient: "bg-gradient-to-br from-emerald-500 to-teal-700", photo: "https://media.licdn.com/dms/image/v2/D5603AQFz1i5Fayg55w/profile-displayphoto-scale_400_400/B56ZzZlenoKMAg-/0/1773177018802?e=1778112000&v=beta&t=e_3K3FhhnUo6LezokNM3eVYnK4E57onqV6OSk5-xZ2c" },
+  { tIndex: 5, initials: "LC", linkedin: "", gradient: "bg-gradient-to-br from-slate-600 to-slate-800", photo: "" },
 ];
 
 export default function LandingAbout() {
@@ -498,7 +498,7 @@ export default function LandingAbout() {
                     <div className="relative shrink-0">
                       <div className="w-24 h-24 rounded-full overflow-hidden shadow-md border-2 border-muted group-hover:border-primary transition-colors">
                         {member.photo ? (
-                          <img src={member.photo} alt={t(`about.leadership.techTeam.${idx}.name`)} className="w-full h-full object-cover" />
+                          <img src={member.photo} alt={t(`about.leadership.advisors.${member.tIndex}.name`)} className="w-full h-full object-cover" />
                         ) : (
                           <div className={`w-full h-full flex items-center justify-center text-white font-bold text-2xl ${member.gradient}`}>
                             {member.initials}
@@ -517,9 +517,9 @@ export default function LandingAbout() {
                       )}
                     </div>
                     <div>
-                      <h4 className="font-semibold text-lg">{t(`about.leadership.techTeam.${idx}.name`)}</h4>
-                      <p className="text-sm font-medium text-primary mb-2">{t(`about.leadership.techTeam.${idx}.role`)}</p>
-                      <p className="text-sm text-muted-foreground leading-relaxed">{t(`about.leadership.techTeam.${idx}.desc`)}</p>
+                      <h4 className="font-semibold text-lg">{t(`about.leadership.advisors.${member.tIndex}.name`)}</h4>
+                      <p className="text-sm font-medium text-primary mb-2">{t(`about.leadership.advisors.${member.tIndex}.role`)}</p>
+                      <p className="text-sm text-muted-foreground leading-relaxed">{t(`about.leadership.advisors.${member.tIndex}.desc`)}</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -543,7 +543,7 @@ export default function LandingAbout() {
                   <div className="relative shrink-0">
                     <div className="w-14 h-14 rounded-full overflow-hidden shadow-md">
                       {advisor.photo ? (
-                        <img src={advisor.photo} alt={t(`about.leadership.advisors.${idx}.name`)} className="w-full h-full object-cover" />
+                        <img src={advisor.photo} alt={t(`about.leadership.advisors.${advisor.tIndex}.name`)} className="w-full h-full object-cover" />
                       ) : (
                         <div className={`w-full h-full flex items-center justify-center text-white font-bold text-sm ${advisor.gradient}`}>
                           {advisor.initials}
@@ -563,15 +563,15 @@ export default function LandingAbout() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <h4 className="font-semibold text-sm">{t(`about.leadership.advisors.${idx}.name`)}</h4>
+                      <h4 className="font-semibold text-sm">{t(`about.leadership.advisors.${advisor.tIndex}.name`)}</h4>
                       {advisor.linkedin && (
                         <a href={advisor.linkedin} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
                           <ExternalLink className="h-3 w-3" />
                         </a>
                       )}
                     </div>
-                    <p className="text-xs font-medium text-primary mb-1">{t(`about.leadership.advisors.${idx}.role`)}</p>
-                    <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{t(`about.leadership.advisors.${idx}.desc`)}</p>
+                    <p className="text-xs font-medium text-primary mb-1">{t(`about.leadership.advisors.${advisor.tIndex}.role`)}</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{t(`about.leadership.advisors.${advisor.tIndex}.desc`)}</p>
                   </div>
                 </div>
               ))}

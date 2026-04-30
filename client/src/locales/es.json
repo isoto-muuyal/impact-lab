@@ -292,6 +292,11 @@
       ],
       "advisors": [
         {
+          "name": "Israel Soto",
+          "role": "Ingeniería de Software",
+          "desc": "Ingeniero de Software Senior | Backend Java | DevOps & Cloud | Sistemas Escalables | Desarrollo con IA"
+        },
+        {
           "name": "Pedro César del Campo",
           "role": "Ciencia de Datos / Estadística",
           "desc": "Data Scientist | Big Data | Analytics | Impact Investment"
@@ -310,13 +315,6 @@
           "name": "Luz Elena Lopera",
           "role": "Recursos Humanos",
           "desc": "Human Resources Business Partner | Talent Management | Change Management"
-        }
-      ],
-      "techTeam": [
-        {
-          "name": "Israel Soto",
-          "role": "Ingeniería de Software",
-          "desc": "Ingeniero de Software Senior | Backend Java | DevOps & Cloud | Sistemas Escalables | Desarrollo con IA"
         },
         {
           "name": "Luis Castañeda",
