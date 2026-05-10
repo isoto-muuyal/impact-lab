@@ -980,6 +980,7 @@ function ProjectDetailsView({
   isManagingParticipants: boolean;
   isReviewingJoinRequest: boolean;
 }) {
+  const { t } = useTranslation();
   const [decisionReasons, setDecisionReasons] = useState<Record<string, string>>({});
   const [newMemberRole, setNewMemberRole] = useState<"participant" | "mentor" | "proponente">("participant");
   const [newMemberHelp, setNewMemberHelp] = useState("");
@@ -1058,20 +1059,20 @@ function ProjectDetailsView({
             {isProjectAdmin ? (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Mentores sugeridos</CardTitle>
+                  <CardTitle className="text-base">{t("projects.suggestedMentors.title")}</CardTitle>
                   <CardDescription>
-                    Coincidencias basadas en las habilidades necesarias del proyecto.
+                    {t("projects.suggestedMentors.description")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {isLoadingMentorMatches ? (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Buscando mentores...
+                      {t("projects.suggestedMentors.loading")}
                     </div>
                   ) : availableMentorMatches.length === 0 ? (
                     <p className="text-sm text-muted-foreground">
-                      Agrega habilidades necesarias al proyecto para recibir sugerencias.
+                      {t("projects.suggestedMentors.noSkills")}
                     </p>
                   ) : (
                     availableMentorMatches.slice(0, 6).map((match) => (
@@ -1084,7 +1085,7 @@ function ProjectDetailsView({
                             </p>
                             <p className="text-xs text-muted-foreground">{match.mentor.email}</p>
                           </div>
-                          <Badge variant="secondary">{match.score} match</Badge>
+                          <Badge variant="secondary">{match.score} {t("projects.suggestedMentors.match")}</Badge>
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {match.matchedSkills.map((skill) => (
@@ -1097,7 +1098,7 @@ function ProjectDetailsView({
                           onClick={() => onAddParticipant({ userId: match.mentor.id, role: "mentor", isProjectAdmin: false })}
                           disabled={isManagingParticipants}
                         >
-                          Agregar como mentor
+                          {t("projects.suggestedMentors.addAsMentor")}
                         </Button>
                       </div>
                     ))

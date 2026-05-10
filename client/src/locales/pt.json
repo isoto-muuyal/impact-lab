@@ -215,7 +215,15 @@
     "edit": "Editar",
     "delete": "Excluir",
     "noProjects": "Ainda não há projetos",
-    "createFirst": "Crie seu primeiro projeto para começar"
+    "createFirst": "Crie seu primeiro projeto para começar",
+    "suggestedMentors": {
+      "title": "Mentores sugeridos",
+      "description": "Correspondências baseadas nas habilidades necessárias do projeto.",
+      "loading": "Buscando mentores...",
+      "noSkills": "Adicione habilidades necessárias ao projeto para receber sugestões.",
+      "addAsMentor": "Adicionar como mentor",
+      "match": "correspondência"
+    }
   },
   "courses": {
     "title": "Cursos",

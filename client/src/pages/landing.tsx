@@ -32,6 +32,8 @@ import {
   Target,
   FileCheck
 } from "lucide-react";
+type LandingTab = "inicio" | "nosotros";
+
 export default function Landing() {
   const { t, tArray } = useTranslation();
   const [activeTab, setActiveTab] = useState<LandingTab>("inicio");
