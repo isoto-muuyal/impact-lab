@@ -476,7 +476,15 @@
     "edit": "Edit",
     "delete": "Delete",
     "noProjects": "No projects yet",
-    "createFirst": "Create your first project to get started"
+    "createFirst": "Create your first project to get started",
+    "suggestedMentors": {
+      "title": "Suggested Mentors",
+      "description": "Matches based on the project's needed skills.",
+      "loading": "Searching for mentors...",
+      "noSkills": "Add required skills to the project to receive suggestions.",
+      "addAsMentor": "Add as mentor",
+      "match": "match"
+    }
   },
   "courses": {
     "title": "Courses",
