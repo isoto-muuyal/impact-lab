@@ -493,7 +493,15 @@
     "edit": "Editar",
     "delete": "Eliminar",
     "noProjects": "Aún no tienes proyectos",
-    "createFirst": "Crea tu primer proyecto para comenzar"
+    "createFirst": "Crea tu primer proyecto para comenzar",
+    "suggestedMentors": {
+      "title": "Mentores sugeridos",
+      "description": "Coincidencias basadas en las habilidades necesarias del proyecto.",
+      "loading": "Buscando mentores...",
+      "noSkills": "Agrega habilidades necesarias al proyecto para recibir sugerencias.",
+      "addAsMentor": "Agregar como mentor",
+      "match": "coincidencia"
+    }
   },
   "courses": {
     "title": "Cursos",

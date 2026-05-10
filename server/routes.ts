@@ -1,5 +1,6 @@
 import express, { type Express } from "express";
 import { createServer, type Server } from "http";
+import { redis } from "./services/redisClient";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isImpactLabAdmin } from "./auth";
 import { sendEmail, isEmailConfigured, getContactRecipient } from "./email";
@@ -529,7 +530,20 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Only project admins can view mentor matches" });
       }
 
+      const cacheKey = `mentor-matches:${req.params.id}`;
+      try {
+        const cached = await redis.get(cacheKey);
+        if (cached) {
+          return res.json(JSON.parse(cached));
+        }
+      } catch (_) { /* Redis unavailable — fall through to compute */ }
+
       const matches = await storage.findSocialProjectMentorMatches(req.params.id);
+
+      try {
+        await redis.setex(cacheKey, 86400, JSON.stringify(matches));
+      } catch (_) { /* Redis unavailable — skip caching */ }
+
       res.json(matches);
     } catch (error) {
       console.error("Error fetching project mentor matches:", error);
@@ -663,6 +677,13 @@ export async function registerRoutes(
       }
       
       const updated = await storage.updateProject(req.params.id, sanitizedData);
+
+      if (sanitizedData.skillsNeeded !== undefined || sanitizedData.description !== undefined) {
+        try {
+          await redis.del(`mentor-matches:${req.params.id}`);
+        } catch (_) { /* Redis unavailable — skip invalidation */ }
+      }
+
       res.json(updated);
     } catch (error) {
       console.error("Error updating project:", error);
@@ -1608,16 +1629,19 @@ export async function registerRoutes(
       const userWithProfile = await storage.getUserWithProfile(userId);
       const userRole = userWithProfile?.userRoles?.[0]?.role?.name;
       
-      // Check authorization - facilitador can do anything, mentor can update their own
-      if (userRole !== 'facilitador' && mentorship.mentorId !== userId) {
+      // Check authorization - facilitador can do anything, mentor can update their own mentorships
+      // A mentor assigned to this mentorship OR a mentor receiving a pending request can also update
+      const isMentorOfRecord = mentorship.mentorId === userId;
+      const isMenteeRequestingMentor = mentorship.menteeId !== userId && userRole === 'mentor' && mentorship.status === 'pending';
+      if (userRole !== 'facilitador' && !isMentorOfRecord && !isMenteeRequestingMentor) {
         return res.status(403).json({ message: "Not authorized to update this mentorship" });
       }
-      
-      const allowedFields = ['status', 'notes'];
+
+      const allowedFields = ['status', 'notes', 'rejectionReason'];
       if (userRole === 'facilitador') {
         allowedFields.push('mentorId');
       }
-      
+
       const sanitizedData: Record<string, any> = {};
       for (const field of allowedFields) {
         if (req.body[field] !== undefined) {

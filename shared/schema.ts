@@ -784,6 +784,7 @@ export const mentorships = pgTable("mentorships", {
   projectId: varchar("project_id").references(() => projects.id),
   status: varchar("status").default('pending'),
   notes: text("notes"),
+  rejectionReason: text("rejection_reason"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

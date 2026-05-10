@@ -62,6 +62,9 @@ export default function MentorshipPage() {
   const [sessionDialogOpen, setSessionDialogOpen] = useState(false);
   const [selectedMentorship, setSelectedMentorship] = useState<MentorshipWithDetails | null>(null);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+  const [selectedRejectId, setSelectedRejectId] = useState<string | null>(null);
 
   const userRole = user?.userRoles?.[0]?.role?.name || "usuario";
 
@@ -115,8 +118,8 @@ export default function MentorshipPage() {
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      return apiRequest("PATCH", `/api/mentorships/${id}`, { status });
+    mutationFn: async ({ id, status, rejectionReason }: { id: string; status: string; rejectionReason?: string }) => {
+      return apiRequest("PATCH", `/api/mentorships/${id}`, { status, ...(rejectionReason ? { rejectionReason } : {}) });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/mentorships"] });
@@ -323,12 +326,14 @@ export default function MentorshipPage() {
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {pendingMentorships.map(m => (
-                <MentorshipCard 
-                  key={m.id} 
-                  mentorship={m} 
+                <MentorshipCard
+                  key={m.id}
+                  mentorship={m}
                   userRole={userRole}
                   onAssign={() => { setSelectedMentorship(m); setAssignDialogOpen(true); }}
                   onUpdateStatus={(status) => updateStatusMutation.mutate({ id: m.id, status })}
+                  onAccept={() => updateStatusMutation.mutate({ id: m.id, status: "active" })}
+                  onReject={() => { setSelectedRejectId(m.id); setRejectDialogOpen(true); }}
                   getInitials={getInitials}
                 />
               ))}
@@ -382,6 +387,43 @@ export default function MentorshipPage() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Reject mentorship dialog — mentor must provide a reason */}
+      <Dialog open={rejectDialogOpen} onOpenChange={(open) => { setRejectDialogOpen(open); if (!open) setRejectReason(""); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rechazar solicitud de mentoría</DialogTitle>
+            <DialogDescription>Indica el motivo del rechazo. Será visible para quien realizó la solicitud.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Textarea
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder="Escribe el motivo del rechazo..."
+              rows={4}
+              data-testid="input-reject-reason"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>Cancelar</Button>
+            <Button
+              variant="destructive"
+              disabled={!rejectReason.trim() || updateStatusMutation.isPending}
+              onClick={() => {
+                if (!selectedRejectId) return;
+                updateStatusMutation.mutate(
+                  { id: selectedRejectId, status: "cancelled", rejectionReason: rejectReason.trim() },
+                  { onSuccess: () => { setRejectDialogOpen(false); setRejectReason(""); setSelectedRejectId(null); } }
+                );
+              }}
+              data-testid="button-confirm-reject"
+            >
+              {updateStatusMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Confirmar rechazo
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
         <DialogContent>
@@ -495,10 +537,12 @@ interface MentorshipCardProps {
   onAssign?: () => void;
   onScheduleSession?: () => void;
   onUpdateStatus?: (status: string) => void;
+  onAccept?: () => void;
+  onReject?: () => void;
   getInitials: (user?: UserType | null) => string;
 }
 
-function MentorshipCard({ mentorship, userRole, onAssign, onScheduleSession, onUpdateStatus, getInitials }: MentorshipCardProps) {
+function MentorshipCard({ mentorship, userRole, onAssign, onScheduleSession, onUpdateStatus, onAccept, onReject, getInitials }: MentorshipCardProps) {
   const { data: sessions } = useQuery<MentorshipSession[]>({
     queryKey: ["/api/mentorships", mentorship.id, "sessions"],
     queryFn: async () => {
@@ -513,7 +557,11 @@ function MentorshipCard({ mentorship, userRole, onAssign, onScheduleSession, onU
     <Card data-testid={`card-mentorship-${mentorship.id}`}>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between gap-2 flex-wrap">
-          <CardTitle className="text-lg">{mentorship.project?.title || "Mentoría General"}</CardTitle>
+          <CardTitle className="text-lg">
+            {mentorship.project ? (
+              <a href="/projects" className="hover:underline">{mentorship.project.title}</a>
+            ) : "Mentoría General"}
+          </CardTitle>
           <Badge className={statusColors[mentorship.status || "pending"]}>
             {statusLabels[mentorship.status || "pending"]}
           </Badge>
@@ -553,7 +601,7 @@ function MentorshipCard({ mentorship, userRole, onAssign, onScheduleSession, onU
                 <Calendar className="h-3 w-3" />
                 <span>{new Date(s.scheduledAt).toLocaleDateString()}</span>
                 <Clock className="h-3 w-3" />
-                <span>{s.duration} min</span>
+                <span>{s.durationMinutes} min</span>
                 <Badge variant="outline" className="text-xs">
                   {sessionStatusLabels[s.status || "scheduled"]}
                 </Badge>
@@ -580,7 +628,19 @@ function MentorshipCard({ mentorship, userRole, onAssign, onScheduleSession, onU
             Completar
           </Button>
         )}
-        {mentorship.status === "pending" && onUpdateStatus && (userRole === "mentor" || userRole === "facilitador") && (
+        {mentorship.status === "pending" && userRole === "mentor" && onAccept && (
+          <Button size="sm" onClick={onAccept} data-testid="button-accept">
+            <CheckCircle className="h-4 w-4 mr-1" />
+            Aceptar
+          </Button>
+        )}
+        {mentorship.status === "pending" && userRole === "mentor" && onReject && (
+          <Button size="sm" variant="destructive" onClick={onReject} data-testid="button-reject">
+            <XCircle className="h-4 w-4 mr-1" />
+            Rechazar
+          </Button>
+        )}
+        {mentorship.status === "pending" && userRole === "facilitador" && onUpdateStatus && (
           <Button size="sm" variant="ghost" onClick={() => onUpdateStatus("cancelled")} data-testid="button-cancel">
             <XCircle className="h-4 w-4 mr-1" />
             Cancelar

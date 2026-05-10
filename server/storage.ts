@@ -1612,6 +1612,7 @@ export class DatabaseStorage implements IStorage {
     return scoreProjectMentorMatches(project, mentors);
   }
 
+
   // Organization operations
   async getOrganizations(activeOnly: boolean = false): Promise<Organization[]> {
     if (activeOnly) {

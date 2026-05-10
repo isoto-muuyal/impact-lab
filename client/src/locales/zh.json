@@ -215,7 +215,15 @@
     "edit": "编辑",
     "delete": "删除",
     "noProjects": "还没有项目",
-    "createFirst": "创建您的第一个项目开始"
+    "createFirst": "创建您的第一个项目开始",
+    "suggestedMentors": {
+      "title": "推荐导师",
+      "description": "根据项目所需技能匹配。",
+      "loading": "正在搜索导师...",
+      "noSkills": "添加项目所需技能以获取建议。",
+      "addAsMentor": "添加为导师",
+      "match": "匹配"
+    }
   },
   "courses": {
     "title": "课程",
