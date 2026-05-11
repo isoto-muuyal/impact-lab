@@ -250,6 +250,7 @@ export const projects = pgTable("projects", {
   mentorId: varchar("mentor_id").references(() => users.id),
   startDate: timestamp("start_date"),
   endDate: timestamp("end_date"),
+  mentorMatchStatus: varchar("mentor_match_status").default('not_run'),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -278,6 +279,20 @@ export const insertProjectSchema = createInsertSchema(projects).omit({
 // Project types
 export type Project = typeof projects.$inferSelect;
 export type InsertProject = z.infer<typeof insertProjectSchema>;
+
+// Mentor suggestions persisted by the matching agent
+export const projectMentorSuggestions = pgTable("project_mentor_suggestions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  projectId: varchar("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  mentorId: varchar("mentor_id").notNull().references(() => users.id),
+  source: varchar("source").notNull(), // 'skills' | 'description' | 'history'
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const projectMentorSuggestionsRelations = relations(projectMentorSuggestions, ({ one }) => ({
+  project: one(projects, { fields: [projectMentorSuggestions.projectId], references: [projects.id] }),
+  mentor: one(users, { fields: [projectMentorSuggestions.mentorId], references: [users.id] }),
+}));
 
 export const socialProjectParticipants = pgTable("social_project_participants", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

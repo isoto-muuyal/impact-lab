@@ -18,6 +18,7 @@ import {
   courseEnrollments,
   mentorships,
   mentorshipSessions,
+  projectMentorSuggestions,
   organizations,
   organizationMemberships,
   challenges,
@@ -1612,6 +1613,51 @@ export class DatabaseStorage implements IStorage {
     return scoreProjectMentorMatches(project, mentors);
   }
 
+  async saveProjectMentorSuggestions(projectId: string, mentorIds: string[], source: string): Promise<void> {
+    if (mentorIds.length === 0) return;
+    await db.delete(projectMentorSuggestions).where(
+      and(eq(projectMentorSuggestions.projectId, projectId), eq(projectMentorSuggestions.source, source))
+    );
+    await db.insert(projectMentorSuggestions).values(
+      mentorIds.map((mentorId) => ({ projectId, mentorId, source }))
+    );
+  }
+
+  async getProjectMentorSuggestions(projectId: string): Promise<ProjectMentorMatch[]> {
+    const rows = await db
+      .select()
+      .from(projectMentorSuggestions)
+      .where(eq(projectMentorSuggestions.projectId, projectId));
+
+    const results = await Promise.all(
+      rows.map(async (row) => {
+        const mentor = await this.getUserWithProfile(row.mentorId);
+        if (!mentor) return null;
+        const skills = mentor.profile?.skills ?? [];
+        return {
+          mentor,
+          score: 0,
+          matchedSkills: skills,
+          reasons: [`Source: ${row.source}`],
+        } satisfies ProjectMentorMatch;
+      })
+    );
+    return results.filter((r): r is ProjectMentorMatch => r !== null);
+  }
+
+  async updateProjectMentorMatchStatus(projectId: string, status: string): Promise<void> {
+    await db.update(projects).set({ mentorMatchStatus: status }).where(eq(projects.id, projectId));
+  }
+
+  async getMentorSuggestedProjects(mentorId: string): Promise<ProjectWithOwner[]> {
+    const rows = await db
+      .select()
+      .from(projectMentorSuggestions)
+      .where(eq(projectMentorSuggestions.mentorId, mentorId));
+
+    const enriched = await Promise.all(rows.map((row) => this.getProject(row.projectId)));
+    return enriched.filter((p): p is ProjectWithOwner => p !== undefined);
+  }
 
   // Organization operations
   async getOrganizations(activeOnly: boolean = false): Promise<Organization[]> {
