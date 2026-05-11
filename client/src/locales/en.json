@@ -477,6 +477,11 @@
     "delete": "Delete",
     "noProjects": "No projects yet",
     "createFirst": "Create your first project to get started",
+    "mentorMatch": {
+      "running": "Searching for mentors...",
+      "notFound": "No mentors found. We recommend updating your project description and skills needed.",
+      "partial": "Only a few mentors found. Consider updating your project description for better matches."
+    },
     "suggestedMentors": {
       "title": "Suggested Mentors",
       "description": "Matches based on the project's needed skills.",

@@ -1065,17 +1065,27 @@ function ProjectDetailsView({
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {isLoadingMentorMatches ? (
+                  {isLoadingMentorMatches || project.mentorMatchStatus === "running" ? (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       {t("projects.suggestedMentors.loading")}
                     </div>
                   ) : availableMentorMatches.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                      {t("projects.suggestedMentors.noSkills")}
-                    </p>
+                    <div className="space-y-2">
+                      <p className="text-sm text-muted-foreground">
+                        {project.mentorMatchStatus === "not_found" || project.mentorMatchStatus === "partial"
+                          ? t("projects.mentorMatch.notFound")
+                          : t("projects.suggestedMentors.noSkills")}
+                      </p>
+                    </div>
                   ) : (
-                    availableMentorMatches.slice(0, 6).map((match) => (
+                    <>
+                    {project.mentorMatchStatus === "partial" && availableMentorMatches.length < 3 && (
+                      <p className="text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1">
+                        {t("projects.mentorMatch.partial")}
+                      </p>
+                    )}
+                    {availableMentorMatches.slice(0, 6).map((match) => (
                       <div key={match.mentor.id} className="rounded-lg border p-3 space-y-2">
                         <div className="flex items-start justify-between gap-3">
                           <div>
@@ -1101,7 +1111,8 @@ function ProjectDetailsView({
                           {t("projects.suggestedMentors.addAsMentor")}
                         </Button>
                       </div>
-                    ))
+                    ))}
+                    </>
                   )}
                 </CardContent>
               </Card>

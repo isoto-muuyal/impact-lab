@@ -216,6 +216,11 @@
     "delete": "Supprimer",
     "noProjects": "Pas encore de projets",
     "createFirst": "Créez votre premier projet pour commencer",
+    "mentorMatch": {
+      "running": "Recherche de mentors...",
+      "notFound": "Aucun mentor trouvé. Nous vous recommandons de mettre à jour la description et les compétences requises du projet.",
+      "partial": "Seulement quelques mentors trouvés. Envisagez de mettre à jour la description du projet pour de meilleures correspondances."
+    },
     "suggestedMentors": {
       "title": "Mentors suggérés",
       "description": "Correspondances basées sur les compétences requises du projet.",

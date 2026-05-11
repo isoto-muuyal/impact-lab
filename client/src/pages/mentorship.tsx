@@ -17,7 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Users, Plus, Calendar, Clock, CheckCircle, XCircle, Loader2, User } from "lucide-react";
+import { Users, Plus, Calendar, Clock, CheckCircle, XCircle, Loader2, User, Sparkles } from "lucide-react";
 import type { MentorshipWithDetails, User as UserType, ProjectWithOwner, MentorshipSession } from "@shared/schema";
 
 const requestMentorshipSchema = z.object({
@@ -74,6 +74,11 @@ export default function MentorshipPage() {
 
   const { data: mentors } = useQuery<UserType[]>({
     queryKey: ["/api/mentors"],
+  });
+
+  const { data: suggestedProjects } = useQuery<ProjectWithOwner[]>({
+    queryKey: ["/api/mentors/me/suggested-projects"],
+    enabled: userRole === "mentor",
   });
 
   const { data: projects } = useQuery<ProjectWithOwner[]>({
@@ -313,6 +318,11 @@ export default function MentorshipPage() {
           <TabsTrigger value="completed" data-testid="tab-completed">
             Historial ({completedMentorships.length})
           </TabsTrigger>
+          {userRole === "mentor" && (
+            <TabsTrigger value="suggested" data-testid="tab-suggested">
+              Proyectos sugeridos {suggestedProjects?.length ? `(${suggestedProjects.length})` : ""}
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="pending" className="mt-4">
@@ -386,6 +396,49 @@ export default function MentorshipPage() {
             </div>
           )}
         </TabsContent>
+
+        {userRole === "mentor" && (
+          <TabsContent value="suggested" className="mt-4">
+            {!suggestedProjects || suggestedProjects.length === 0 ? (
+              <Card>
+                <CardContent className="py-8 text-center text-muted-foreground">
+                  <Sparkles className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No hay proyectos sugeridos aún</p>
+                  <p className="text-xs mt-1">Los proyectos compatibles con tu perfil aparecerán aquí</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {suggestedProjects.map((project) => (
+                  <Card key={project.id} data-testid={`card-suggested-project-${project.id}`}>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base">
+                        <a href="/projects" className="hover:underline">{project.title}</a>
+                      </CardTitle>
+                      {project.skillsNeeded && (
+                        <CardDescription className="line-clamp-1">{project.skillsNeeded}</CardDescription>
+                      )}
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {project.description && (
+                        <p className="text-sm text-muted-foreground line-clamp-3">{project.description}</p>
+                      )}
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <User className="h-3 w-3" />
+                        <span>{project.owner?.firstName} {project.owner?.lastName}</span>
+                      </div>
+                    </CardContent>
+                    <CardFooter>
+                      <a href="/projects">
+                        <Button size="sm" variant="outline">Ver proyecto</Button>
+                      </a>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        )}
       </Tabs>
 
       {/* Reject mentorship dialog — mentor must provide a reason */}
