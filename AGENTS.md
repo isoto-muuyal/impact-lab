@@ -38,6 +38,7 @@ Recommended structure:
 - Reuse existing UI primitives from `client/src/components/ui`.
 - If a feature changes permissions, reflect that in the UI before the user hits a server error.
 - For workflow features, prefer visible status badges over silent failures.
+- For every text change never hard code the text, it should be in the locales files, translated to each language.
 
 ## Verification
 

@@ -216,6 +216,11 @@
     "delete": "删除",
     "noProjects": "还没有项目",
     "createFirst": "创建您的第一个项目开始",
+    "mentorMatch": {
+      "running": "正在搜索导师...",
+      "notFound": "未找到导师。建议更新项目描述和所需技能。",
+      "partial": "仅找到少数导师。考虑更新项目描述以获得更好的匹配。"
+    },
     "suggestedMentors": {
       "title": "推荐导师",
       "description": "根据项目所需技能匹配。",

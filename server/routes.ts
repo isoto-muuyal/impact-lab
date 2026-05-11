@@ -1,6 +1,7 @@
 import express, { type Express } from "express";
 import { createServer, type Server } from "http";
 import { redis } from "./services/redisClient";
+import { runMentorMatchingAgent } from "./services/mentorMatchingAgent";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isImpactLabAdmin } from "./auth";
 import { sendEmail, isEmailConfigured, getContactRecipient } from "./email";
@@ -536,9 +537,9 @@ export async function registerRoutes(
         if (cached) {
           return res.json(JSON.parse(cached));
         }
-      } catch (_) { /* Redis unavailable — fall through to compute */ }
+      } catch (_) { /* Redis unavailable — fall through */ }
 
-      const matches = await storage.findSocialProjectMentorMatches(req.params.id);
+      const matches = await storage.getProjectMentorSuggestions(req.params.id);
 
       try {
         await redis.setex(cacheKey, 86400, JSON.stringify(matches));
@@ -635,6 +636,7 @@ export async function registerRoutes(
       }
       
       const project = await storage.createProject(validationResult.data);
+      runMentorMatchingAgent(project.id).catch((err) => console.error("[Agent] create:", err));
       res.status(201).json(project);
     } catch (error) {
       console.error("Error creating project:", error);
@@ -682,6 +684,7 @@ export async function registerRoutes(
         try {
           await redis.del(`mentor-matches:${req.params.id}`);
         } catch (_) { /* Redis unavailable — skip invalidation */ }
+        runMentorMatchingAgent(req.params.id).catch((err) => console.error("[Agent] update:", err));
       }
 
       res.json(updated);
@@ -1528,6 +1531,18 @@ export async function registerRoutes(
 
   // ===== MENTORSHIP ROUTES =====
   
+  // Get projects suggested for the logged-in mentor by the matching agent
+  app.get('/api/mentors/me/suggested-projects', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const suggestions = await storage.getMentorSuggestedProjects(userId);
+      res.json(suggestions);
+    } catch (error) {
+      console.error("Error fetching suggested projects:", error);
+      res.status(500).json({ message: "Failed to fetch suggested projects" });
+    }
+  });
+
   // Get mentors list (for requesting mentorship)
   app.get('/api/mentors', isAuthenticated, async (req: any, res) => {
     try {
