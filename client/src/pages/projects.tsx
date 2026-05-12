@@ -487,17 +487,17 @@ export default function Projects() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="description">Descripción</Label>
+                  <Label htmlFor="description">{t("projects.description")}</Label>
                   <Textarea id="description" name="description" rows={3} data-testid="input-project-description" />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="objectives">Objetivos</Label>
+                  <Label htmlFor="objectives">{t("projects.objectives")}</Label>
                   <Textarea id="objectives" name="objectives" rows={2} data-testid="input-project-objectives" />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="skillsNeeded">Habilidades necesarias</Label>
+                  <Label htmlFor="skillsNeeded">{t("projects.skillsNeeded")}</Label>
                   <Input
                     id="skillsNeeded"
                     name="skillsNeeded"
@@ -508,7 +508,7 @@ export default function Projects() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="category">Categoría</Label>
+                    <Label htmlFor="category">{t("projects.category")}</Label>
                     <Select name="category">
                       <SelectTrigger data-testid="select-project-category">
                         <SelectValue placeholder="Selecciona una categoría" />
@@ -522,28 +522,28 @@ export default function Projects() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="location">Ubicación</Label>
+                    <Label htmlFor="location">{t("projects.location")}</Label>
                     <Input id="location" name="location" data-testid="input-project-location" />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="targetBeneficiaries">Beneficiarios Objetivo</Label>
+                  <Label htmlFor="targetBeneficiaries">{t("projects.targetBeneficiaries")}</Label>
                   <Input id="targetBeneficiaries" name="targetBeneficiaries" data-testid="input-project-beneficiaries" />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="expectedImpact">Impacto Esperado</Label>
+                  <Label htmlFor="expectedImpact">{t("projects.expectedImpact")}</Label>
                   <Textarea id="expectedImpact" name="expectedImpact" rows={2} data-testid="input-project-impact" />
                 </div>
 
                 <DialogFooter>
                   <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                    Cancelar
+                    {t("common.cancel")}
                   </Button>
                   <Button type="submit" disabled={createMutation.isPending} data-testid="button-submit-project">
                     {createMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                    Crear Proyecto
+                    {t("projects.createProject")}
                   </Button>
                 </DialogFooter>
               </form>
@@ -602,7 +602,7 @@ export default function Projects() {
                 data-testid="button-create-first-project"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Crear Proyecto
+                {t("projects.createProject")}
               </Button>
             )}
           </CardContent>
@@ -768,7 +768,7 @@ export default function Projects() {
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setIsJoinDialogOpen(false)}>
-              Cancelar
+              {t("common.cancel")}
             </Button>
             <Button
               type="button"
@@ -817,17 +817,17 @@ export default function Projects() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="edit-description">Descripción</Label>
+                    <Label htmlFor="edit-description">{t("projects.description")}</Label>
                     <Textarea id="edit-description" name="description" defaultValue={selectedProject.description || ""} rows={3} data-testid="input-edit-project-description" />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="edit-objectives">Objetivos</Label>
+                    <Label htmlFor="edit-objectives">{t("projects.objectives")}</Label>
                     <Textarea id="edit-objectives" name="objectives" defaultValue={selectedProject.objectives || ""} rows={2} data-testid="input-edit-project-objectives" />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="edit-skillsNeeded">Habilidades necesarias</Label>
+                    <Label htmlFor="edit-skillsNeeded">{t("projects.skillsNeeded")}</Label>
                     <Input
                       id="edit-skillsNeeded"
                       name="skillsNeeded"
@@ -839,7 +839,7 @@ export default function Projects() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="edit-category">Categoría</Label>
+                      <Label htmlFor="edit-category">{t("projects.category")}</Label>
                       <Select name="category" defaultValue={selectedProject.category || ""}>
                         <SelectTrigger data-testid="select-edit-project-category">
                           <SelectValue placeholder="Selecciona una categoría" />
@@ -853,7 +853,7 @@ export default function Projects() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="edit-status">Estado</Label>
+                      <Label htmlFor="edit-status">{t("projects.status")}</Label>
                       <Select name="status" defaultValue={selectedProject.status || "draft"}>
                         <SelectTrigger data-testid="select-edit-project-status">
                           <SelectValue />
@@ -868,17 +868,17 @@ export default function Projects() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="edit-location">Ubicación</Label>
+                    <Label htmlFor="edit-location">{t("projects.location")}</Label>
                     <Input id="edit-location" name="location" defaultValue={selectedProject.location || ""} data-testid="input-edit-project-location" />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="edit-targetBeneficiaries">Beneficiarios Objetivo</Label>
+                    <Label htmlFor="edit-targetBeneficiaries">{t("projects.targetBeneficiaries")}</Label>
                     <Input id="edit-targetBeneficiaries" name="targetBeneficiaries" defaultValue={selectedProject.targetBeneficiaries || ""} data-testid="input-edit-project-beneficiaries" />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="edit-expectedImpact">Impacto Esperado</Label>
+                    <Label htmlFor="edit-expectedImpact">{t("projects.expectedImpact")}</Label>
                     <Textarea id="edit-expectedImpact" name="expectedImpact" defaultValue={selectedProject.expectedImpact || ""} rows={2} data-testid="input-edit-project-impact" />
                   </div>
 
@@ -897,11 +897,11 @@ export default function Projects() {
                     )}
                     <div className="flex-1" />
                     <Button type="button" variant="outline" onClick={() => setIsViewDialogOpen(false)}>
-                      Cancelar
+                      {t("common.cancel")}
                     </Button>
                     <Button type="submit" disabled={updateMutation.isPending} data-testid="button-save-project">
                       {updateMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                      Guardar Cambios
+                      {t("projects.saveChanges")}
                     </Button>
                   </DialogFooter>
                 </form>
@@ -1029,22 +1029,22 @@ function ProjectDetailsView({
 
       <Tabs defaultValue="overview" className="w-full">
         <TabsList>
-          <TabsTrigger value="overview">Resumen</TabsTrigger>
-          <TabsTrigger value="participants">Participantes</TabsTrigger>
-          {isProjectAdmin ? <TabsTrigger value="requests">Solicitudes</TabsTrigger> : null}
-          {isProjectAdmin ? <TabsTrigger value="team">Administración</TabsTrigger> : null}
+          <TabsTrigger value="overview">{t("projects.tabOverview")}</TabsTrigger>
+          <TabsTrigger value="participants">{t("projects.tabParticipants")}</TabsTrigger>
+          {isProjectAdmin ? <TabsTrigger value="requests">{t("projects.tabRequests")}</TabsTrigger> : null}
+          {isProjectAdmin ? <TabsTrigger value="team">{t("projects.tabTeam")}</TabsTrigger> : null}
         </TabsList>
 
         <TabsContent value="overview" className="mt-4">
           <div className={`grid gap-6 ${isProjectAdmin ? "lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]" : ""}`}>
             <div className="space-y-4">
-              <DetailBlock label="Descripción" value={project.description || "Sin descripción"} />
-              {project.objectives && <DetailBlock label="Objetivos" value={project.objectives} />}
-              {project.skillsNeeded && <DetailBlock label="Habilidades necesarias" value={project.skillsNeeded} />}
-              {project.targetBeneficiaries && <DetailBlock label="Beneficiarios" value={project.targetBeneficiaries} />}
-              {project.expectedImpact && <DetailBlock label="Impacto Esperado" value={project.expectedImpact} />}
+              <DetailBlock label={t("projects.description")} value={project.description || t("common.noData", "—")} />
+              {project.objectives && <DetailBlock label={t("projects.objectives")} value={project.objectives} />}
+              {project.skillsNeeded && <DetailBlock label={t("projects.skillsNeeded")} value={project.skillsNeeded} />}
+              {project.targetBeneficiaries && <DetailBlock label={t("projects.targetBeneficiaries")} value={project.targetBeneficiaries} />}
+              {project.expectedImpact && <DetailBlock label={t("projects.expectedImpact")} value={project.expectedImpact} />}
               <div className="space-y-2">
-                <h4 className="text-sm font-medium text-muted-foreground">Datos generales</h4>
+                <h4 className="text-sm font-medium text-muted-foreground">{t("projects.generalInfo")}</h4>
                 <div className="space-y-2 text-sm">
                   {project.location && (
                     <div className="flex items-center gap-2">
@@ -1132,11 +1132,11 @@ function ProjectDetailsView({
         <TabsContent value="participants" className="mt-4">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <h4 className="text-sm font-medium text-muted-foreground">Participantes</h4>
+              <h4 className="text-sm font-medium text-muted-foreground">{t("projects.tabParticipants")}</h4>
               <Badge variant="outline">{participants.length}</Badge>
             </div>
             {participants.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No hay participantes registrados.</p>
+              <p className="text-sm text-muted-foreground">{t("projects.noParticipants")}</p>
             ) : (
               <div className="space-y-2">
                 {participants.map((participant: SocialProjectParticipantWithUser) => (
@@ -1199,16 +1199,16 @@ function ProjectDetailsView({
           <TabsContent value="requests" className="mt-4">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <h4 className="text-sm font-medium text-muted-foreground">Solicitudes para unirse</h4>
+                <h4 className="text-sm font-medium text-muted-foreground">{t("projects.joinRequests")}</h4>
                 <Badge variant="outline">{pendingRequests.length}</Badge>
               </div>
               {isLoadingRequests ? (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Cargando solicitudes...
+                  {t("projects.loadingRequests")}
                 </div>
               ) : pendingRequests.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No hay solicitudes pendientes.</p>
+                <p className="text-sm text-muted-foreground">{t("projects.noPendingRequests")}</p>
               ) : (
                 <div className="space-y-3">
                   {pendingRequests.map((request) => (

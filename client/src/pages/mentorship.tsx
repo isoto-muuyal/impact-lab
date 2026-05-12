@@ -19,6 +19,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Users, Plus, Calendar, Clock, CheckCircle, XCircle, Loader2, User, Sparkles } from "lucide-react";
 import type { MentorshipWithDetails, User as UserType, ProjectWithOwner, MentorshipSession } from "@shared/schema";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 const requestMentorshipSchema = z.object({
   mentorId: z.string().optional(),
@@ -58,6 +59,7 @@ const sessionStatusLabels: Record<string, string> = {
 export default function MentorshipPage() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [requestDialogOpen, setRequestDialogOpen] = useState(false);
   const [sessionDialogOpen, setSessionDialogOpen] = useState(false);
   const [selectedMentorship, setSelectedMentorship] = useState<MentorshipWithDetails | null>(null);
@@ -310,17 +312,17 @@ export default function MentorshipPage() {
       <Tabs defaultValue="active" className="w-full">
         <TabsList>
           <TabsTrigger value="pending" data-testid="tab-pending">
-            Pendientes ({pendingMentorships.length})
+            {t("mentorship.tabPending")} ({pendingMentorships.length})
           </TabsTrigger>
           <TabsTrigger value="active" data-testid="tab-active">
-            Activas ({activeMentorships.length})
+            {t("mentorship.tabActive")} ({activeMentorships.length})
           </TabsTrigger>
           <TabsTrigger value="completed" data-testid="tab-completed">
-            Historial ({completedMentorships.length})
+            {t("mentorship.tabHistory")} ({completedMentorships.length})
           </TabsTrigger>
           {userRole === "mentor" && (
             <TabsTrigger value="suggested" data-testid="tab-suggested">
-              Proyectos sugeridos {suggestedProjects?.length ? `(${suggestedProjects.length})` : ""}
+              {t("mentorship.suggestedProjects")} {suggestedProjects?.length ? `(${suggestedProjects.length})` : ""}
             </TabsTrigger>
           )}
         </TabsList>
@@ -330,7 +332,7 @@ export default function MentorshipPage() {
             <Card>
               <CardContent className="py-8 text-center text-muted-foreground">
                 <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No hay solicitudes pendientes</p>
+                <p>{t("mentorship.noPending")}</p>
               </CardContent>
             </Card>
           ) : (
@@ -403,8 +405,8 @@ export default function MentorshipPage() {
               <Card>
                 <CardContent className="py-8 text-center text-muted-foreground">
                   <Sparkles className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No hay proyectos sugeridos aún</p>
-                  <p className="text-xs mt-1">Los proyectos compatibles con tu perfil aparecerán aquí</p>
+                  <p>{t("mentorship.noSuggestedProjects")}</p>
+                  <p className="text-xs mt-1">{t("mentorship.noSuggestedProjectsHint")}</p>
                 </CardContent>
               </Card>
             ) : (
@@ -458,7 +460,7 @@ export default function MentorshipPage() {
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>{t("common.cancel")}</Button>
             <Button
               variant="destructive"
               disabled={!rejectReason.trim() || updateStatusMutation.isPending}
@@ -596,6 +598,7 @@ interface MentorshipCardProps {
 }
 
 function MentorshipCard({ mentorship, userRole, onAssign, onScheduleSession, onUpdateStatus, onAccept, onReject, getInitials }: MentorshipCardProps) {
+  const { t } = useTranslation();
   const { data: sessions } = useQuery<MentorshipSession[]>({
     queryKey: ["/api/mentorships", mentorship.id, "sessions"],
     queryFn: async () => {
@@ -696,7 +699,7 @@ function MentorshipCard({ mentorship, userRole, onAssign, onScheduleSession, onU
         {mentorship.status === "pending" && userRole === "facilitador" && onUpdateStatus && (
           <Button size="sm" variant="ghost" onClick={() => onUpdateStatus("cancelled")} data-testid="button-cancel">
             <XCircle className="h-4 w-4 mr-1" />
-            Cancelar
+            {t("common.cancel")}
           </Button>
         )}
       </CardFooter>
