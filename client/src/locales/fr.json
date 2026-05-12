@@ -21,7 +21,9 @@
     "myMentorships": "Mes Mentorats",
     "organizations": "Organisations",
     "challenges": "Défis",
-    "challengeProjects": "Projets de Défi"
+    "challengeProjects": "Projets de Défi",
+    "admin": "Admin",
+    "roleRequests": "Demandes de rôle"
   },
   "auth": {
     "login": "Se Connecter",
@@ -450,6 +452,61 @@
       "approve": "Approuver",
       "reject": "Rejeter",
       "cancel": "Annuler"
+    }
+  },
+  "admin": {
+    "tabs": {
+      "users": "Utilisateurs",
+      "projects": "Projets"
+    },
+    "users": {
+      "title": "Utilisateurs",
+      "totalUsers": "Total des utilisateurs",
+      "withProjects": "Utilisateurs avec projets",
+      "activeUsers": "Utilisateurs actifs",
+      "loading": "Chargement des utilisateurs...",
+      "loadError": "Impossible de charger les utilisateurs.",
+      "empty": "Aucun utilisateur trouvé.",
+      "name": "Nom",
+      "login": "Connexion",
+      "lastLogin": "Dernière connexion",
+      "roles": "Rôles",
+      "projectCount": "Projets",
+      "unknownUser": "Utilisateur inconnu"
+    },
+    "projects": {
+      "title": "Projets",
+      "totalProjects": "Total des projets",
+      "activeProjects": "Projets actifs",
+      "enlistedUsers": "Utilisateurs inscrits",
+      "loading": "Chargement des projets...",
+      "loadError": "Impossible de charger les projets.",
+      "empty": "Aucun projet trouvé.",
+      "project": "Projet",
+      "description": "Description",
+      "owner": "Responsable",
+      "enlisted": "Utilisateurs inscrits",
+      "status": "Statut",
+      "noDescription": "Aucune description"
+    },
+    "profile": {
+      "backToUsers": "Retour aux utilisateurs",
+      "loadError": "Impossible de charger le profil utilisateur.",
+      "noTitle": "Aucun titre",
+      "role": "Rôle",
+      "noRoles": "Aucun rôle actif",
+      "about": "À propos",
+      "email": "Email",
+      "location": "Emplacement",
+      "lastLogin": "Dernière connexion",
+      "bio": "Bio",
+      "noBio": "Aucune bio renseignée.",
+      "skills": "Compétences",
+      "interests": "Centres d'intérêt",
+      "noSkills": "Aucune compétence renseignée.",
+      "noInterests": "Aucun centre d'intérêt renseigné.",
+      "projects": "Projets",
+      "noProjects": "Cet utilisateur n'est inscrit à aucun projet."
     }
   },
   "about": {

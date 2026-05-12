@@ -21,7 +21,9 @@
     "myMentorships": "Minhas Mentorias",
     "organizations": "Organizações",
     "challenges": "Desafios",
-    "challengeProjects": "Projetos de Desafio"
+    "challengeProjects": "Projetos de Desafio",
+    "admin": "Admin",
+    "roleRequests": "Solicitações de função"
   },
   "auth": {
     "login": "Entrar",
@@ -450,6 +452,61 @@
       "approve": "Aprovar",
       "reject": "Rejeitar",
       "cancel": "Cancelar"
+    }
+  },
+  "admin": {
+    "tabs": {
+      "users": "Usuários",
+      "projects": "Projetos"
+    },
+    "users": {
+      "title": "Usuários",
+      "totalUsers": "Total de usuários",
+      "withProjects": "Usuários com projetos",
+      "activeUsers": "Usuários ativos",
+      "loading": "Carregando usuários...",
+      "loadError": "Não foi possível carregar os usuários.",
+      "empty": "Nenhum usuário encontrado.",
+      "name": "Nome",
+      "login": "Login",
+      "lastLogin": "Último login",
+      "roles": "Funções",
+      "projectCount": "Projetos",
+      "unknownUser": "Usuário desconhecido"
+    },
+    "projects": {
+      "title": "Projetos",
+      "totalProjects": "Total de projetos",
+      "activeProjects": "Projetos ativos",
+      "enlistedUsers": "Usuários inscritos",
+      "loading": "Carregando projetos...",
+      "loadError": "Não foi possível carregar os projetos.",
+      "empty": "Nenhum projeto encontrado.",
+      "project": "Projeto",
+      "description": "Descrição",
+      "owner": "Responsável",
+      "enlisted": "Usuários inscritos",
+      "status": "Status",
+      "noDescription": "Sem descrição"
+    },
+    "profile": {
+      "backToUsers": "Voltar para usuários",
+      "loadError": "Não foi possível carregar o perfil do usuário.",
+      "noTitle": "Sem título",
+      "role": "Função",
+      "noRoles": "Sem funções ativas",
+      "about": "Sobre",
+      "email": "Email",
+      "location": "Localização",
+      "lastLogin": "Último login",
+      "bio": "Bio",
+      "noBio": "Nenhuma bio informada.",
+      "skills": "Habilidades",
+      "interests": "Interesses",
+      "noSkills": "Nenhuma habilidade informada.",
+      "noInterests": "Nenhum interesse informado.",
+      "projects": "Projetos",
+      "noProjects": "Este usuário não está inscrito em nenhum projeto."
     }
   },
   "about": {

@@ -147,7 +147,7 @@ export function AppSidebar() {
                     <SidebarMenuButton asChild isActive={location === "/admin"}>
                       <Link href="/admin" data-testid="link-nav-admin">
                         <Shield className="h-4 w-4" />
-                        <span>Admin</span>
+                        <span>{t("nav.admin")}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -155,7 +155,7 @@ export function AppSidebar() {
                     <SidebarMenuButton asChild isActive={location === "/admin?tab=role-requests"}>
                       <Link href="/admin?tab=role-requests" data-testid="link-nav-admin-role-requests">
                         <UserPlus className="h-4 w-4" />
-                        <span>Role Requests</span>
+                        <span>{t("nav.roleRequests")}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

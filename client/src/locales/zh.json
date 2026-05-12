@@ -21,7 +21,9 @@
     "myMentorships": "我的导师",
     "organizations": "组织",
     "challenges": "挑战",
-    "challengeProjects": "挑战项目"
+    "challengeProjects": "挑战项目",
+    "admin": "管理员",
+    "roleRequests": "角色申请"
   },
   "auth": {
     "login": "登录",
@@ -450,6 +452,61 @@
       "approve": "批准",
       "reject": "拒绝",
       "cancel": "取消"
+    }
+  },
+  "admin": {
+    "tabs": {
+      "users": "用户",
+      "projects": "项目"
+    },
+    "users": {
+      "title": "用户",
+      "totalUsers": "用户总数",
+      "withProjects": "有项目的用户",
+      "activeUsers": "活跃用户",
+      "loading": "正在加载用户...",
+      "loadError": "无法加载用户。",
+      "empty": "未找到用户。",
+      "name": "姓名",
+      "login": "登录",
+      "lastLogin": "最后登录",
+      "roles": "角色",
+      "projectCount": "项目",
+      "unknownUser": "未知用户"
+    },
+    "projects": {
+      "title": "项目",
+      "totalProjects": "项目总数",
+      "activeProjects": "活跃项目",
+      "enlistedUsers": "已加入用户",
+      "loading": "正在加载项目...",
+      "loadError": "无法加载项目。",
+      "empty": "未找到项目。",
+      "project": "项目",
+      "description": "描述",
+      "owner": "负责人",
+      "enlisted": "已加入用户",
+      "status": "状态",
+      "noDescription": "无描述"
+    },
+    "profile": {
+      "backToUsers": "返回用户",
+      "loadError": "无法加载用户资料。",
+      "noTitle": "无标题",
+      "role": "角色",
+      "noRoles": "无活跃角色",
+      "about": "关于",
+      "email": "邮箱",
+      "location": "位置",
+      "lastLogin": "最后登录",
+      "bio": "简介",
+      "noBio": "未提供简介。",
+      "skills": "技能",
+      "interests": "兴趣",
+      "noSkills": "未列出技能。",
+      "noInterests": "未列出兴趣。",
+      "projects": "项目",
+      "noProjects": "该用户未加入任何项目。"
     }
   },
   "about": {

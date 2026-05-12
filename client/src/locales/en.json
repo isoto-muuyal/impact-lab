@@ -21,7 +21,9 @@
     "myMentorships": "My Mentorships",
     "organizations": "Organizations",
     "challenges": "Challenges",
-    "challengeProjects": "Challenge Projects"
+    "challengeProjects": "Challenge Projects",
+    "admin": "Admin",
+    "roleRequests": "Role Requests"
   },
   "auth": {
     "login": "Log In",
@@ -712,6 +714,61 @@
       "approve": "Approve",
       "reject": "Reject",
       "cancel": "Cancel"
+    }
+  },
+  "admin": {
+    "tabs": {
+      "users": "Users",
+      "projects": "Projects"
+    },
+    "users": {
+      "title": "Users",
+      "totalUsers": "Total Users",
+      "withProjects": "Users with Projects",
+      "activeUsers": "Active Users",
+      "loading": "Loading users...",
+      "loadError": "Failed to load users.",
+      "empty": "No users found.",
+      "name": "Name",
+      "login": "Login",
+      "lastLogin": "Last Login",
+      "roles": "Roles",
+      "projectCount": "Projects",
+      "unknownUser": "Unknown user"
+    },
+    "projects": {
+      "title": "Projects",
+      "totalProjects": "Total Projects",
+      "activeProjects": "Active Projects",
+      "enlistedUsers": "Enlisted Users",
+      "loading": "Loading projects...",
+      "loadError": "Failed to load projects.",
+      "empty": "No projects found.",
+      "project": "Project",
+      "description": "Description",
+      "owner": "Owner",
+      "enlisted": "Enlisted Users",
+      "status": "Status",
+      "noDescription": "No description"
+    },
+    "profile": {
+      "backToUsers": "Back to Users",
+      "loadError": "Failed to load user profile.",
+      "noTitle": "No title",
+      "role": "Role",
+      "noRoles": "No active roles",
+      "about": "About",
+      "email": "Email",
+      "location": "Location",
+      "lastLogin": "Last Login",
+      "bio": "Bio",
+      "noBio": "No bio provided.",
+      "skills": "Skills",
+      "interests": "Interests",
+      "noSkills": "No skills listed.",
+      "noInterests": "No interests listed.",
+      "projects": "Projects",
+      "noProjects": "This user is not enlisted in any projects."
     }
   },
   "nosotros": {

@@ -195,6 +195,39 @@ export async function registerRoutes(
     }
   });
 
+  app.get('/api/admin/users', isImpactLabAdmin, async (_req, res) => {
+    try {
+      const users = await storage.getAdminUsersSummary();
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching admin users summary:", error);
+      res.status(500).json({ message: "Failed to fetch users summary" });
+    }
+  });
+
+  app.get('/api/admin/users/:id', isImpactLabAdmin, async (req, res) => {
+    try {
+      const user = await storage.getAdminUserDetails(req.params.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching admin user details:", error);
+      res.status(500).json({ message: "Failed to fetch user details" });
+    }
+  });
+
+  app.get('/api/admin/projects', isImpactLabAdmin, async (_req, res) => {
+    try {
+      const projects = await storage.getAdminProjectsSummary();
+      res.json(projects);
+    } catch (error) {
+      console.error("Error fetching admin projects summary:", error);
+      res.status(500).json({ message: "Failed to fetch projects summary" });
+    }
+  });
+
   // Profile routes
   app.patch('/api/profile', isAuthenticated, async (req: any, res) => {
     try {
@@ -502,7 +535,8 @@ export async function registerRoutes(
         project.ownerId === userId ||
         project.mentorId === userId ||
         !!participant ||
-        userRole === 'facilitador';
+        userRole === 'facilitador' ||
+        userWithProfile?.username === 'impactlab';
 
       if (!canAccess) {
         return res.status(403).json({ message: "Not authorized to view this project" });

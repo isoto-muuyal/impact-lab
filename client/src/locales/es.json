@@ -21,7 +21,9 @@
     "myMentorships": "Mis Mentorías",
     "organizations": "Organizaciones",
     "challenges": "Desafíos",
-    "challengeProjects": "Proyectos de Desafío"
+    "challengeProjects": "Proyectos de Desafío",
+    "admin": "Admin",
+    "roleRequests": "Solicitudes de rol"
   },
   "auth": {
     "login": "Iniciar Sesión",
@@ -827,6 +829,61 @@
       "cancelled": "Cancelado"
     },
     "events": "eventos"
+  },
+  "admin": {
+    "tabs": {
+      "users": "Usuarios",
+      "projects": "Proyectos"
+    },
+    "users": {
+      "title": "Usuarios",
+      "totalUsers": "Total de usuarios",
+      "withProjects": "Usuarios con proyectos",
+      "activeUsers": "Usuarios activos",
+      "loading": "Cargando usuarios...",
+      "loadError": "No se pudieron cargar los usuarios.",
+      "empty": "No se encontraron usuarios.",
+      "name": "Nombre",
+      "login": "Acceso",
+      "lastLogin": "Último ingreso",
+      "roles": "Roles",
+      "projectCount": "Proyectos",
+      "unknownUser": "Usuario desconocido"
+    },
+    "projects": {
+      "title": "Proyectos",
+      "totalProjects": "Total de proyectos",
+      "activeProjects": "Proyectos activos",
+      "enlistedUsers": "Usuarios inscritos",
+      "loading": "Cargando proyectos...",
+      "loadError": "No se pudieron cargar los proyectos.",
+      "empty": "No se encontraron proyectos.",
+      "project": "Proyecto",
+      "description": "Descripción",
+      "owner": "Responsable",
+      "enlisted": "Usuarios inscritos",
+      "status": "Estado",
+      "noDescription": "Sin descripción"
+    },
+    "profile": {
+      "backToUsers": "Volver a usuarios",
+      "loadError": "No se pudo cargar el perfil del usuario.",
+      "noTitle": "Sin título",
+      "role": "Rol",
+      "noRoles": "Sin roles activos",
+      "about": "Acerca de",
+      "email": "Correo",
+      "location": "Ubicación",
+      "lastLogin": "Último ingreso",
+      "bio": "Biografía",
+      "noBio": "No hay biografía registrada.",
+      "skills": "Habilidades",
+      "interests": "Intereses",
+      "noSkills": "No hay habilidades registradas.",
+      "noInterests": "No hay intereses registrados.",
+      "projects": "Proyectos",
+      "noProjects": "Este usuario no está inscrito en ningún proyecto."
+    }
   },
   "settings": {
     "title": "Configuracion",

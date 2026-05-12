@@ -1,4 +1,4 @@
-import { useDeferredValue, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -146,6 +146,7 @@ export default function Projects() {
   const deferredMemberSearchQuery = useDeferredValue(memberSearchQuery.trim());
   const userRole = user?.userRoles?.[0]?.role?.name || "usuario";
   const hasProponenteRole = hasRole("proponente");
+  const isImpactLabAdmin = user?.username === "impactlab";
 
   const showProponenteRoleWarning = () => {
     toast({
@@ -421,6 +422,14 @@ export default function Projects() {
     setIsViewDialogOpen(true);
   };
 
+  useEffect(() => {
+    const projectId = new URLSearchParams(window.location.search).get("projectId");
+    if (!projectId) return;
+    setSelectedProjectId(projectId);
+    setIsEditMode(false);
+    setIsViewDialogOpen(true);
+  }, []);
+
   const openJoinRequestDialog = (project: ProjectWithOwner) => {
     setSelectedProjectId(project.id);
     setJoinRequestedRole("participant");
@@ -604,7 +613,7 @@ export default function Projects() {
             const participants = project.participants ?? [];
             const myParticipation = participants.find((participant) => participant.userId === user?.id);
             const isOwner = project.ownerId === user?.id;
-            const hasProjectAccess = isOwner || !!myParticipation || project.mentorId === user?.id || userRole === "facilitador";
+            const hasProjectAccess = isOwner || !!myParticipation || project.mentorId === user?.id || userRole === "facilitador" || isImpactLabAdmin;
             const myRequest = myRequestsByProjectId.get(project.id);
 
             return (

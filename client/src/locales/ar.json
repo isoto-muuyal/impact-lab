@@ -21,7 +21,9 @@
     "myMentorships": "إرشاداتي",
     "organizations": "المنظمات",
     "challenges": "التحديات",
-    "challengeProjects": "مشاريع التحدي"
+    "challengeProjects": "مشاريع التحدي",
+    "admin": "المسؤول",
+    "roleRequests": "طلبات الأدوار"
   },
   "auth": {
     "login": "تسجيل الدخول",
@@ -450,6 +452,61 @@
       "approve": "موافقة",
       "reject": "رفض",
       "cancel": "إلغاء"
+    }
+  },
+  "admin": {
+    "tabs": {
+      "users": "المستخدمون",
+      "projects": "المشاريع"
+    },
+    "users": {
+      "title": "المستخدمون",
+      "totalUsers": "إجمالي المستخدمين",
+      "withProjects": "مستخدمون لديهم مشاريع",
+      "activeUsers": "مستخدمون نشطون",
+      "loading": "جاري تحميل المستخدمين...",
+      "loadError": "تعذر تحميل المستخدمين.",
+      "empty": "لم يتم العثور على مستخدمين.",
+      "name": "الاسم",
+      "login": "تسجيل الدخول",
+      "lastLogin": "آخر تسجيل دخول",
+      "roles": "الأدوار",
+      "projectCount": "المشاريع",
+      "unknownUser": "مستخدم غير معروف"
+    },
+    "projects": {
+      "title": "المشاريع",
+      "totalProjects": "إجمالي المشاريع",
+      "activeProjects": "المشاريع النشطة",
+      "enlistedUsers": "المستخدمون المسجلون",
+      "loading": "جاري تحميل المشاريع...",
+      "loadError": "تعذر تحميل المشاريع.",
+      "empty": "لم يتم العثور على مشاريع.",
+      "project": "المشروع",
+      "description": "الوصف",
+      "owner": "المالك",
+      "enlisted": "المستخدمون المسجلون",
+      "status": "الحالة",
+      "noDescription": "لا يوجد وصف"
+    },
+    "profile": {
+      "backToUsers": "العودة إلى المستخدمين",
+      "loadError": "تعذر تحميل ملف المستخدم.",
+      "noTitle": "لا يوجد عنوان",
+      "role": "الدور",
+      "noRoles": "لا توجد أدوار نشطة",
+      "about": "نبذة",
+      "email": "البريد الإلكتروني",
+      "location": "الموقع",
+      "lastLogin": "آخر تسجيل دخول",
+      "bio": "السيرة",
+      "noBio": "لا توجد سيرة مسجلة.",
+      "skills": "المهارات",
+      "interests": "الاهتمامات",
+      "noSkills": "لا توجد مهارات مسجلة.",
+      "noInterests": "لا توجد اهتمامات مسجلة.",
+      "projects": "المشاريع",
+      "noProjects": "هذا المستخدم غير مسجل في أي مشروع."
     }
   },
   "about": {
