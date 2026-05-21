@@ -21,7 +21,9 @@
     "myMentorships": "إرشاداتي",
     "organizations": "المنظمات",
     "challenges": "التحديات",
-    "challengeProjects": "مشاريع التحدي"
+    "challengeProjects": "مشاريع التحدي",
+    "admin": "المسؤول",
+    "roleRequests": "طلبات الأدوار"
   },
   "auth": {
     "login": "تسجيل الدخول",
@@ -216,6 +218,23 @@
     "delete": "حذف",
     "noProjects": "لا توجد مشاريع بعد",
     "createFirst": "أنشئ مشروعك الأول للبدء",
+    "tabOverview": "نظرة عامة",
+    "tabParticipants": "المشاركون",
+    "tabRequests": "الطلبات",
+    "tabTeam": "الإدارة",
+    "objectives": "الأهداف",
+    "skillsNeeded": "المهارات المطلوبة",
+    "targetBeneficiaries": "المستفيدون",
+    "expectedImpact": "التأثير المتوقع",
+    "generalInfo": "معلومات عامة",
+    "noParticipants": "لا يوجد مشاركون مسجلون.",
+    "saveChanges": "حفظ التغييرات",
+    "category": "الفئة",
+    "location": "الموقع",
+    "joinRequests": "طلبات الانضمام",
+    "loadingRequests": "جارٍ تحميل الطلبات...",
+    "noPendingRequests": "لا توجد طلبات معلقة.",
+    "createProject": "إنشاء مشروع",
     "mentorMatch": {
       "running": "جارٍ البحث عن المرشدين...",
       "notFound": "لم يتم العثور على مرشدين. نوصي بتحديث وصف المشروع والمهارات المطلوبة.",
@@ -252,7 +271,14 @@
     "upcoming": "القادمة",
     "past": "السابقة",
     "expertise": "الخبرة",
-    "availability": "التوفر"
+    "availability": "التوفر",
+    "tabPending": "قيد الانتظار",
+    "tabActive": "نشطة",
+    "tabHistory": "السجل",
+    "suggestedProjects": "المشاريع المقترحة",
+    "noPending": "لا توجد طلبات معلقة",
+    "noSuggestedProjects": "لا توجد مشاريع مقترحة حتى الآن",
+    "noSuggestedProjectsHint": "ستظهر هنا المشاريع المتوافقة مع ملفك الشخصي"
   },
   "organizations": {
     "title": "المنظمات",
@@ -452,6 +478,61 @@
       "cancel": "إلغاء"
     }
   },
+  "admin": {
+    "tabs": {
+      "users": "المستخدمون",
+      "projects": "المشاريع"
+    },
+    "users": {
+      "title": "المستخدمون",
+      "totalUsers": "إجمالي المستخدمين",
+      "withProjects": "مستخدمون لديهم مشاريع",
+      "activeUsers": "مستخدمون نشطون",
+      "loading": "جاري تحميل المستخدمين...",
+      "loadError": "تعذر تحميل المستخدمين.",
+      "empty": "لم يتم العثور على مستخدمين.",
+      "name": "الاسم",
+      "login": "تسجيل الدخول",
+      "lastLogin": "آخر تسجيل دخول",
+      "roles": "الأدوار",
+      "projectCount": "المشاريع",
+      "unknownUser": "مستخدم غير معروف"
+    },
+    "projects": {
+      "title": "المشاريع",
+      "totalProjects": "إجمالي المشاريع",
+      "activeProjects": "المشاريع النشطة",
+      "enlistedUsers": "المستخدمون المسجلون",
+      "loading": "جاري تحميل المشاريع...",
+      "loadError": "تعذر تحميل المشاريع.",
+      "empty": "لم يتم العثور على مشاريع.",
+      "project": "المشروع",
+      "description": "الوصف",
+      "owner": "المالك",
+      "enlisted": "المستخدمون المسجلون",
+      "status": "الحالة",
+      "noDescription": "لا يوجد وصف"
+    },
+    "profile": {
+      "backToUsers": "العودة إلى المستخدمين",
+      "loadError": "تعذر تحميل ملف المستخدم.",
+      "noTitle": "لا يوجد عنوان",
+      "role": "الدور",
+      "noRoles": "لا توجد أدوار نشطة",
+      "about": "نبذة",
+      "email": "البريد الإلكتروني",
+      "location": "الموقع",
+      "lastLogin": "آخر تسجيل دخول",
+      "bio": "السيرة",
+      "noBio": "لا توجد سيرة مسجلة.",
+      "skills": "المهارات",
+      "interests": "الاهتمامات",
+      "noSkills": "لا توجد مهارات مسجلة.",
+      "noInterests": "لا توجد اهتمامات مسجلة.",
+      "projects": "المشاريع",
+      "noProjects": "هذا المستخدم غير مسجل في أي مشروع."
+    }
+  },
   "about": {
     "badge": "Global Approach for Social Innovation",
     "heroTitle": "المساحة التشغيلية لـ",
@@ -464,7 +545,7 @@
       "videoLabel": "شاهد الفيديو المؤسسي",
       "mission": {
         "title": "الرسالة",
-        "description": "تمكين منظومة الابتكار الاجتماعي في أمريكا اللاتينية من خلال ربط المواهب والموارد والمعرفة لتحويل الأفكار إلى مشاريع ذات تأثير حقيقي."
+        "description": "تمكين منظومة الابتكار الاجتماعي في مدينة نيويورك ومن مدينة نيويورك من خلال ربط المواهب والموارد والمعرفة لتحويل الأفكار إلى مشاريع ذات تأثير حقيقي."
       },
       "vision": {
         "title": "الرؤية",

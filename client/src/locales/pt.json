@@ -21,7 +21,9 @@
     "myMentorships": "Minhas Mentorias",
     "organizations": "Organizações",
     "challenges": "Desafios",
-    "challengeProjects": "Projetos de Desafio"
+    "challengeProjects": "Projetos de Desafio",
+    "admin": "Admin",
+    "roleRequests": "Solicitações de função"
   },
   "auth": {
     "login": "Entrar",
@@ -216,6 +218,23 @@
     "delete": "Excluir",
     "noProjects": "Ainda não há projetos",
     "createFirst": "Crie seu primeiro projeto para começar",
+    "tabOverview": "Visão geral",
+    "tabParticipants": "Participantes",
+    "tabRequests": "Solicitações",
+    "tabTeam": "Administração",
+    "objectives": "Objetivos",
+    "skillsNeeded": "Habilidades necessárias",
+    "targetBeneficiaries": "Beneficiários",
+    "expectedImpact": "Impacto esperado",
+    "generalInfo": "Informações gerais",
+    "noParticipants": "Nenhum participante registrado.",
+    "saveChanges": "Salvar alterações",
+    "category": "Categoria",
+    "location": "Localização",
+    "joinRequests": "Solicitações de entrada",
+    "loadingRequests": "Carregando solicitações...",
+    "noPendingRequests": "Nenhuma solicitação pendente.",
+    "createProject": "Criar projeto",
     "mentorMatch": {
       "running": "Buscando mentores...",
       "notFound": "Nenhum mentor encontrado. Recomendamos atualizar a descrição e as habilidades necessárias do projeto.",
@@ -252,7 +271,14 @@
     "upcoming": "Próximas",
     "past": "Anteriores",
     "expertise": "Especialidade",
-    "availability": "Disponibilidade"
+    "availability": "Disponibilidade",
+    "tabPending": "Pendentes",
+    "tabActive": "Ativas",
+    "tabHistory": "Histórico",
+    "suggestedProjects": "Projetos sugeridos",
+    "noPending": "Nenhuma solicitação pendente",
+    "noSuggestedProjects": "Nenhum projeto sugerido ainda",
+    "noSuggestedProjectsHint": "Projetos compatíveis com o seu perfil aparecerão aqui"
   },
   "organizations": {
     "title": "Organizações",
@@ -452,6 +478,61 @@
       "cancel": "Cancelar"
     }
   },
+  "admin": {
+    "tabs": {
+      "users": "Usuários",
+      "projects": "Projetos"
+    },
+    "users": {
+      "title": "Usuários",
+      "totalUsers": "Total de usuários",
+      "withProjects": "Usuários com projetos",
+      "activeUsers": "Usuários ativos",
+      "loading": "Carregando usuários...",
+      "loadError": "Não foi possível carregar os usuários.",
+      "empty": "Nenhum usuário encontrado.",
+      "name": "Nome",
+      "login": "Login",
+      "lastLogin": "Último login",
+      "roles": "Funções",
+      "projectCount": "Projetos",
+      "unknownUser": "Usuário desconhecido"
+    },
+    "projects": {
+      "title": "Projetos",
+      "totalProjects": "Total de projetos",
+      "activeProjects": "Projetos ativos",
+      "enlistedUsers": "Usuários inscritos",
+      "loading": "Carregando projetos...",
+      "loadError": "Não foi possível carregar os projetos.",
+      "empty": "Nenhum projeto encontrado.",
+      "project": "Projeto",
+      "description": "Descrição",
+      "owner": "Responsável",
+      "enlisted": "Usuários inscritos",
+      "status": "Status",
+      "noDescription": "Sem descrição"
+    },
+    "profile": {
+      "backToUsers": "Voltar para usuários",
+      "loadError": "Não foi possível carregar o perfil do usuário.",
+      "noTitle": "Sem título",
+      "role": "Função",
+      "noRoles": "Sem funções ativas",
+      "about": "Sobre",
+      "email": "Email",
+      "location": "Localização",
+      "lastLogin": "Último login",
+      "bio": "Bio",
+      "noBio": "Nenhuma bio informada.",
+      "skills": "Habilidades",
+      "interests": "Interesses",
+      "noSkills": "Nenhuma habilidade informada.",
+      "noInterests": "Nenhum interesse informado.",
+      "projects": "Projetos",
+      "noProjects": "Este usuário não está inscrito em nenhum projeto."
+    }
+  },
   "about": {
     "badge": "Global Approach for Social Innovation",
     "heroTitle": "Espaço operacional de",
@@ -464,7 +545,7 @@
       "videoLabel": "Ver vídeo institucional",
       "mission": {
         "title": "Missão",
-        "description": "Potencializar o ecossistema de inovação social na América Latina, conectando talento, recursos e conhecimento para transformar ideias em projetos de impacto real."
+        "description": "Potencializar o ecossistema de inovação social em e a partir de New York City, conectando talento, recursos e conhecimento para transformar ideias em projetos de impacto real."
       },
       "vision": {
         "title": "Visão",

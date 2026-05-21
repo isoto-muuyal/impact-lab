@@ -1,7 +1,9 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { BarChart3, Copy, Lock, MousePointerClick, ShieldAlert, UserRound } from "lucide-react";
+import { Link } from "wouter";
+import { BarChart3, Copy, FolderKanban, Lock, MousePointerClick, ShieldAlert, UserRound, Users } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useTranslation } from "@/contexts/LanguageContext";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type ActivityRange = "week" | "month" | "all";
+type AdminTab = "activity" | "role-requests" | "users" | "projects";
 
 type ActivityLogEntry = {
   id: string;
@@ -68,12 +71,46 @@ type RoleRequestEntry = {
   } | null;
 };
 
+type AdminUserSummary = {
+  id: string;
+  username?: string | null;
+  email?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  profileImageUrl?: string | null;
+  status?: string | null;
+  lastAccessAt?: string | null;
+  createdAt?: string | null;
+  roles: string[];
+  projectCount: number;
+};
+
+type AdminProjectSummary = {
+  id: string;
+  title: string;
+  description?: string | null;
+  status?: string | null;
+  owner?: AdminUserSummary | null;
+  mentor?: AdminUserSummary | null;
+  participants: {
+    id: string;
+    userId: string;
+    role: string;
+    isActive?: boolean | null;
+    user?: AdminUserSummary | null;
+  }[];
+  createdAt?: string | null;
+  updatedAt?: string | null;
+};
+
 export default function AdminPage() {
   const { user, isAuthenticated, isLoading } = useAuth();
+  const { t } = useTranslation();
   const [range, setRange] = useState<ActivityRange>("week");
-  const [activeTab, setActiveTab] = useState(() => {
+  const [activeTab, setActiveTab] = useState<AdminTab>(() => {
     if (typeof window === "undefined") return "activity";
-    return new URLSearchParams(window.location.search).get("tab") === "role-requests" ? "role-requests" : "activity";
+    const tab = new URLSearchParams(window.location.search).get("tab");
+    return tab === "role-requests" || tab === "users" || tab === "projects" ? tab : "activity";
   });
   const [credentials, setCredentials] = useState({ username: "impactlab", password: "impactlab" });
   const [decisionNotes, setDecisionNotes] = useState<Record<string, string>>({});
@@ -109,6 +146,16 @@ export default function AdminPage() {
     enabled: isImpactLabAdmin,
   });
 
+  const adminUsersQuery = useQuery<AdminUserSummary[]>({
+    queryKey: ["/api/admin/users"],
+    enabled: isImpactLabAdmin,
+  });
+
+  const adminProjectsQuery = useQuery<AdminProjectSummary[]>({
+    queryKey: ["/api/admin/projects"],
+    enabled: isImpactLabAdmin,
+  });
+
   const reviewRoleRequestMutation = useMutation({
     mutationFn: async ({ id, status, decisionNote }: { id: string; status: "approved" | "rejected"; decisionNote: string }) => {
       await apiRequest("PATCH", `/api/admin/role-requests/${id}`, { status, decisionNote });
@@ -122,6 +169,8 @@ export default function AdminPage() {
   const logs = reportQuery.data?.logs ?? [];
   const topPages = reportQuery.data?.topPages ?? [];
   const topButtons = reportQuery.data?.topButtons ?? [];
+  const adminUsers = adminUsersQuery.data ?? [];
+  const adminProjects = adminProjectsQuery.data ?? [];
   const reportTitle = useMemo(() => {
     if (range === "week") return "This Week";
     if (range === "month") return "This Month";
@@ -198,10 +247,12 @@ export default function AdminPage() {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as AdminTab)}>
         <TabsList>
           <TabsTrigger value="activity">Site Stats</TabsTrigger>
           <TabsTrigger value="role-requests">Role Requests</TabsTrigger>
+          <TabsTrigger value="users">{t("admin.tabs.users")}</TabsTrigger>
+          <TabsTrigger value="projects">{t("admin.tabs.projects")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="activity" className="space-y-6 mt-6">
@@ -377,6 +428,148 @@ export default function AdminPage() {
             })
           )}
         </TabsContent>
+
+        <TabsContent value="users" className="space-y-6 mt-6">
+          <div className="grid gap-4 md:grid-cols-3">
+            <SummaryCard title={t("admin.users.totalUsers")} value={String(adminUsers.length)} icon={<Users className="h-5 w-5" />} />
+            <SummaryCard
+              title={t("admin.users.withProjects")}
+              value={String(adminUsers.filter((adminUser) => adminUser.projectCount > 0).length)}
+              icon={<FolderKanban className="h-5 w-5" />}
+            />
+            <SummaryCard
+              title={t("admin.users.activeUsers")}
+              value={String(adminUsers.filter((adminUser) => adminUser.status === "active").length)}
+              icon={<UserRound className="h-5 w-5" />}
+            />
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("admin.users.title")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {adminUsersQuery.isLoading ? (
+                <p>{t("admin.users.loading")}</p>
+              ) : adminUsersQuery.error ? (
+                <p className="text-destructive">{t("admin.users.loadError")}</p>
+              ) : adminUsers.length === 0 ? (
+                <p className="text-muted-foreground">{t("admin.users.empty")}</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{t("admin.users.name")}</TableHead>
+                        <TableHead>{t("admin.users.login")}</TableHead>
+                        <TableHead>{t("admin.users.lastLogin")}</TableHead>
+                        <TableHead>{t("admin.users.roles")}</TableHead>
+                        <TableHead className="text-right">{t("admin.users.projectCount")}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {adminUsers.map((adminUser) => (
+                        <TableRow key={adminUser.id}>
+                          <TableCell>
+                            <Link href={`/admin/users/${adminUser.id}`} className="font-medium text-primary hover:underline">
+                              {getUserDisplayName(adminUser, t("admin.users.unknownUser"))}
+                            </Link>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {adminUser.email || adminUser.username || "-"}
+                          </TableCell>
+                          <TableCell>{formatDate(adminUser.lastAccessAt)}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {adminUser.roles.length > 0 ? adminUser.roles.map((role) => (
+                                <Badge key={`${adminUser.id}-${role}`} variant="secondary">{role}</Badge>
+                              )) : <span className="text-muted-foreground">-</span>}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">{adminUser.projectCount}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="projects" className="space-y-6 mt-6">
+          <div className="grid gap-4 md:grid-cols-3">
+            <SummaryCard title={t("admin.projects.totalProjects")} value={String(adminProjects.length)} icon={<FolderKanban className="h-5 w-5" />} />
+            <SummaryCard
+              title={t("admin.projects.activeProjects")}
+              value={String(adminProjects.filter((project) => project.status === "active").length)}
+              icon={<BarChart3 className="h-5 w-5" />}
+            />
+            <SummaryCard
+              title={t("admin.projects.enlistedUsers")}
+              value={String(new Set(adminProjects.flatMap((project) => project.participants.map((participant) => participant.userId))).size)}
+              icon={<Users className="h-5 w-5" />}
+            />
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("admin.projects.title")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {adminProjectsQuery.isLoading ? (
+                <p>{t("admin.projects.loading")}</p>
+              ) : adminProjectsQuery.error ? (
+                <p className="text-destructive">{t("admin.projects.loadError")}</p>
+              ) : adminProjects.length === 0 ? (
+                <p className="text-muted-foreground">{t("admin.projects.empty")}</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{t("admin.projects.project")}</TableHead>
+                        <TableHead>{t("admin.projects.description")}</TableHead>
+                        <TableHead>{t("admin.projects.owner")}</TableHead>
+                        <TableHead>{t("admin.projects.enlisted")}</TableHead>
+                        <TableHead>{t("admin.projects.status")}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {adminProjects.map((project) => (
+                        <TableRow key={project.id}>
+                          <TableCell className="min-w-48">
+                            <Link href={`/projects?projectId=${project.id}`} className="font-medium text-primary hover:underline">
+                              {project.title}
+                            </Link>
+                          </TableCell>
+                          <TableCell className="max-w-sm">
+                            <p className="line-clamp-3 text-sm text-muted-foreground">
+                              {project.description || t("admin.projects.noDescription")}
+                            </p>
+                          </TableCell>
+                          <TableCell>{project.owner ? getUserDisplayName(project.owner, t("admin.users.unknownUser")) : "-"}</TableCell>
+                          <TableCell>
+                            <div className="flex max-w-md flex-wrap gap-1">
+                              {project.participants.length > 0 ? project.participants.map((participant) => (
+                                <Badge key={`${project.id}-${participant.id}`} variant="secondary" className="font-normal">
+                                  {participant.user ? getUserDisplayName(participant.user, t("admin.users.unknownUser")) : t("admin.users.unknownUser")}
+                                </Badge>
+                              )) : <span className="text-muted-foreground">-</span>}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{project.status || "-"}</Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
     </div>
   );
@@ -441,6 +634,11 @@ function formatDate(value?: string | null) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
+}
+
+function getUserDisplayName(user: { firstName?: string | null; lastName?: string | null; email?: string | null; username?: string | null }, fallback: string) {
+  const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ").trim();
+  return fullName || user.email || user.username || fallback;
 }
 
 function parseAttachments(value?: string | null): RoleRequestAttachment[] {

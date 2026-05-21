@@ -23,6 +23,7 @@ import ChallengeProjects from "@/pages/challenge-projects";
 import Events from "@/pages/events";
 import Settings from "@/pages/settings";
 import AdminPage from "@/pages/admin";
+import AdminUserProfile from "@/pages/admin-user-profile";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
 import NotFound from "@/pages/not-found";
@@ -60,6 +61,7 @@ function Router() {
       <Route path="/challenge-projects" component={ChallengeProjects} />
       <Route path="/events" component={Events} />
       <Route path="/settings" component={Settings} />
+      <Route path="/admin/users/:id" component={AdminUserProfile} />
       <Route path="/admin" component={AdminPage} />
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />

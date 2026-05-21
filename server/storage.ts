@@ -124,6 +124,36 @@ export interface ActivityReport {
   topButtons: ActivityAggregate[];
 }
 
+export interface AdminUserSummary {
+  id: string;
+  username: string | null;
+  email: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  profileImageUrl: string | null;
+  status: string | null;
+  lastAccessAt: Date | null;
+  createdAt: Date | null;
+  roles: string[];
+  projectCount: number;
+}
+
+export interface AdminProjectSummary {
+  id: string;
+  title: string;
+  description: string | null;
+  status: string | null;
+  owner?: User | null;
+  mentor?: User | null;
+  participants: SocialProjectParticipantWithUser[];
+  createdAt: Date | null;
+  updatedAt: Date | null;
+}
+
+export interface AdminUserDetails extends UserWithProfile {
+  projects: ProjectWithOwner[];
+}
+
 export interface IStorage {
   // User operations (required for auth)
   getUser(id: string): Promise<User | undefined>;
@@ -307,6 +337,11 @@ export interface IStorage {
   // Activity tracking
   createActivityLog(activity: InsertActivityLog): Promise<ActivityLog>;
   getActivityReport(range: ActivityRange): Promise<ActivityReport>;
+
+  // Admin reporting
+  getAdminUsersSummary(): Promise<AdminUserSummary[]>;
+  getAdminProjectsSummary(): Promise<AdminProjectSummary[]>;
+  getAdminUserDetails(userId: string): Promise<AdminUserDetails | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2396,6 +2431,82 @@ export class DatabaseStorage implements IStorage {
       .limit(10);
 
     return { logs, topPages, topButtons };
+  }
+
+  async getAdminUsersSummary(): Promise<AdminUserSummary[]> {
+    const [allUsers, allProjects] = await Promise.all([
+      this.getAllUsers(),
+      this.getProjects(),
+    ]);
+
+    const projectsByUserId = new Map<string, Set<string>>();
+    for (const project of allProjects) {
+      if (!projectsByUserId.has(project.ownerId)) {
+        projectsByUserId.set(project.ownerId, new Set());
+      }
+      projectsByUserId.get(project.ownerId)!.add(project.id);
+
+      for (const participant of project.participants ?? []) {
+        if (!participant.isActive) continue;
+        if (!projectsByUserId.has(participant.userId)) {
+          projectsByUserId.set(participant.userId, new Set());
+        }
+        projectsByUserId.get(participant.userId)!.add(project.id);
+      }
+    }
+
+    return Promise.all(
+      allUsers.map(async (user) => {
+        const userRolesWithRole = await this.getUserRoles(user.id);
+        return {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          profileImageUrl: user.profileImageUrl,
+          status: user.status,
+          lastAccessAt: user.lastAccessAt,
+          createdAt: user.createdAt,
+          roles: userRolesWithRole
+            .filter((userRole) => userRole.status === 'active')
+            .flatMap((userRole) => userRole.role?.name ? [userRole.role.name] : []),
+          projectCount: projectsByUserId.get(user.id)?.size ?? 0,
+        };
+      }),
+    );
+  }
+
+  async getAdminProjectsSummary(): Promise<AdminProjectSummary[]> {
+    const allProjects = await this.getProjects();
+    return allProjects.map((project) => ({
+      id: project.id,
+      title: project.title,
+      description: project.description,
+      status: project.status,
+      owner: project.owner ?? null,
+      mentor: project.mentor ?? null,
+      participants: project.participants ?? [],
+      createdAt: project.createdAt,
+      updatedAt: project.updatedAt,
+    }));
+  }
+
+  async getAdminUserDetails(userId: string): Promise<AdminUserDetails | undefined> {
+    const user = await this.getUserWithProfile(userId);
+    if (!user) return undefined;
+
+    const allProjects = await this.getProjects();
+    const projects = allProjects.filter((project) => (
+      project.ownerId === userId ||
+      project.mentorId === userId ||
+      (project.participants ?? []).some((participant) => participant.userId === userId && participant.isActive)
+    ));
+
+    return {
+      ...user,
+      projects,
+    };
   }
 }
 
