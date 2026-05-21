@@ -114,7 +114,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           port: ${{ secrets.EC2_PORT }}
           target: ${{ steps.target.outputs.remote_dir }}
-          source: docker-compose.yml,db,package.json,package-lock.json,drizzle.config.ts,shared
+          source: docker-compose.yml,tempo.yml,db,package.json,package-lock.json,drizzle.config.ts,shared
 
       - name: Deploy on EC2
         uses: appleboy/ssh-action@v1.2.0

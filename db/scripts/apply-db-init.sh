@@ -38,6 +38,14 @@ DB_INITIALIZED="$(
 
 if [[ "$DB_INITIALIZED" == "t" ]]; then
   echo "Database $APP_DB_NAME is already initialized (public.users exists); skipping schema and seed."
+  psql \
+    -v ON_ERROR_STOP=1 \
+    -v app_db_user="$APP_DB_USER" \
+    -h "$PGHOST" \
+    -p "$PGPORT" \
+    -U "$PGUSER" \
+    -d "$APP_DB_NAME" \
+    -f "$ROOT_DIR/db/init/03-ownership-grants.sql"
   exit 0
 fi
 
@@ -56,3 +64,12 @@ psql \
   -U "$PGUSER" \
   -d "$APP_DB_NAME" \
   -f "$ROOT_DIR/db/init/02-seed.sql"
+
+psql \
+  -v ON_ERROR_STOP=1 \
+  -v app_db_user="$APP_DB_USER" \
+  -h "$PGHOST" \
+  -p "$PGPORT" \
+  -U "$PGUSER" \
+  -d "$APP_DB_NAME" \
+  -f "$ROOT_DIR/db/init/03-ownership-grants.sql"
