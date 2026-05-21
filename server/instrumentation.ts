@@ -9,13 +9,17 @@ const enabled = !!process.env.GRAFANA_OTLP_ENDPOINT;
 function buildTraceExporter() {
   if (!enabled) return undefined;
 
-  const auth = Buffer.from(
-    `${process.env.GRAFANA_INSTANCE_ID}:${process.env.GRAFANA_API_TOKEN}`
-  ).toString("base64");
+  const headers: Record<string, string> = {};
+  if (process.env.GRAFANA_INSTANCE_ID && process.env.GRAFANA_API_TOKEN) {
+    const auth = Buffer.from(
+      `${process.env.GRAFANA_INSTANCE_ID}:${process.env.GRAFANA_API_TOKEN}`
+    ).toString("base64");
+    headers.Authorization = `Basic ${auth}`;
+  }
 
   return new OTLPTraceExporter({
     url: `${process.env.GRAFANA_OTLP_ENDPOINT}/v1/traces`,
-    headers: { Authorization: `Basic ${auth}` },
+    headers,
   });
 }
 
@@ -39,7 +43,7 @@ const sdk = new NodeSDK({
 });
 
 sdk.start();
-console.log(`[OTEL] Instrumentation started. Traces → ${enabled ? "Grafana Cloud" : "disabled"}`);
+console.log(`[OTEL] Instrumentation started. Traces → ${enabled ? process.env.GRAFANA_OTLP_ENDPOINT : "disabled"}`);
 
 process.on("SIGTERM", () => {
   sdk.shutdown().catch((err) => console.error("[OTEL] Shutdown error:", err));

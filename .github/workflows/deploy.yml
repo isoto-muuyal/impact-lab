@@ -114,7 +114,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           port: ${{ secrets.EC2_PORT }}
           target: ${{ steps.target.outputs.remote_dir }}
-          source: docker-compose.yml,tempo.yml,db,package.json,package-lock.json,drizzle.config.ts,shared
+          source: docker-compose.yml,db,package.json,package-lock.json,drizzle.config.ts,shared
 
       - name: Deploy on EC2
         uses: appleboy/ssh-action@v1.2.0
@@ -169,6 +169,10 @@ jobs:
               sed -i "s|^APP_PORT=.*|APP_PORT=${APP_PORT}|" .env
             else
               printf 'APP_PORT=%s\n' "${APP_PORT}" >> .env
+            fi
+
+            if ! grep -q '^OTEL_SERVICE_NAME=' .env; then
+              printf 'OTEL_SERVICE_NAME=%s\n' "${CONTAINER_NAME}" >> .env
             fi
 
             docker network inspect "${DOCKER_NETWORK}" >/dev/null 2>&1 || docker network create "${DOCKER_NETWORK}"
