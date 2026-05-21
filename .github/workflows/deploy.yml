@@ -43,6 +43,7 @@ jobs:
             echo "deploy_env=qa" >> "$GITHUB_OUTPUT"
             echo "remote_dir=/home/${{ secrets.EC2_USERNAME }}/apps/impactlab-qa" >> "$GITHUB_OUTPUT"
             echo "container_name=qa-impactlab" >> "$GITHUB_OUTPUT"
+            echo "compose_project_name=impactlab-qa" >> "$GITHUB_OUTPUT"
             echo "app_port=5050" >> "$GITHUB_OUTPUT"
             echo "db_host=${QA_DB_HOST}" >> "$GITHUB_OUTPUT"
             echo "db_port=${QA_DB_PORT}" >> "$GITHUB_OUTPUT"
@@ -56,6 +57,7 @@ jobs:
             echo "deploy_env=prod" >> "$GITHUB_OUTPUT"
             echo "remote_dir=/home/${{ secrets.EC2_USERNAME }}/apps/impactlab" >> "$GITHUB_OUTPUT"
             echo "container_name=impactlab" >> "$GITHUB_OUTPUT"
+            echo "compose_project_name=impactlab-prod" >> "$GITHUB_OUTPUT"
             echo "app_port=5000" >> "$GITHUB_OUTPUT"
             echo "db_host=${PROD_DB_HOST}" >> "$GITHUB_OUTPUT"
             echo "db_port=${PROD_DB_PORT}" >> "$GITHUB_OUTPUT"
@@ -125,6 +127,7 @@ jobs:
           DOCKER_NETWORK: ${{ secrets.DOCKER_NETWORK }}
           REMOTE_DIR: ${{ steps.target.outputs.remote_dir }}
           CONTAINER_NAME: ${{ steps.target.outputs.container_name }}
+          COMPOSE_PROJECT_NAME: ${{ steps.target.outputs.compose_project_name }}
           APP_PORT: ${{ steps.target.outputs.app_port }}
           PGHOST: ${{ steps.target.outputs.db_host }}
           PGPORT: ${{ steps.target.outputs.db_port }}
@@ -139,7 +142,7 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           port: ${{ env.EC2_PORT }}
-          envs: IMAGE_URI,ECR_REGISTRY,ECR_PASSWORD,DOCKER_NETWORK,REMOTE_DIR,CONTAINER_NAME,APP_PORT,PGHOST,PGPORT,PGUSER,PGPASSWORD,APP_DB_NAME,APP_DB_USER,APP_DB_PASSWORD,ADMIN_DB_NAME
+          envs: IMAGE_URI,ECR_REGISTRY,ECR_PASSWORD,DOCKER_NETWORK,REMOTE_DIR,CONTAINER_NAME,COMPOSE_PROJECT_NAME,APP_PORT,PGHOST,PGPORT,PGUSER,PGPASSWORD,APP_DB_NAME,APP_DB_USER,APP_DB_PASSWORD,ADMIN_DB_NAME
           script: |
             set -e
             mkdir -p "${REMOTE_DIR}"
@@ -163,6 +166,12 @@ jobs:
               sed -i "s|^CONTAINER_NAME=.*|CONTAINER_NAME=${CONTAINER_NAME}|" .env
             else
               printf 'CONTAINER_NAME=%s\n' "${CONTAINER_NAME}" >> .env
+            fi
+
+            if grep -q '^COMPOSE_PROJECT_NAME=' .env; then
+              sed -i "s|^COMPOSE_PROJECT_NAME=.*|COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME}|" .env
+            else
+              printf 'COMPOSE_PROJECT_NAME=%s\n' "${COMPOSE_PROJECT_NAME}" >> .env
             fi
 
             if grep -q '^APP_PORT=' .env; then
@@ -195,5 +204,6 @@ jobs:
                 npm ci
                 npx drizzle-kit push
               '
-            docker compose pull
-            docker compose up -d --remove-orphans
+            docker rm -f "${CONTAINER_NAME}" >/dev/null 2>&1 || true
+            docker compose -p "${COMPOSE_PROJECT_NAME}" pull
+            docker compose -p "${COMPOSE_PROJECT_NAME}" up -d --remove-orphans
