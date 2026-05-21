@@ -10,21 +10,19 @@ services:
     networks:
       - impactlab-network
 
+  tempo:
+    image: grafana/tempo:latest
+    container_name: ${TEMPO_CONTAINER_NAME:-tempo}
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./tempo.yml:/etc/tempo.yaml:ro
+    ports:
+      - "${TEMPO_OTLP_PORT:-4318}:4318"
+      - "${TEMPO_HTTP_PORT:-3200}:3200"
+    networks:
+      - impactlab-network
+
 networks:
   impactlab-network:
     external: true
     name: ${DOCKER_NETWORK:-shared_network}
-    # Add to your existing docker-compose
-
-tempo:
-  image: grafana/tempo:latest
-  container_name: tempo
-  command: ["-config.file=/etc/tempo.yaml"]
-  volumes:
-    - ./tempo.yaml:/etc/tempo.yaml
-  ports:
-    - "4318:4318"   # OTLP HTTP (where your app sends traces)
-    - "3200:3200"   # Tempo query API (Grafana reads from here)
-  networks:
-    - shared_network
-
