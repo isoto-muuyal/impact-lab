@@ -1,3 +1,4 @@
+import "./instrumentation"; // must be first — patches Node.js before any other imports
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";

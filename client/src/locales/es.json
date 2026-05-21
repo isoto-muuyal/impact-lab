@@ -21,7 +21,9 @@
     "myMentorships": "Mis Mentorías",
     "organizations": "Organizaciones",
     "challenges": "Desafíos",
-    "challengeProjects": "Proyectos de Desafío"
+    "challengeProjects": "Proyectos de Desafío",
+    "admin": "Admin",
+    "roleRequests": "Solicitudes de rol"
   },
   "auth": {
     "login": "Iniciar Sesión",
@@ -79,7 +81,7 @@
       "videoLabel": "Ver video institucional",
       "mission": {
         "title": "Misión",
-        "description": "Potenciar el ecosistema de innovación social en América Latina, conectando talento, recursos y conocimiento para transformar ideas en proyectos de impacto real."
+        "description": "Potenciar el ecosistema de innovación social en y desde la ciudad de Nueva York, conectando talento, recursos y conocimiento para transformar ideas en proyectos de impacto real."
       },
       "vision": {
         "title": "Visión",
@@ -494,6 +496,23 @@
     "delete": "Eliminar",
     "noProjects": "Aún no tienes proyectos",
     "createFirst": "Crea tu primer proyecto para comenzar",
+    "tabOverview": "Resumen",
+    "tabParticipants": "Participantes",
+    "tabRequests": "Solicitudes",
+    "tabTeam": "Administración",
+    "objectives": "Objetivos",
+    "skillsNeeded": "Habilidades necesarias",
+    "targetBeneficiaries": "Beneficiarios",
+    "expectedImpact": "Impacto Esperado",
+    "generalInfo": "Datos generales",
+    "noParticipants": "No hay participantes registrados.",
+    "saveChanges": "Guardar Cambios",
+    "category": "Categoría",
+    "location": "Ubicación",
+    "joinRequests": "Solicitudes para unirse",
+    "loadingRequests": "Cargando solicitudes...",
+    "noPendingRequests": "No hay solicitudes pendientes.",
+    "createProject": "Crear Proyecto",
     "mentorMatch": {
       "running": "Buscando mentores...",
       "notFound": "No encontramos mentores. Te recomendamos actualizar la descripción y habilidades necesarias del proyecto.",
@@ -530,7 +549,14 @@
     "upcoming": "Próximas",
     "past": "Pasadas",
     "expertise": "Experiencia",
-    "availability": "Disponibilidad"
+    "availability": "Disponibilidad",
+    "tabPending": "Pendientes",
+    "tabActive": "Activas",
+    "tabHistory": "Historial",
+    "suggestedProjects": "Proyectos sugeridos",
+    "noPending": "No hay solicitudes pendientes",
+    "noSuggestedProjects": "No hay proyectos sugeridos aún",
+    "noSuggestedProjectsHint": "Los proyectos compatibles con tu perfil aparecerán aquí"
   },
   "organizations": {
     "title": "Organizaciones",
@@ -827,6 +853,61 @@
       "cancelled": "Cancelado"
     },
     "events": "eventos"
+  },
+  "admin": {
+    "tabs": {
+      "users": "Usuarios",
+      "projects": "Proyectos"
+    },
+    "users": {
+      "title": "Usuarios",
+      "totalUsers": "Total de usuarios",
+      "withProjects": "Usuarios con proyectos",
+      "activeUsers": "Usuarios activos",
+      "loading": "Cargando usuarios...",
+      "loadError": "No se pudieron cargar los usuarios.",
+      "empty": "No se encontraron usuarios.",
+      "name": "Nombre",
+      "login": "Acceso",
+      "lastLogin": "Último ingreso",
+      "roles": "Roles",
+      "projectCount": "Proyectos",
+      "unknownUser": "Usuario desconocido"
+    },
+    "projects": {
+      "title": "Proyectos",
+      "totalProjects": "Total de proyectos",
+      "activeProjects": "Proyectos activos",
+      "enlistedUsers": "Usuarios inscritos",
+      "loading": "Cargando proyectos...",
+      "loadError": "No se pudieron cargar los proyectos.",
+      "empty": "No se encontraron proyectos.",
+      "project": "Proyecto",
+      "description": "Descripción",
+      "owner": "Responsable",
+      "enlisted": "Usuarios inscritos",
+      "status": "Estado",
+      "noDescription": "Sin descripción"
+    },
+    "profile": {
+      "backToUsers": "Volver a usuarios",
+      "loadError": "No se pudo cargar el perfil del usuario.",
+      "noTitle": "Sin título",
+      "role": "Rol",
+      "noRoles": "Sin roles activos",
+      "about": "Acerca de",
+      "email": "Correo",
+      "location": "Ubicación",
+      "lastLogin": "Último ingreso",
+      "bio": "Biografía",
+      "noBio": "No hay biografía registrada.",
+      "skills": "Habilidades",
+      "interests": "Intereses",
+      "noSkills": "No hay habilidades registradas.",
+      "noInterests": "No hay intereses registrados.",
+      "projects": "Proyectos",
+      "noProjects": "Este usuario no está inscrito en ningún proyecto."
+    }
   },
   "settings": {
     "title": "Configuracion",
