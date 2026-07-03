@@ -205,12 +205,12 @@ export async function setupAuth(app: Express) {
     try {
       const password = typeof req.body?.password === "string" ? req.body.password : "";
       const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
-      const firstName = typeof req.body?.firstName === "string" ? req.body.firstName.trim() : null;
-      const lastName = typeof req.body?.lastName === "string" ? req.body.lastName.trim() : null;
+      const firstName = typeof req.body?.firstName === "string" ? req.body.firstName.trim() : "";
+      const lastName = typeof req.body?.lastName === "string" ? req.body.lastName.trim() : "";
       const username = email;
 
-      if (!password || !email) {
-        return res.status(400).json({ message: "Email and password are required" });
+      if (!password || !email || !firstName || !lastName) {
+        return res.status(400).json({ message: "Email, password, first name, and last name are required" });
       }
 
       if (password.length < 6) {
@@ -226,8 +226,8 @@ export async function setupAuth(app: Express) {
         username,
         password,
         email,
-        firstName: firstName || undefined,
-        lastName: lastName || undefined,
+        firstName,
+        lastName,
         status: "active",
       });
 
