@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useTranslation } from "@/contexts/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { Role, RoleRequestWithDetails } from "@shared/schema";
+import { MentorProfileChat, type MentorRoleRequestPreview } from "@/components/mentor-profile-chat";
 import {
   Form,
   FormControl,
@@ -50,20 +52,22 @@ import {
   Paperclip
 } from "lucide-react";
 
-const profileFormSchema = z.object({
-  firstName: z.string().min(1, "El nombre es requerido"),
-  lastName: z.string().min(1, "El apellido es requerido"),
-  title: z.string().optional(),
-  bio: z.string().max(500, "La biografía no puede exceder 500 caracteres").optional(),
-  country: z.string().optional(),
-  city: z.string().optional(),
-  timezone: z.string().optional(),
-  linkedinUrl: z.string().url("URL inválida").or(z.literal("")).optional(),
-  skills: z.string().optional(),
-  interests: z.string().optional(),
-});
+function getProfileFormSchema(t: (key: string, fallback?: string) => string) {
+  return z.object({
+    firstName: z.string().min(1, t("profile.firstNameRequired", "First name is required.")),
+    lastName: z.string().min(1, t("profile.lastNameRequired", "Last name is required.")),
+    title: z.string().optional(),
+    bio: z.string().max(500, t("profile.bioMaxLength", "Bio cannot exceed 500 characters.")).optional(),
+    country: z.string().optional(),
+    city: z.string().optional(),
+    timezone: z.string().optional(),
+    linkedinUrl: z.string().url(t("profile.invalidUrl", "Invalid URL.")).or(z.literal("")).optional(),
+    skills: z.string().optional(),
+    interests: z.string().optional(),
+  });
+}
 
-type ProfileFormData = z.infer<typeof profileFormSchema>;
+type ProfileFormData = z.infer<ReturnType<typeof getProfileFormSchema>>;
 type RoleRequestAttachment = {
   name: string;
   type: string;
@@ -127,6 +131,7 @@ const timezones = [
 
 export default function Profile() {
   const { user, isLoading } = useAuth();
+  const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
@@ -136,6 +141,8 @@ export default function Profile() {
   const [roleRequestJustification, setRoleRequestJustification] = useState("");
   const [roleRequestAttachments, setRoleRequestAttachments] = useState<RoleRequestAttachment[]>([]);
   const [isUploadingRoleAttachments, setIsUploadingRoleAttachments] = useState(false);
+  const [isMentorProfileChatOpen, setIsMentorProfileChatOpen] = useState(false);
+  const [pendingMentorDraftId, setPendingMentorDraftId] = useState<string | null>(null);
   
   const isImpactLabAdmin = user?.username === "impactlab";
 
@@ -154,6 +161,8 @@ export default function Profile() {
       setSelectedRoles(user.userRoles.filter((ur: any) => ur.status === "active").map((ur: any) => ur.roleId));
     }
   }, [user]);
+
+  const profileFormSchema = useMemo(() => getProfileFormSchema(t), [t]);
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileFormSchema),
@@ -191,15 +200,15 @@ export default function Profile() {
   useEffect(() => {
     if (!isLoading && !user) {
       toast({
-        title: "Sin autorización",
-        description: "Iniciando sesión...",
+        title: t("profile.unauthorizedTitle", "Unauthorized"),
+        description: t("profile.unauthorizedDescription", "Logging in..."),
         variant: "destructive",
       });
       setTimeout(() => {
         window.location.href = "/login";
       }, 500);
     }
-  }, [isLoading, user, toast]);
+  }, [isLoading, user, toast, t]);
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: ProfileFormData) => {
@@ -214,15 +223,15 @@ export default function Profile() {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       setIsEditing(false);
       toast({
-        title: "Perfil actualizado",
-        description: "Tu información ha sido guardada correctamente.",
+        title: t("profile.profileUpdatedTitle", "Profile updated"),
+        description: t("profile.profileUpdatedDescription", "Your information has been saved successfully."),
       });
     },
     onError: (error) => {
       if (isUnauthorizedError(error as Error)) {
         toast({
-          title: "Sin autorización",
-          description: "Iniciando sesión...",
+          title: t("profile.unauthorizedTitle", "Unauthorized"),
+          description: t("profile.unauthorizedDescription", "Logging in..."),
           variant: "destructive",
         });
         setTimeout(() => {
@@ -231,8 +240,8 @@ export default function Profile() {
         return;
       }
       toast({
-        title: "Error",
-        description: "No se pudo actualizar el perfil. Intenta de nuevo.",
+        title: t("common.error", "Error"),
+        description: t("profile.updateErrorDescription", "Could not update the profile. Please try again."),
         variant: "destructive",
       });
     },
@@ -245,14 +254,14 @@ export default function Profile() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
       toast({
-        title: "Roles actualizados",
-        description: "Tus roles han sido actualizados correctamente.",
+        title: t("profile.rolesUpdatedTitle", "Roles updated"),
+        description: t("profile.rolesUpdatedDescription", "Your roles have been updated successfully."),
       });
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "No se pudieron actualizar los roles.",
+        title: t("common.error", "Error"),
+        description: t("profile.rolesUpdateErrorDescription", "Could not update the roles."),
         variant: "destructive",
       });
     },
@@ -260,7 +269,10 @@ export default function Profile() {
 
   const roleRequestMutation = useMutation({
     mutationFn: async (payload: { roleId: string; justification: string; attachments: RoleRequestAttachment[] }) => {
-      await apiRequest("POST", "/api/role-requests", payload);
+      await apiRequest("POST", "/api/role-requests", {
+        ...payload,
+        ...(pendingMentorDraftId ? { draftId: pendingMentorDraftId } : {}),
+      });
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['/api/role-requests/my'] });
@@ -268,15 +280,16 @@ export default function Profile() {
       setRequestedRoleId(null);
       setRoleRequestJustification("");
       setRoleRequestAttachments([]);
+      setPendingMentorDraftId(null);
       toast({
-        title: "Solicitud enviada",
-        description: "El admin revisará tu solicitud de rol.",
+        title: t("profile.roleRequestSentTitle", "Request sent"),
+        description: t("profile.roleRequestSentDescription", "An admin will review your role request."),
       });
     },
     onError: (error) => {
       toast({
-        title: "Error",
-        description: getApiErrorMessage(error, "No se pudo enviar la solicitud de rol."),
+        title: t("common.error", "Error"),
+        description: getApiErrorMessage(error, t("profile.roleRequestErrorFallback", "Could not submit the role request.")),
         variant: "destructive",
       });
     },
@@ -295,8 +308,8 @@ export default function Profile() {
   const handleSaveRoles = () => {
     if (selectedRoles.length === 0) {
       toast({
-        title: "Error",
-        description: "Debes seleccionar al menos un rol.",
+        title: t("common.error", "Error"),
+        description: t("profile.selectAtLeastOneRole", "You must select at least one role."),
         variant: "destructive",
       });
       return;
@@ -305,9 +318,24 @@ export default function Profile() {
   };
 
   const handleOpenRoleRequest = (roleId: string) => {
+    const role = allRoles?.find((item) => item.id === roleId);
+    if (role?.name === "mentor") {
+      setRequestedRoleId(roleId);
+      setIsMentorProfileChatOpen(true);
+      return;
+    }
+
     setRequestedRoleId(roleId);
     setRoleRequestJustification("");
     setRoleRequestAttachments([]);
+    setPendingMentorDraftId(null);
+    setIsRoleRequestDialogOpen(true);
+  };
+
+  const handleMentorSection1Complete = (preview: MentorRoleRequestPreview) => {
+    setPendingMentorDraftId(preview.draftId);
+    setRoleRequestJustification(preview.justification);
+    setRoleRequestAttachments(preview.attachments);
     setIsRoleRequestDialogOpen(true);
   };
 
@@ -321,14 +349,14 @@ export default function Profile() {
       );
       setRoleRequestAttachments(nextAttachments);
       toast({
-        title: "Adjuntos cargados",
-        description: "Los archivos se cargaron correctamente.",
+        title: t("profile.attachmentsUploadedTitle", "Attachments uploaded"),
+        description: t("profile.attachmentsUploadedDescription", "The files were uploaded successfully."),
       });
     } catch (error) {
       setRoleRequestAttachments([]);
       toast({
-        title: "Error",
-        description: getApiErrorMessage(error, "No se pudo cargar el archivo adjunto."),
+        title: t("common.error", "Error"),
+        description: getApiErrorMessage(error, t("profile.attachmentUploadErrorFallback", "Could not upload the attachment.")),
         variant: "destructive",
       });
     } finally {
@@ -339,8 +367,8 @@ export default function Profile() {
   const handleSubmitRoleRequest = () => {
     if (!requestedRoleId || !roleRequestJustification.trim()) {
       toast({
-        title: "Error",
-        description: "Debes explicar por qué necesitas el rol.",
+        title: t("common.error", "Error"),
+        description: t("profile.justifyRoleRequired", "You must explain why you need the role."),
         variant: "destructive",
       });
       return;
@@ -367,11 +395,11 @@ export default function Profile() {
 
   const userRole = user?.userRoles?.[0]?.role?.name || "usuario";
   const roleLabels: Record<string, string> = {
-    usuario: "Usuario",
-    mentor: "Mentor",
-    facilitador: "Facilitador",
-    proponente: "Proponente",
-    acreditador: "Acreditador",
+    usuario: t("profile.roleCatalog.usuario.label", "User"),
+    mentor: t("profile.roleCatalog.mentor.label", "Mentor"),
+    facilitador: t("profile.roleCatalog.facilitador.label", "Facilitator"),
+    proponente: t("profile.roleCatalog.proponente.label", "Proposer"),
+    acreditador: t("profile.roleCatalog.acreditador.label", "Accreditor"),
   };
   const roleBadgeColors: Record<string, string> = {
     usuario: "bg-primary/10 text-primary",
@@ -381,11 +409,11 @@ export default function Profile() {
     acreditador: "bg-chart-3/10 text-chart-3",
   };
   const roleDescriptions: Record<string, string> = {
-    usuario: "Acceso basico a la plataforma",
-    mentor: "Puede crear y ejecutar mentorias, elegir proyectos para guiar",
-    facilitador: "Puede crear cursos y subir contenido educativo",
-    proponente: "Puede crear proyectos, buscar mentores e inscribirse a cursos",
-    acreditador: "Instituto que certifica cursos y mentorias",
+    usuario: t("profile.roleCatalog.usuario.description", "Basic access to the platform"),
+    mentor: t("profile.roleCatalog.mentor.description", "Can create and run mentorships, choose projects to guide"),
+    facilitador: t("profile.roleCatalog.facilitador.description", "Can create courses and upload educational content"),
+    proponente: t("profile.roleCatalog.proponente.description", "Can create projects, search for mentors, and enroll in courses"),
+    acreditador: t("profile.roleCatalog.acreditador.description", "Institution that certifies courses and mentorships"),
   };
   const grantedRoleIds = new Set(user?.userRoles?.map((ur: any) => ur.roleId) || []);
   const pendingRoleRequestIds = new Set(
@@ -416,20 +444,20 @@ export default function Profile() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-3xl font-semibold mb-2">Mi Perfil</h1>
+          <h1 className="text-3xl font-semibold mb-2">{t("profile.title", "My Profile")}</h1>
           <p className="text-muted-foreground">
-            Administra tu información personal y profesional.
+            {t("profile.subtitle", "Manage your personal and professional information.")}
           </p>
         </div>
         {!isEditing ? (
           <Button onClick={() => setIsEditing(true)} className="gap-2" data-testid="button-edit-profile">
             <Edit className="h-4 w-4" />
-            Editar perfil
+            {t("profile.editProfile", "Edit profile")}
           </Button>
         ) : (
           <div className="flex gap-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => {
                 setIsEditing(false);
                 form.reset();
@@ -438,16 +466,16 @@ export default function Profile() {
               data-testid="button-cancel-edit"
             >
               <X className="h-4 w-4" />
-              Cancelar
+              {t("common.cancel", "Cancel")}
             </Button>
-            <Button 
-              onClick={form.handleSubmit(onSubmit)} 
+            <Button
+              onClick={form.handleSubmit(onSubmit)}
               disabled={updateProfileMutation.isPending}
               className="gap-2"
               data-testid="button-save-profile"
             >
               <Save className="h-4 w-4" />
-              {updateProfileMutation.isPending ? "Guardando..." : "Guardar"}
+              {updateProfileMutation.isPending ? t("profile.saving", "Saving...") : t("common.save", "Save")}
             </Button>
           </div>
         )}
@@ -460,7 +488,7 @@ export default function Profile() {
             <CardContent className="p-6">
               <div className="flex flex-col sm:flex-row items-start gap-6">
                 <Avatar className="h-24 w-24">
-                  <AvatarImage src={user.profileImageUrl || undefined} alt={user.firstName || "Usuario"} />
+                  <AvatarImage src={user.profileImageUrl || undefined} alt={user.firstName || roleLabels.usuario} />
                   <AvatarFallback className="text-2xl">{getInitials()}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 space-y-4">
@@ -473,11 +501,11 @@ export default function Profile() {
                     </Badge>
                     {user.profile?.profileStatus === 'complete' ? (
                       <Badge variant="secondary" className="bg-chart-2/10 text-chart-2">
-                        Perfil completo
+                        {t("profile.profileComplete", "Complete profile")}
                       </Badge>
                     ) : (
                       <Badge variant="secondary" className="bg-chart-4/10 text-chart-4">
-                        Perfil incompleto
+                        {t("profile.profileIncomplete", "Incomplete profile")}
                       </Badge>
                     )}
                   </div>
@@ -487,12 +515,12 @@ export default function Profile() {
                       name="firstName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Nombre</FormLabel>
+                          <FormLabel>{t("profile.firstName", "First name")}</FormLabel>
                           <FormControl>
-                            <Input 
-                              {...field} 
+                            <Input
+                              {...field}
                               disabled={!isEditing}
-                              placeholder="Tu nombre"
+                              placeholder={t("profile.firstNamePlaceholder", "Your first name")}
                               data-testid="input-first-name"
                             />
                           </FormControl>
@@ -505,12 +533,12 @@ export default function Profile() {
                       name="lastName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Apellido</FormLabel>
+                          <FormLabel>{t("profile.lastName", "Last name")}</FormLabel>
                           <FormControl>
-                            <Input 
-                              {...field} 
+                            <Input
+                              {...field}
                               disabled={!isEditing}
-                              placeholder="Tu apellido"
+                              placeholder={t("profile.lastNamePlaceholder", "Your last name")}
                               data-testid="input-last-name"
                             />
                           </FormControl>
@@ -529,7 +557,7 @@ export default function Profile() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Briefcase className="h-5 w-5 text-muted-foreground" />
-                Información Profesional
+                {t("profile.professionalInfo", "Professional Information")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -538,17 +566,17 @@ export default function Profile() {
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Título profesional</FormLabel>
+                    <FormLabel>{t("profile.professionalTitle", "Professional title")}</FormLabel>
                     <FormControl>
-                      <Input 
-                        {...field} 
+                      <Input
+                        {...field}
                         disabled={!isEditing}
-                        placeholder="Ej: Emprendedor Social, Ingeniero, Diseñador..."
+                        placeholder={t("profile.professionalTitlePlaceholder", "E.g: Social Entrepreneur, Engineer, Designer...")}
                         data-testid="input-title"
                       />
                     </FormControl>
                     <FormDescription>
-                      Tu rol o especialidad principal.
+                      {t("profile.professionalTitleHint", "Your main role or specialty.")}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -559,18 +587,18 @@ export default function Profile() {
                 name="bio"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Biografía</FormLabel>
+                    <FormLabel>{t("profile.bio", "Bio")}</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        {...field} 
+                      <Textarea
+                        {...field}
                         disabled={!isEditing}
-                        placeholder="Cuéntanos sobre ti, tu experiencia y lo que te motiva..."
+                        placeholder={t("profile.bioPlaceholder", "Tell us about yourself, your experience and what motivates you...")}
                         className="resize-none min-h-[100px]"
                         data-testid="textarea-bio"
                       />
                     </FormControl>
                     <FormDescription>
-                      Máximo 500 caracteres.
+                      {t("profile.bioHint", "Maximum 500 characters.")}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -582,17 +610,17 @@ export default function Profile() {
                   name="skills"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Habilidades</FormLabel>
+                      <FormLabel>{t("profile.skills", "Skills")}</FormLabel>
                       <FormControl>
-                        <Input 
-                          {...field} 
+                        <Input
+                          {...field}
                           disabled={!isEditing}
-                          placeholder="Ej: Liderazgo, Diseño, Marketing..."
+                          placeholder={t("profile.skillsPlaceholder", "E.g: Leadership, Design, Marketing...")}
                           data-testid="input-skills"
                         />
                       </FormControl>
                       <FormDescription>
-                        Separa cada habilidad con una coma.
+                        {t("profile.skillsHint", "Separate each skill with a comma.")}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -603,17 +631,17 @@ export default function Profile() {
                   name="interests"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Intereses</FormLabel>
+                      <FormLabel>{t("profile.interests", "Interests")}</FormLabel>
                       <FormControl>
-                        <Input 
-                          {...field} 
+                        <Input
+                          {...field}
                           disabled={!isEditing}
-                          placeholder="Ej: Educación, Medio ambiente, Tecnología..."
+                          placeholder={t("profile.interestsPlaceholder", "E.g: Education, Environment, Technology...")}
                           data-testid="input-interests"
                         />
                       </FormControl>
                       <FormDescription>
-                        Áreas que te interesan.
+                        {t("profile.interestsHint", "Areas that interest you.")}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -627,13 +655,13 @@ export default function Profile() {
                   <FormItem>
                     <FormLabel className="flex items-center gap-2">
                       <Link2 className="h-4 w-4" />
-                      LinkedIn
+                      {t("profile.linkedin", "LinkedIn")}
                     </FormLabel>
                     <FormControl>
-                      <Input 
-                        {...field} 
+                      <Input
+                        {...field}
                         disabled={!isEditing}
-                        placeholder="https://linkedin.com/in/tu-perfil"
+                        placeholder={t("profile.linkedinPlaceholder", "https://linkedin.com/in/your-profile")}
                         data-testid="input-linkedin"
                       />
                     </FormControl>
@@ -649,7 +677,7 @@ export default function Profile() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MapPin className="h-5 w-5 text-muted-foreground" />
-                Ubicación y Contacto
+                {t("profile.locationContact", "Location & Contact")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -659,12 +687,12 @@ export default function Profile() {
                   name="country"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>País</FormLabel>
+                      <FormLabel>{t("profile.country", "Country")}</FormLabel>
                       <FormControl>
-                        <Input 
-                          {...field} 
+                        <Input
+                          {...field}
                           disabled={!isEditing}
-                          placeholder="Ej: México"
+                          placeholder={t("profile.countryPlaceholder", "E.g: Mexico")}
                           data-testid="input-country"
                         />
                       </FormControl>
@@ -677,12 +705,12 @@ export default function Profile() {
                   name="city"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Ciudad</FormLabel>
+                      <FormLabel>{t("profile.city", "City")}</FormLabel>
                       <FormControl>
-                        <Input 
-                          {...field} 
+                        <Input
+                          {...field}
                           disabled={!isEditing}
-                          placeholder="Ej: Ciudad de México"
+                          placeholder={t("profile.cityPlaceholder", "E.g: Mexico City")}
                           data-testid="input-city"
                         />
                       </FormControl>
@@ -698,16 +726,16 @@ export default function Profile() {
                   <FormItem>
                     <FormLabel className="flex items-center gap-2">
                       <Globe className="h-4 w-4" />
-                      Zona horaria
+                      {t("profile.timezone", "Timezone")}
                     </FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
+                    <Select
+                      onValueChange={field.onChange}
                       defaultValue={field.value}
                       disabled={!isEditing}
                     >
                       <FormControl>
                         <SelectTrigger data-testid="select-timezone">
-                          <SelectValue placeholder="Selecciona tu zona horaria" />
+                          <SelectValue placeholder={t("profile.selectTimezone", "Select your timezone")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -725,9 +753,9 @@ export default function Profile() {
               <div className="flex items-center gap-2 p-4 rounded-lg bg-muted/50">
                 <Mail className="h-5 w-5 text-muted-foreground" />
                 <div>
-                  <p className="text-sm font-medium">Correo electrónico</p>
+                  <p className="text-sm font-medium">{t("profile.email", "Email")}</p>
                   <p className="text-sm text-muted-foreground" data-testid="text-email">
-                    {user.email || "No disponible"}
+                    {user.email || t("profile.notAvailable", "Not available")}
                   </p>
                 </div>
               </div>
@@ -741,10 +769,10 @@ export default function Profile() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-muted-foreground" />
-            Mis Roles
+            {t("profile.myRoles", "My Roles")}
           </CardTitle>
           <CardDescription>
-            Selecciona los roles que deseas desempeñar en la plataforma. Puedes tener múltiples roles.
+            {t("profile.myRolesHint", "Select the roles you want to play on the platform. You can have multiple roles.")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -776,9 +804,9 @@ export default function Profile() {
                       >
                         {roleLabels[role.name] || role.name}
                       </label>
-                      {selectedRoles.includes(role.id) ? <Badge variant="secondary">Activo</Badge> : null}
-                      {isGranted && !selectedRoles.includes(role.id) ? <Badge variant="outline">Concedido</Badge> : null}
-                      {isPending ? <Badge variant="outline">Pendiente</Badge> : null}
+                      {selectedRoles.includes(role.id) ? <Badge variant="secondary">{t("profile.active", "Active")}</Badge> : null}
+                      {isGranted && !selectedRoles.includes(role.id) ? <Badge variant="outline">{t("profile.granted", "Granted")}</Badge> : null}
+                      {isPending ? <Badge variant="outline">{t("profile.pending", "Pending")}</Badge> : null}
                     </div>
                     <p className="text-sm text-muted-foreground">
                       {roleDescriptions[role.name] || role.description}
@@ -794,26 +822,26 @@ export default function Profile() {
                       onClick={() => handleOpenRoleRequest(role.id)}
                     >
                       <Plus className="mr-2 h-4 w-4" />
-                      Add role
+                      {t("profile.addRole", "Add role")}
                     </Button>
                   )}
                 </div>
               );
             })}
           </div>
-          
+
           <div className="mt-6 flex justify-end">
-            <Button 
+            <Button
               onClick={handleSaveRoles}
               disabled={!hasRoleChanges() || updateRolesMutation.isPending}
               data-testid="button-save-roles"
             >
               {updateRolesMutation.isPending ? (
-                "Guardando..."
+                t("profile.saving", "Saving...")
               ) : (
                 <>
                   <Save className="h-4 w-4 mr-2" />
-                  Guardar Roles
+                  {t("profile.saveRoles", "Save Roles")}
                 </>
               )}
             </Button>
@@ -824,24 +852,26 @@ export default function Profile() {
       <Dialog open={isRoleRequestDialogOpen} onOpenChange={setIsRoleRequestDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Solicitar rol</DialogTitle>
+            <DialogTitle>{t("profile.requestRole", "Request role")}</DialogTitle>
             <DialogDescription>
-              {requestedRole ? `Explica por qué necesitas el rol de ${roleLabels[requestedRole.name] || requestedRole.name}.` : "Describe tu solicitud."}
+              {requestedRole
+                ? `${t("profile.requestRoleDescription", "Explain why you need this role")}: ${roleLabels[requestedRole.name] || requestedRole.name}`
+                : t("profile.describeRequest", "Describe your request.")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="role-request-justification">Justificación</Label>
+              <Label htmlFor="role-request-justification">{t("profile.justification", "Justification")}</Label>
               <Textarea
                 id="role-request-justification"
                 rows={5}
                 value={roleRequestJustification}
                 onChange={(event) => setRoleRequestJustification(event.target.value)}
-                placeholder="Cuéntanos tu experiencia, por qué necesitas este rol y cómo lo usarás."
+                placeholder={t("profile.justificationPlaceholder", "Tell us your experience, why you need this role and how you'll use it.")}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="role-request-attachments">Adjuntos de evidencia</Label>
+              <Label htmlFor="role-request-attachments">{t("profile.attachments", "Supporting attachments")}</Label>
               <Input
                 id="role-request-attachments"
                 type="file"
@@ -852,7 +882,7 @@ export default function Profile() {
                 }}
               />
               {isUploadingRoleAttachments ? (
-                <p className="text-sm text-muted-foreground">Cargando adjuntos...</p>
+                <p className="text-sm text-muted-foreground">{t("profile.uploadingAttachments", "Uploading attachments...")}</p>
               ) : null}
               {roleRequestAttachments.length > 0 ? (
                 <div className="space-y-2 rounded-md border p-3 text-sm">
@@ -868,14 +898,20 @@ export default function Profile() {
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setIsRoleRequestDialogOpen(false)}>
-              Cancelar
+              {t("common.cancel", "Cancel")}
             </Button>
             <Button type="button" onClick={handleSubmitRoleRequest} disabled={roleRequestMutation.isPending || isUploadingRoleAttachments}>
-              {roleRequestMutation.isPending ? "Enviando..." : "Enviar solicitud"}
+              {roleRequestMutation.isPending ? t("profile.sending", "Sending...") : t("profile.sendRequest", "Submit request")}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <MentorProfileChat
+        open={isMentorProfileChatOpen}
+        onOpenChange={setIsMentorProfileChatOpen}
+        onSection1Complete={handleMentorSection1Complete}
+      />
     </div>
   );
 }

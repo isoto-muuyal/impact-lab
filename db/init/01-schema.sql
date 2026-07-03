@@ -746,3 +746,29 @@ CREATE TABLE "activity_logs" (
 );
 --> statement-breakpoint
 ALTER TABLE "activity_logs" ADD CONSTRAINT "activity_logs_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+CREATE TYPE "public"."mentor_profile_draft_status" AS ENUM('in_progress', 'section1_complete', 'submitted', 'abandoned');--> statement-breakpoint
+CREATE TYPE "public"."mentor_profile_chat_role" AS ENUM('user', 'assistant');--> statement-breakpoint
+CREATE TABLE "mentor_profile_drafts" (
+	"id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_id" varchar NOT NULL,
+	"status" "mentor_profile_draft_status" DEFAULT 'in_progress' NOT NULL,
+	"current_step" integer DEFAULT 1 NOT NULL,
+	"profile_data" jsonb DEFAULT '{}'::jsonb NOT NULL,
+	"cv_file_name" varchar,
+	"cv_storage_key" varchar,
+	"cv_url" varchar,
+	"role_request_id" varchar,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now()
+);
+--> statement-breakpoint
+CREATE TABLE "mentor_profile_chat_messages" (
+	"id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"draft_id" varchar NOT NULL,
+	"role" "mentor_profile_chat_role" NOT NULL,
+	"content" text NOT NULL,
+	"created_at" timestamp DEFAULT now()
+);
+--> statement-breakpoint
+ALTER TABLE "mentor_profile_drafts" ADD CONSTRAINT "mentor_profile_drafts_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "mentor_profile_chat_messages" ADD CONSTRAINT "mentor_profile_chat_messages_draft_id_mentor_profile_drafts_id_fk" FOREIGN KEY ("draft_id") REFERENCES "public"."mentor_profile_drafts"("id") ON DELETE cascade ON UPDATE no action;
