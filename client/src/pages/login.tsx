@@ -3,12 +3,14 @@ import { useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
+import { useTranslation } from "@/contexts/LanguageContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 export default function Login() {
   const { isAuthenticated, isLoading } = useAuth();
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const [username, setUsername] = useState("impactlab");
   const [password, setPassword] = useState("impactlab");
@@ -33,20 +35,20 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center p-6 bg-muted/20">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Inicia sesión</CardTitle>
+          <CardTitle>{t("auth.loginTitle", "Log in")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <Input
             value={username}
             onChange={(event) => setUsername(event.target.value)}
-            placeholder="Usuario"
+            placeholder={t("auth.usernamePlaceholder", "Username")}
             data-testid="input-username"
           />
           <Input
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            placeholder="Contraseña"
+            placeholder={t("auth.passwordPlaceholder", "Password")}
             data-testid="input-password"
           />
           <Button
@@ -55,7 +57,7 @@ export default function Login() {
             onClick={() => loginMutation.mutate()}
             data-testid="button-submit-login"
           >
-            Entrar
+            {t("auth.enter", "Enter")}
           </Button>
           <a href="/api/auth/google" className="block">
             <Button
@@ -64,11 +66,11 @@ export default function Login() {
               className="w-full"
               data-testid="button-google-login"
             >
-              Continuar con Google
+              {t("auth.continueWithGoogle", "Continue with Google")}
             </Button>
           </a>
           {loginMutation.error ? (
-            <p className="text-sm text-destructive">Credenciales inválidas.</p>
+            <p className="text-sm text-destructive">{t("auth.invalidCredentials", "Invalid credentials.")}</p>
           ) : null}
           <Button
             type="button"
@@ -77,7 +79,7 @@ export default function Login() {
             onClick={() => setLocation("/register")}
             data-testid="button-go-register"
           >
-            Crear cuenta
+            {t("auth.createAccount", "Create account")}
           </Button>
         </CardContent>
       </Card>

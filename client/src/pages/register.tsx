@@ -3,12 +3,14 @@ import { useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
+import { useTranslation } from "@/contexts/LanguageContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 export default function Register() {
   const { isAuthenticated, isLoading } = useAuth();
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,15 +21,11 @@ export default function Register() {
 
   const registerMutation = useMutation({
     mutationFn: async () => {
-      if (password !== confirmPassword) {
-        throw new Error("Las contraseñas no coinciden.");
-      }
-
       await apiRequest("POST", "/api/register", {
         email,
         password,
-        firstName: firstName || undefined,
-        lastName: lastName || undefined,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
       });
     },
     onSuccess: async () => {
@@ -42,11 +40,26 @@ export default function Register() {
     }
   }, [isAuthenticated, isLoading, setLocation]);
 
+  const handleSubmit = () => {
+    if (!firstName.trim() || !lastName.trim()) {
+      setFormError(t("auth.nameRequired", "First and last name are required."));
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setFormError(t("auth.passwordMismatch", "Passwords do not match."));
+      return;
+    }
+
+    setFormError(null);
+    registerMutation.mutate();
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-muted/20">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Crear cuenta</CardTitle>
+          <CardTitle>{t("auth.registerTitle", "Create account")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <Input
@@ -56,19 +69,25 @@ export default function Register() {
               setFormError(null);
               setEmail(event.target.value);
             }}
-            placeholder="Correo electrónico"
+            placeholder={t("auth.emailPlaceholder", "Email")}
             data-testid="input-register-email"
           />
           <Input
             value={firstName}
-            onChange={(event) => setFirstName(event.target.value)}
-            placeholder="Nombre (opcional)"
+            onChange={(event) => {
+              setFormError(null);
+              setFirstName(event.target.value);
+            }}
+            placeholder={t("auth.firstNamePlaceholder", "First name")}
             data-testid="input-register-first-name"
           />
           <Input
             value={lastName}
-            onChange={(event) => setLastName(event.target.value)}
-            placeholder="Apellido (opcional)"
+            onChange={(event) => {
+              setFormError(null);
+              setLastName(event.target.value);
+            }}
+            placeholder={t("auth.lastNamePlaceholder", "Last name")}
             data-testid="input-register-last-name"
           />
           <Input
@@ -78,7 +97,7 @@ export default function Register() {
               setFormError(null);
               setPassword(event.target.value);
             }}
-            placeholder="Contraseña"
+            placeholder={t("auth.passwordPlaceholder", "Password")}
             data-testid="input-register-password"
           />
           <Input
@@ -88,23 +107,16 @@ export default function Register() {
               setFormError(null);
               setConfirmPassword(event.target.value);
             }}
-            placeholder="Confirmar contraseña"
+            placeholder={t("auth.confirmPasswordPlaceholder", "Confirm password")}
             data-testid="input-register-confirm-password"
           />
           <Button
             className="w-full"
             disabled={registerMutation.isPending}
-            onClick={() => {
-              if (password !== confirmPassword) {
-                setFormError("Las contraseñas no coinciden.");
-                return;
-              }
-              setFormError(null);
-              registerMutation.mutate();
-            }}
+            onClick={handleSubmit}
             data-testid="button-submit-register"
           >
-            Registrarme
+            {t("auth.registerButton", "Register")}
           </Button>
           <a href="/api/auth/google" className="block">
             <Button
@@ -113,13 +125,13 @@ export default function Register() {
               className="w-full"
               data-testid="button-google-register"
             >
-              Continuar con Google
+              {t("auth.continueWithGoogle", "Continue with Google")}
             </Button>
           </a>
           {formError ? <p className="text-sm text-destructive">{formError}</p> : null}
           {registerMutation.error ? (
             <p className="text-sm text-destructive">
-              No se pudo crear la cuenta. Verifica que el correo no exista.
+              {t("auth.registerFailed", "Could not create the account. Check that the email doesn't already exist.")}
             </p>
           ) : null}
           <Button
@@ -129,7 +141,7 @@ export default function Register() {
             onClick={() => setLocation("/login")}
             data-testid="button-go-login"
           >
-            Ya tengo cuenta
+            {t("auth.alreadyHaveAccount", "I already have an account")}
           </Button>
         </CardContent>
       </Card>
