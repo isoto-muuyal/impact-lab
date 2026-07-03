@@ -18,6 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { Role, RoleRequestWithDetails } from "@shared/schema";
+import { MentorProfileChat, type MentorRoleRequestPreview } from "@/components/mentor-profile-chat";
 import {
   Form,
   FormControl,
@@ -136,6 +137,8 @@ export default function Profile() {
   const [roleRequestJustification, setRoleRequestJustification] = useState("");
   const [roleRequestAttachments, setRoleRequestAttachments] = useState<RoleRequestAttachment[]>([]);
   const [isUploadingRoleAttachments, setIsUploadingRoleAttachments] = useState(false);
+  const [isMentorProfileChatOpen, setIsMentorProfileChatOpen] = useState(false);
+  const [pendingMentorDraftId, setPendingMentorDraftId] = useState<string | null>(null);
   
   const isImpactLabAdmin = user?.username === "impactlab";
 
@@ -260,7 +263,10 @@ export default function Profile() {
 
   const roleRequestMutation = useMutation({
     mutationFn: async (payload: { roleId: string; justification: string; attachments: RoleRequestAttachment[] }) => {
-      await apiRequest("POST", "/api/role-requests", payload);
+      await apiRequest("POST", "/api/role-requests", {
+        ...payload,
+        ...(pendingMentorDraftId ? { draftId: pendingMentorDraftId } : {}),
+      });
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['/api/role-requests/my'] });
@@ -268,6 +274,7 @@ export default function Profile() {
       setRequestedRoleId(null);
       setRoleRequestJustification("");
       setRoleRequestAttachments([]);
+      setPendingMentorDraftId(null);
       toast({
         title: "Solicitud enviada",
         description: "El admin revisará tu solicitud de rol.",
@@ -305,9 +312,24 @@ export default function Profile() {
   };
 
   const handleOpenRoleRequest = (roleId: string) => {
+    const role = allRoles?.find((item) => item.id === roleId);
+    if (role?.name === "mentor") {
+      setRequestedRoleId(roleId);
+      setIsMentorProfileChatOpen(true);
+      return;
+    }
+
     setRequestedRoleId(roleId);
     setRoleRequestJustification("");
     setRoleRequestAttachments([]);
+    setPendingMentorDraftId(null);
+    setIsRoleRequestDialogOpen(true);
+  };
+
+  const handleMentorSection1Complete = (preview: MentorRoleRequestPreview) => {
+    setPendingMentorDraftId(preview.draftId);
+    setRoleRequestJustification(preview.justification);
+    setRoleRequestAttachments(preview.attachments);
     setIsRoleRequestDialogOpen(true);
   };
 
@@ -876,6 +898,12 @@ export default function Profile() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <MentorProfileChat
+        open={isMentorProfileChatOpen}
+        onOpenChange={setIsMentorProfileChatOpen}
+        onSection1Complete={handleMentorSection1Complete}
+      />
     </div>
   );
 }

@@ -59,6 +59,21 @@ async function buildAll() {
     external: externals,
     logLevel: "info",
   });
+
+  console.log("building mentor profiling MCP server...");
+  await esbuild({
+    entryPoints: ["server/mcp/mentorProfilingMcpServer.ts"],
+    platform: "node",
+    bundle: true,
+    format: "cjs",
+    outfile: "dist/mentorProfilingMcpServer.cjs",
+    define: {
+      "process.env.NODE_ENV": '"production"',
+    },
+    minify: true,
+    external: externals,
+    logLevel: "info",
+  });
 }
 
 buildAll().catch((err) => {

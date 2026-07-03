@@ -793,5 +793,17 @@
       "description": "加入企业家、导师和组织社区，通过社会创新改变拉丁美洲。",
       "button": "开始你的项目"
     }
+  },
+  "mentorProfiling": {
+    "title": "战略画像聊天",
+    "subtitle": "与 ImpactLab 智能助手对话并上传简历,以建立你的 MicroImpactLab 档案。",
+    "loading": "加载中...",
+    "uploadCv": "简历已上传",
+    "uploadCvHint": "仅支持 PDF 和 TXT 文件。",
+    "unsupportedFileType": "不支持的文件类型",
+    "messagePlaceholder": "输入你的回答...",
+    "errorGeneric": "出现错误",
+    "submitting": "准备中...",
+    "continueToRoleRequest": "继续提交角色申请"
   }
 }

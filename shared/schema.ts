@@ -228,6 +228,77 @@ export type InsertUserRole = z.infer<typeof insertUserRoleSchema>;
 export type RoleRequest = typeof roleRequests.$inferSelect;
 export type InsertRoleRequest = z.infer<typeof insertRoleRequestSchema>;
 
+// Mentor strategic-profiling chat (MicroImpactLab onboarding, feeds the mentor role request)
+export const mentorProfileDraftStatusEnum = pgEnum('mentor_profile_draft_status', [
+  'in_progress',
+  'section1_complete',
+  'submitted',
+  'abandoned',
+]);
+
+export const mentorProfileChatRoleEnum = pgEnum('mentor_profile_chat_role', ['user', 'assistant']);
+
+export const mentorProfileDrafts = pgTable("mentor_profile_drafts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  status: mentorProfileDraftStatusEnum("status").notNull().default('in_progress'),
+  currentStep: integer("current_step").notNull().default(1), // 1..12 across the MicroImpactLab questionnaire
+  profileData: jsonb("profile_data").notNull().default({}), // structured answers keyed by step
+  cvFileName: varchar("cv_file_name"),
+  cvStorageKey: varchar("cv_storage_key"),
+  cvUrl: varchar("cv_url"),
+  roleRequestId: varchar("role_request_id").references(() => roleRequests.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const mentorProfileChatMessages = pgTable("mentor_profile_chat_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  draftId: varchar("draft_id").notNull().references(() => mentorProfileDrafts.id, { onDelete: "cascade" }),
+  role: mentorProfileChatRoleEnum("role").notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const mentorProfileDraftsRelations = relations(mentorProfileDrafts, ({ one, many }) => ({
+  user: one(users, {
+    fields: [mentorProfileDrafts.userId],
+    references: [users.id],
+  }),
+  roleRequest: one(roleRequests, {
+    fields: [mentorProfileDrafts.roleRequestId],
+    references: [roleRequests.id],
+  }),
+  messages: many(mentorProfileChatMessages),
+}));
+
+export const mentorProfileChatMessagesRelations = relations(mentorProfileChatMessages, ({ one }) => ({
+  draft: one(mentorProfileDrafts, {
+    fields: [mentorProfileChatMessages.draftId],
+    references: [mentorProfileDrafts.id],
+  }),
+}));
+
+export const insertMentorProfileDraftSchema = createInsertSchema(mentorProfileDrafts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertMentorProfileChatMessageSchema = createInsertSchema(mentorProfileChatMessages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type MentorProfileDraft = typeof mentorProfileDrafts.$inferSelect;
+export type InsertMentorProfileDraft = z.infer<typeof insertMentorProfileDraftSchema>;
+export type MentorProfileChatMessage = typeof mentorProfileChatMessages.$inferSelect;
+export type InsertMentorProfileChatMessage = z.infer<typeof insertMentorProfileChatMessageSchema>;
+
+export type MentorProfileDraftWithMessages = MentorProfileDraft & {
+  messages?: MentorProfileChatMessage[];
+};
+
 // Project status enum
 export const projectStatusEnum = pgEnum('project_status', ['draft', 'active', 'completed', 'paused', 'cancelled']);
 export const socialProjectParticipantRoleEnum = pgEnum('social_project_participant_role', ['creator', 'proponente', 'mentor', 'participant']);
