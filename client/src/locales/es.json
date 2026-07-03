@@ -924,5 +924,17 @@
       "description": "Selecciona tu idioma preferido",
       "select": "Seleccionar idioma"
     }
+  },
+  "mentorProfiling": {
+    "title": "Chat de perfilamiento estratégico",
+    "subtitle": "Conversa con el agente de ImpactLab y sube tu CV para construir tu perfil MicroImpactLab.",
+    "loading": "Cargando...",
+    "uploadCv": "CV cargado",
+    "uploadCvHint": "Solo se admiten archivos PDF y TXT.",
+    "unsupportedFileType": "Tipo de archivo no soportado",
+    "messagePlaceholder": "Escribe tu respuesta...",
+    "errorGeneric": "Ocurrió un error",
+    "submitting": "Preparando...",
+    "continueToRoleRequest": "Continuar a la solicitud de rol"
   }
 }

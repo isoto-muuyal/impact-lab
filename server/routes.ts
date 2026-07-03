@@ -2,10 +2,11 @@ import express, { type Express } from "express";
 import { createServer, type Server } from "http";
 import { redis } from "./services/redisClient";
 import { runMentorMatchingAgent } from "./services/mentorMatchingAgent";
+import { mentorProfilingAgent } from "./services/mentorProfilingAgent";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isImpactLabAdmin } from "./auth";
 import { sendEmail, isEmailConfigured, getContactRecipient } from "./email";
-import { mkdir, writeFile } from "fs/promises";
+import { mkdir, writeFile, copyFile, stat } from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
 import { 
@@ -43,6 +44,31 @@ function sanitizeUploadFilename(value: string): string {
 
 function getRoleRequestUploadDir(): string {
   return path.resolve(process.cwd(), "uploads", "role-requests");
+}
+
+function getMentorProfileCvUploadDir(): string {
+  return path.resolve(process.cwd(), "uploads", "mentor-profile-cv");
+}
+
+function formatMentorProfileJustification(profileData: Record<string, any>): string {
+  const stepLabels: Record<string, string> = {
+    step_1: "Análisis del perfil profesional",
+    step_2: "Identidad del MicroImpactLab",
+    step_3: "Propósito y propuesta de valor",
+    step_4: "Especialización y problemas que resuelve",
+  };
+
+  const sections = ["step_1", "step_2", "step_3", "step_4"]
+    .filter((key) => profileData[key])
+    .map((key) => {
+      const { section, ...data } = profileData[key];
+      const body = Object.values(data)
+        .filter((value) => typeof value === "string" && value.trim())
+        .join("\n");
+      return `${stepLabels[key]}:\n${body}`;
+    });
+
+  return sections.join("\n\n");
 }
 
 export async function registerRoutes(
@@ -391,6 +417,7 @@ export async function registerRoutes(
       const userId = req.user.claims.sub;
       const roleId = typeof req.body?.roleId === 'string' ? req.body.roleId : '';
       const justification = typeof req.body?.justification === 'string' ? req.body.justification.trim() : '';
+      const draftId = typeof req.body?.draftId === 'string' ? req.body.draftId : '';
       const attachments = Array.isArray(req.body?.attachments) ? req.body.attachments : [];
       const normalizedAttachments = attachments
         .filter((attachment: any) => attachment && typeof attachment === 'object')
@@ -440,10 +467,191 @@ export async function registerRoutes(
       }
 
       const request = await storage.createRoleRequest(validationResult.data);
+
+      if (draftId) {
+        const draft = await storage.getMentorProfileDraft(draftId, userId);
+        if (draft) {
+          await storage.linkMentorProfileDraftToRoleRequest(draftId, request.id);
+        }
+      }
+
       res.status(201).json(request);
     } catch (error) {
       console.error("Error creating role request:", error);
       res.status(500).json({ message: "Failed to create role request" });
+    }
+  });
+
+  // Mentor strategic-profiling chat (MicroImpactLab) — runs before the mentor role request
+  app.get('/api/mentor-profile-draft', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const draft = await storage.getOrCreateMentorProfileDraft(userId);
+      const messages = await storage.getMentorProfileChatMessages(draft.id);
+      res.json({ draft, messages });
+    } catch (error) {
+      console.error("Error fetching mentor profile draft:", error);
+      res.status(500).json({ message: "Failed to fetch mentor profile draft" });
+    }
+  });
+
+  app.post(
+    '/api/uploads/mentor-profile-cv',
+    isAuthenticated,
+    express.raw({ type: '*/*', limit: '10mb' }),
+    async (req: any, res) => {
+      try {
+        const userId = req.user.claims.sub;
+        const draftId = typeof req.query.draftId === 'string' ? req.query.draftId : '';
+        const fileNameHeader = typeof req.headers['x-file-name'] === 'string' ? req.headers['x-file-name'] : '';
+        const fileTypeHeader = typeof req.headers['content-type'] === 'string' ? req.headers['content-type'] : 'application/octet-stream';
+        const declaredSize = Number(req.headers['x-file-size'] || 0);
+        const originalName = decodeURIComponent(fileNameHeader || '').trim();
+        const buffer = Buffer.isBuffer(req.body) ? req.body : Buffer.from([]);
+
+        if (!draftId) {
+          return res.status(400).json({ message: "draftId is required" });
+        }
+
+        const draft = await storage.getMentorProfileDraft(draftId, userId);
+        if (!draft) {
+          return res.status(404).json({ message: "Mentor profile draft not found" });
+        }
+
+        if (!originalName) {
+          return res.status(400).json({ message: "File name is required" });
+        }
+
+        if (!buffer.length) {
+          return res.status(400).json({ message: "CV file is empty" });
+        }
+
+        if (declaredSize && declaredSize !== buffer.length) {
+          return res.status(400).json({ message: "File size does not match the uploaded content" });
+        }
+
+        const ext = path.extname(originalName).toLowerCase();
+        if (ext !== '.pdf' && ext !== '.txt') {
+          return res.status(400).json({ message: "Unsupported file type. Only PDF and TXT CVs are supported for now." });
+        }
+
+        const safeName = sanitizeUploadFilename(originalName);
+        const storageKey = `${randomUUID()}-${safeName}`;
+        const uploadDir = getMentorProfileCvUploadDir();
+        await mkdir(uploadDir, { recursive: true });
+        await writeFile(path.join(uploadDir, storageKey), buffer);
+
+        const url = `/api/uploads/mentor-profile-cv/${storageKey}`;
+        await storage.updateMentorProfileDraft(draftId, {
+          cvFileName: originalName,
+          cvStorageKey: storageKey,
+          cvUrl: url,
+        });
+
+        res.status(201).json({
+          name: originalName,
+          type: fileTypeHeader,
+          size: buffer.length,
+          storageKey,
+          url,
+        });
+      } catch (error) {
+        console.error("Error uploading mentor profile CV:", error);
+        res.status(500).json({ message: "Failed to upload CV" });
+      }
+    },
+  );
+
+  app.get('/api/uploads/mentor-profile-cv/:fileName', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const safeName = path.basename(req.params.fileName);
+      if (!safeName) {
+        return res.status(400).json({ message: "Invalid file name" });
+      }
+
+      const draft = await storage.getOrCreateMentorProfileDraft(userId);
+      if (draft.cvStorageKey !== safeName) {
+        return res.status(403).json({ message: "You do not have access to this file" });
+      }
+
+      res.sendFile(path.join(getMentorProfileCvUploadDir(), safeName), (error) => {
+        if (error && !res.headersSent) {
+          res.status((error as any).statusCode || 404).json({ message: "File not found" });
+        }
+      });
+    } catch (error) {
+      console.error("Error serving mentor profile CV:", error);
+      res.status(500).json({ message: "Failed to fetch file" });
+    }
+  });
+
+  app.post('/api/mentor-profile-draft/:draftId/messages', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { draftId } = req.params;
+      const message = typeof req.body?.message === 'string' ? req.body.message.trim() : '';
+
+      if (!message) {
+        return res.status(400).json({ message: "Message is required" });
+      }
+
+      const draft = await storage.getMentorProfileDraft(draftId, userId);
+      if (!draft) {
+        return res.status(404).json({ message: "Mentor profile draft not found" });
+      }
+
+      const cvAttachment = draft.cvStorageKey && draft.cvFileName
+        ? { storageKey: draft.cvStorageKey, fileName: draft.cvFileName }
+        : undefined;
+
+      const result = await mentorProfilingAgent.sendMessage(userId, draftId, message, cvAttachment);
+      res.json(result);
+    } catch (error) {
+      console.error("Error sending mentor profiling chat message:", error);
+      res.status(500).json({ message: "Failed to send message" });
+    }
+  });
+
+  app.get('/api/mentor-profile-draft/:draftId/role-request-preview', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { draftId } = req.params;
+
+      const draft = await storage.getMentorProfileDraft(draftId, userId);
+      if (!draft) {
+        return res.status(404).json({ message: "Mentor profile draft not found" });
+      }
+
+      if (draft.status !== 'section1_complete') {
+        return res.status(400).json({ message: "The strategic profiling chat is not complete yet" });
+      }
+
+      const justification = formatMentorProfileJustification((draft.profileData ?? {}) as Record<string, any>);
+      const attachments: { name: string; type: string; size: number; url: string; storageKey: string }[] = [];
+
+      if (draft.cvStorageKey && draft.cvFileName) {
+        const sourcePath = path.join(getMentorProfileCvUploadDir(), draft.cvStorageKey);
+        const safeName = sanitizeUploadFilename(draft.cvFileName);
+        const storageKey = `${randomUUID()}-${safeName}`;
+        const targetDir = getRoleRequestUploadDir();
+        await mkdir(targetDir, { recursive: true });
+        await copyFile(sourcePath, path.join(targetDir, storageKey));
+
+        const stats = await stat(path.join(targetDir, storageKey));
+        attachments.push({
+          name: draft.cvFileName,
+          type: 'application/octet-stream',
+          size: stats.size,
+          url: `/api/uploads/role-request-attachments/${storageKey}`,
+          storageKey,
+        });
+      }
+
+      res.json({ justification, attachments });
+    } catch (error) {
+      console.error("Error building mentor profile role-request preview:", error);
+      res.status(500).json({ message: "Failed to prepare role request preview" });
     }
   });
 

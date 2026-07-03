@@ -815,5 +815,17 @@
         "department": "Pro Bono Finance, Sustainability & Strategic Alliances Division"
       }
     }
+  },
+  "mentorProfiling": {
+    "title": "Strategic profiling chat",
+    "subtitle": "Chat with the ImpactLab agent and upload your CV to build your MicroImpactLab profile.",
+    "loading": "Loading...",
+    "uploadCv": "CV uploaded",
+    "uploadCvHint": "Only PDF and TXT files are supported.",
+    "unsupportedFileType": "Unsupported file type",
+    "messagePlaceholder": "Write your answer...",
+    "errorGeneric": "Something went wrong",
+    "submitting": "Preparing...",
+    "continueToRoleRequest": "Continue to role request"
   }
 }

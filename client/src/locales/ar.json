@@ -793,5 +793,17 @@
       "description": "انضم إلى مجتمع رواد الأعمال والموجهين والمنظمات الذين يغيرون أمريكا اللاتينية من خلال الابتكار الاجتماعي.",
       "button": "ابدأ مشروعك"
     }
+  },
+  "mentorProfiling": {
+    "title": "محادثة التوصيف الاستراتيجي",
+    "subtitle": "تحدث مع وكيل ImpactLab وارفع سيرتك الذاتية لبناء ملفك في MicroImpactLab.",
+    "loading": "جارٍ التحميل...",
+    "uploadCv": "تم رفع السيرة الذاتية",
+    "uploadCvHint": "يتم دعم ملفات PDF وTXT فقط.",
+    "unsupportedFileType": "نوع ملف غير مدعوم",
+    "messagePlaceholder": "اكتب إجابتك...",
+    "errorGeneric": "حدث خطأ ما",
+    "submitting": "جارٍ التحضير...",
+    "continueToRoleRequest": "المتابعة إلى طلب الدور"
   }
 }

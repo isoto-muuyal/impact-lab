@@ -793,5 +793,17 @@
       "description": "Junte-se à comunidade de empreendedores, mentores e organizações que estão transformando a América Latina através da inovação social.",
       "button": "Comece seu projeto"
     }
+  },
+  "mentorProfiling": {
+    "title": "Chat de perfilamento estratégico",
+    "subtitle": "Converse com o agente do ImpactLab e envie seu currículo para construir seu perfil MicroImpactLab.",
+    "loading": "Carregando...",
+    "uploadCv": "Currículo enviado",
+    "uploadCvHint": "Apenas arquivos PDF e TXT são suportados.",
+    "unsupportedFileType": "Tipo de arquivo não suportado",
+    "messagePlaceholder": "Escreva sua resposta...",
+    "errorGeneric": "Ocorreu um erro",
+    "submitting": "Preparando...",
+    "continueToRoleRequest": "Continuar para a solicitação de função"
   }
 }

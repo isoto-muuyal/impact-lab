@@ -5,6 +5,8 @@ import {
   roles,
   userRoles,
   roleRequests,
+  mentorProfileDrafts,
+  mentorProfileChatMessages,
   projects,
   socialProjectParticipants,
   projectJoinRequests,
@@ -41,6 +43,10 @@ import {
   type RoleRequest,
   type InsertRoleRequest,
   type RoleRequestWithDetails,
+  type MentorProfileDraft,
+  type InsertMentorProfileDraft,
+  type MentorProfileChatMessage,
+  type InsertMentorProfileChatMessage,
   type Project,
   type InsertProject,
   type ProjectWithOwner,
@@ -183,7 +189,15 @@ export interface IStorage {
   getPendingRoleRequest(userId: string, roleId: string): Promise<RoleRequest | undefined>;
   createRoleRequest(data: InsertRoleRequest): Promise<RoleRequest>;
   updateRoleRequest(id: string, data: Partial<InsertRoleRequest>): Promise<RoleRequest | undefined>;
-  
+
+  // Mentor profiling draft operations (MicroImpactLab strategic-profiling chat)
+  getOrCreateMentorProfileDraft(userId: string): Promise<MentorProfileDraft>;
+  getMentorProfileDraft(draftId: string, userId: string): Promise<MentorProfileDraft | undefined>;
+  updateMentorProfileDraft(draftId: string, data: Partial<InsertMentorProfileDraft>): Promise<MentorProfileDraft | undefined>;
+  getMentorProfileChatMessages(draftId: string): Promise<MentorProfileChatMessage[]>;
+  addMentorProfileChatMessage(data: InsertMentorProfileChatMessage): Promise<MentorProfileChatMessage>;
+  linkMentorProfileDraftToRoleRequest(draftId: string, roleRequestId: string): Promise<MentorProfileDraft | undefined>;
+
   // Seed operations
   seedRoles(): Promise<void>;
   seedTestData(userId: string): Promise<{ organizations: number; challenges: number; projects: number; courses: number }>;
@@ -620,6 +634,67 @@ export class DatabaseStorage implements IStorage {
       .where(eq(roleRequests.id, id))
       .returning();
     return request;
+  }
+
+  async getOrCreateMentorProfileDraft(userId: string): Promise<MentorProfileDraft> {
+    const [existing] = await db
+      .select()
+      .from(mentorProfileDrafts)
+      .where(and(
+        eq(mentorProfileDrafts.userId, userId),
+        or(
+          eq(mentorProfileDrafts.status, 'in_progress'),
+          eq(mentorProfileDrafts.status, 'section1_complete'),
+        ),
+      ))
+      .orderBy(desc(mentorProfileDrafts.createdAt));
+
+    if (existing) return existing;
+
+    const [created] = await db
+      .insert(mentorProfileDrafts)
+      .values({ userId, status: 'in_progress', currentStep: 1, profileData: {} })
+      .returning();
+    return created;
+  }
+
+  async getMentorProfileDraft(draftId: string, userId: string): Promise<MentorProfileDraft | undefined> {
+    const [draft] = await db
+      .select()
+      .from(mentorProfileDrafts)
+      .where(and(eq(mentorProfileDrafts.id, draftId), eq(mentorProfileDrafts.userId, userId)));
+    return draft;
+  }
+
+  async updateMentorProfileDraft(draftId: string, data: Partial<InsertMentorProfileDraft>): Promise<MentorProfileDraft | undefined> {
+    const [draft] = await db
+      .update(mentorProfileDrafts)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(mentorProfileDrafts.id, draftId))
+      .returning();
+    return draft;
+  }
+
+  async getMentorProfileChatMessages(draftId: string): Promise<MentorProfileChatMessage[]> {
+    return db
+      .select()
+      .from(mentorProfileChatMessages)
+      .where(eq(mentorProfileChatMessages.draftId, draftId))
+      .orderBy(mentorProfileChatMessages.createdAt);
+  }
+
+  async addMentorProfileChatMessage(data: InsertMentorProfileChatMessage): Promise<MentorProfileChatMessage> {
+    const [message] = await db.insert(mentorProfileChatMessages).values(data).returning();
+    return message;
+  }
+
+  async linkMentorProfileDraftToRoleRequest(draftId: string, roleRequestId: string): Promise<MentorProfileDraft | undefined> {
+    const [draft] = await db
+      .update(mentorProfileDrafts)
+      .set({ roleRequestId, status: 'submitted', updatedAt: new Date() })
+      .where(eq(mentorProfileDrafts.id, draftId))
+      .returning();
+    return draft;
   }
 
   // Seed roles
